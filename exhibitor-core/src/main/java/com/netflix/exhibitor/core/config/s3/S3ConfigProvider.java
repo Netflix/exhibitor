@@ -1,10 +1,15 @@
 package com.netflix.exhibitor.core.config.s3;
 
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.netflix.exhibitor.core.config.ConfigProvider;
 import com.netflix.exhibitor.core.config.InstanceConfig;
 import com.netflix.exhibitor.core.config.LoadedInstanceConfig;
@@ -41,11 +46,18 @@ public class S3ConfigProvider implements ConfigProvider
     @Override
     public LoadedInstanceConfig loadConfig() throws Exception
     {
-        S3Object    object = s3Client.getObject(arguments.getBucket(), arguments.getKey());
-        Date        lastModified = object.getObjectMetadata().getLastModified();
-
+        Date        lastModified;
         Properties  properties = new Properties();
-        properties.load(object.getObjectContent());
+        S3Object    object = getConfigObject();
+        if ( object != null )
+        {
+            lastModified = object.getObjectMetadata().getLastModified();
+            properties.load(object.getObjectContent());
+        }
+        else
+        {
+            lastModified = new Date(0L);
+        }
 
         PropertyBasedInstanceConfig config = new PropertyBasedInstanceConfig(properties, defaults);
         return new LoadedInstanceConfig(config, lastModified.getTime());
@@ -54,11 +66,16 @@ public class S3ConfigProvider implements ConfigProvider
     @Override
     public LoadedInstanceConfig storeConfig(InstanceConfig config, long compareLastModified) throws Exception
     {
-        S3Object                        object = s3Client.getObject(arguments.getBucket(), arguments.getKey());
-        Date                            lastModified = object.getObjectMetadata().getLastModified();
-        if ( lastModified.getTime() != compareLastModified )
         {
-            return null;    // apparently there's no atomic way to do this with S3 so this will have to do
+            S3Object                        object = getConfigObject();
+            if ( object != null )
+            {
+                Date                            lastModified = object.getObjectMetadata().getLastModified();
+                if ( lastModified.getTime() != compareLastModified )
+                {
+                    return null;    // apparently there's no atomic way to do this with S3 so this will have to do
+                }
+            }
         }
 
         PropertyBasedInstanceConfig     propertyBasedInstanceConfig = new PropertyBasedInstanceConfig(config);
@@ -81,5 +98,31 @@ public class S3ConfigProvider implements ConfigProvider
         }
 
         return new LoadedInstanceConfig(propertyBasedInstanceConfig, metadata.getLastModified().getTime());
+    }
+
+    private S3Object getConfigObject() throws Exception
+    {
+        ListObjectsRequest  request = new ListObjectsRequest();
+        request.setBucketName(arguments.getBucket());
+        ObjectListing       listing = s3Client.listObjects(request);
+        S3ObjectSummary     keySummary = Iterables.find
+        (
+            listing.getObjectSummaries(),
+            new Predicate<S3ObjectSummary>()
+            {
+                @Override
+                public boolean apply(S3ObjectSummary summary)
+                {
+                    return summary.getKey().equals(arguments.getKey());
+                }
+            },
+            null
+        );
+        if ( keySummary == null )
+        {
+            return null;
+        }
+
+        return s3Client.getObject(arguments.getBucket(), arguments.getKey());
     }
 }
