@@ -1,5 +1,5 @@
 Exhibitor
-Copyright 2012 Netlix, Inc.
+Copyright 2012 Netflix, Inc.
 
 This product includes software developed by The Apache Software
 Foundation (http://www.apache.org/).
