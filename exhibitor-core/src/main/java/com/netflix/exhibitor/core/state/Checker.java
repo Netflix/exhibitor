@@ -30,6 +30,11 @@ public class Checker
     {
         InstanceConfig          config = exhibitor.getConfigManager().getConfig();
 
+        if ( !isSet(config, StringConfigs.ZOOKEEPER_DATA_DIRECTORY) || !isSet(config, StringConfigs.ZOOKEEPER_INSTALL_DIRECTORY) )
+        {
+            return InstanceStateTypes.LATENT;
+        }
+
         InstanceStateTypes      potentialState = InstanceStateTypes.DOWN;
         ServerList              serverList = new ServerList(config.getString(StringConfigs.SERVERS_SPEC));
         ServerSpec              us = Iterables.find(serverList.getSpecs(), ServerList.isUs(exhibitor.getThisJVMHostname()), null);
@@ -73,5 +78,11 @@ public class Checker
         }
 
         return actualState;
+    }
+
+    private boolean isSet(InstanceConfig config, StringConfigs type)
+    {
+        String s = config.getString(type);
+        return (s != null) && (s.trim().length() > 0);
     }
 }
