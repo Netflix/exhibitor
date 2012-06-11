@@ -1,9 +1,6 @@
 package com.netflix.exhibitor.core.backup.s3;
 
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.*;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -13,11 +10,8 @@ import com.netflix.exhibitor.core.backup.BackupMetaData;
 import com.netflix.exhibitor.core.s3.PropertyBasedS3Credential;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
+
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -43,18 +37,19 @@ public abstract class TestS3BackupProviderBase
     @Test
     public void     testDownload() throws Exception
     {
-        byte[]              uploadedBytes = getUploadedBytes(sourceFile);
-
-        S3Object            object = new S3Object();
-        object.setBucketName("foo");
-        object.setKey("test");
-        object.setObjectContent(new S3ObjectInputStream(new ByteArrayInputStream(uploadedBytes), null));
-
+        InputStream in = null;
         OutputStream        out = null;
         File                tempFile = File.createTempFile("test", ".test");
         try
         {
-            MockS3Client        s3Client = new MockS3Client(object, null);
+            in = new FileInputStream(sourceFile);
+
+            PutObjectRequest dummyRequest =
+                    new PutObjectRequest("bucket", "exhibitor-backup" + S3BackupProvider.SEPARATOR + "test" + S3BackupProvider.SEPARATOR + 1, in, null);
+
+            MockS3Client        s3Client = new MockS3Client(null, null);
+            s3Client.putObject(dummyRequest);
+
             S3BackupProvider    provider = new S3BackupProvider(new MockS3ClientFactory(s3Client), new PropertyBasedS3Credential(new Properties()));
             out = new FileOutputStream(tempFile);
             provider.downloadBackup(null, new BackupMetaData("test", 1), out, Maps.<String, String>newHashMap());
@@ -63,6 +58,7 @@ public abstract class TestS3BackupProviderBase
         }
         finally
         {
+            Closeables.closeQuietly(in);
             Closeables.closeQuietly(out);
             
             //noinspection ResultOfMethodCallIgnored

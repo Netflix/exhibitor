@@ -20,7 +20,7 @@ public class MockS3Client implements S3Client
     private final ObjectListing             listing;
     private final Map<String, S3Object>     uploads = Maps.newConcurrentMap();
 
-    private static final String BYTES_HEADER = "__inernal_index__";
+    private static final String BYTES_HEADER = "__internal_index__";
 
     public MockS3Client()
     {

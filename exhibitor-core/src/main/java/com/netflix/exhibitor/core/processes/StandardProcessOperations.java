@@ -103,7 +103,11 @@ public class StandardProcessOperations implements ProcessOperations
         }
         finally
         {
-            jpsProcess.destroy();
+                Closeables.closeQuietly(jpsProcess.getErrorStream());
+                Closeables.closeQuietly(jpsProcess.getInputStream());
+                Closeables.closeQuietly(jpsProcess.getOutputStream());
+
+                jpsProcess.destroy();
         }
 
         if ( pid == null )
