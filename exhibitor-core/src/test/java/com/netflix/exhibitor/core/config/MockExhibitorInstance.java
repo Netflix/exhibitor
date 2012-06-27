@@ -15,32 +15,17 @@ class MockExhibitorInstance implements Closeable
 
     MockExhibitorInstance(String hostname) throws Exception
     {
+        this(hostname, getConfigProvider());
+    }
+
+    MockExhibitorInstance(String hostname, ConfigProvider provider) throws Exception
+    {
         ActivityLog log = new ActivityLog(100);
         ActivityQueue activityQueue = new ActivityQueue();
         mockExhibitor = Mockito.mock(Exhibitor.class);
         Mockito.when(mockExhibitor.getLog()).thenReturn(log);
         Mockito.when(mockExhibitor.getActivityQueue()).thenReturn(activityQueue);
         Mockito.when(mockExhibitor.getThisJVMHostname()).thenReturn(hostname);
-
-        ConfigProvider      provider = new ConfigProvider()
-        {
-            private volatile ConfigCollection      config = new PropertyBasedInstanceConfig(new Properties(), new Properties());
-            private final AtomicLong modified = new AtomicLong(1);
-
-            @Override
-            public LoadedInstanceConfig loadConfig() throws Exception
-            {
-                return new LoadedInstanceConfig(config, modified.get());
-            }
-
-            @Override
-            public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
-            {
-                this.config = config;
-                modified.incrementAndGet();
-                return loadConfig();
-            }
-        };
 
         ConfigManager       manager = new ConfigManager(mockExhibitor, provider, 10);
         manager.start();
@@ -57,5 +42,45 @@ class MockExhibitorInstance implements Closeable
     Exhibitor getMockExhibitor()
     {
         return mockExhibitor;
+    }
+
+    private static ConfigProvider getConfigProvider()
+    {
+        return new ConfigProvider()
+        {
+            private volatile ConfigCollection       config = new PropertyBasedInstanceConfig(new Properties(), new Properties());
+            private final AtomicLong                modified = new AtomicLong(1);
+
+            @Override
+            public LoadedInstanceConfig loadConfig() throws Exception
+            {
+                return new LoadedInstanceConfig(config, modified.get());
+            }
+
+            @Override
+            public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+            {
+            }
+
+            @Override
+            public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+            {
+                return 0;
+            }
+
+            @Override
+            public PseudoLock newPseudoLock() throws Exception
+            {
+                return null;
+            }
+
+            @Override
+            public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
+            {
+                this.config = config;
+                modified.incrementAndGet();
+                return loadConfig();
+            }
+        };
     }
 }

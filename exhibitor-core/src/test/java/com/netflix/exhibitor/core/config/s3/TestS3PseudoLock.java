@@ -1,4 +1,4 @@
-package com.netflix.exhibitor.core.s3;
+package com.netflix.exhibitor.core.config.s3;
 
 import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.backup.s3.MockS3Client;
@@ -35,7 +35,7 @@ public class TestS3PseudoLock
                     @Override
                     public Void call() throws Exception
                     {
-                        S3PseudoLock        lock = new S3PseudoLock(client, "foo", "bar", Integer.MAX_VALUE, POLLING_MS, 0);
+                        S3PseudoLock lock = new S3PseudoLock(client, "foo", "bar", Integer.MAX_VALUE, POLLING_MS, 0);
                         try
                         {
                             Assert.assertTrue(lock.lock(10, TimeUnit.SECONDS));

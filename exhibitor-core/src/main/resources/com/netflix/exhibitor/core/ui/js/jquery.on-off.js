@@ -127,7 +127,7 @@
             toggle(jqueryElement, false);
         }
 
-        jqueryElement.next().next().click(function(){
+        jqueryElement.next().next().mousedown(function(){
             if ( !jqueryElement.prop("disabled") )
             {
                 toggle(jqueryElement, true);

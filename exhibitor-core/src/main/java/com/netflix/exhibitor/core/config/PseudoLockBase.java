@@ -1,16 +1,7 @@
-package com.netflix.exhibitor.core.s3;
+package com.netflix.exhibitor.core.config;
 
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.io.ByteStreams;
-import java.io.ByteArrayInputStream;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.List;
@@ -21,10 +12,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * An approximation of a lock using S3
  */
-public class S3PseudoLock
+public abstract class PseudoLockBase implements PseudoLock
 {
-    private final S3Client                  client;
-    private final String                    bucket;
     private final String                    lockPrefix;
     private final int                       timeoutMs;
     private final String                    id;
@@ -42,33 +31,27 @@ public class S3PseudoLock
     private static final int        DEFAULT_SETTLING_MS = 5000;
 
     /**
-     * @param client the S3 client
-     * @param bucket the S3 bucket
      * @param lockPrefix key prefix
      * @param timeoutMs max age for locks
      * @param pollingMs how often to poll S3
      */
-    public S3PseudoLock(S3Client client, String bucket, String lockPrefix, int timeoutMs, int pollingMs)
+    public PseudoLockBase(String lockPrefix, int timeoutMs, int pollingMs)
     {
-        this(client, bucket, lockPrefix, timeoutMs, pollingMs, DEFAULT_SETTLING_MS);
+        this(lockPrefix, timeoutMs, pollingMs, DEFAULT_SETTLING_MS);
     }
 
     /**
-     * @param client the S3 client
-     * @param bucket the S3 bucket
      * @param lockPrefix key prefix
      * @param timeoutMs max age for locks
      * @param pollingMs how often to poll S3
      * @param settlingMs how long to wait for S3 to reach consistency
      */
-    public S3PseudoLock(S3Client client, String bucket, String lockPrefix, int timeoutMs, int pollingMs, int settlingMs)
+    public PseudoLockBase(String lockPrefix, int timeoutMs, int pollingMs, int settlingMs)
     {
         this.settlingMs = settlingMs;
         Preconditions.checkArgument(!lockPrefix.contains(SEPARATOR), "lockPrefix cannot contain " + SEPARATOR);
 
         this.pollingMs = pollingMs;
-        this.client = client;
-        this.bucket = bucket;
         this.lockPrefix = lockPrefix;
         this.timeoutMs = timeoutMs;
 
@@ -107,10 +90,7 @@ public class S3PseudoLock
         long        maxWaitMs = hasMaxWait ? TimeUnit.MILLISECONDS.convert(maxWait, unit) : Long.MAX_VALUE;
         Preconditions.checkState(maxWaitMs >= settlingMs, String.format("The maxWait ms (%d) is less than the settling ms (%d)", maxWaitMs, settlingMs));
 
-        ObjectMetadata      metadata = new ObjectMetadata();
-        metadata.setContentLength(id.length());
-        PutObjectRequest    request = new PutObjectRequest(bucket, key, new ByteArrayInputStream(id.getBytes()), metadata);
-        client.putObject(request);
+        createFile(key, id.getBytes());
 
         for(;;)
         {
@@ -150,9 +130,17 @@ public class S3PseudoLock
             throw new IllegalStateException("Already unlocked");
         }
 
-        client.deleteObject(bucket, key);
+        deleteFile(key);
         notifyAll();
     }
+
+    protected abstract void createFile(String key, byte[] contents) throws Exception;
+
+    protected abstract void deleteFile(String key) throws Exception;
+
+    protected abstract byte[] getFileContents(String key) throws Exception;
+
+    protected abstract List<String> getFileNames(String lockPrefix) throws Exception;
 
     private void checkUpdate() throws Exception
     {
@@ -161,34 +149,16 @@ public class S3PseudoLock
             return;
         }
 
-        ListObjectsRequest  request = new ListObjectsRequest();
-        request.setBucketName(bucket);
-        request.setPrefix(lockPrefix);
-        ObjectListing       objectListing = client.listObjects(request);
-
-        List<String>        keys = Lists.transform
-        (
-            objectListing.getObjectSummaries(),
-            new Function<S3ObjectSummary, String>()
-            {
-                @Override
-                public String apply(S3ObjectSummary summary)
-                {
-                    return summary.getKey();
-                }
-            }
-        );
+        List<String>        keys = getFileNames(lockPrefix);
         keys = cleanOldObjects(keys);
         Collections.sort(keys);
 
         if ( keys.size() > 0 )
         {
             String      lockerKey = keys.get(0);
-            S3Object    object = client.getObject(bucket, lockerKey);
-            if ( object != null )
+            byte[]      bytes = getFileContents(lockerKey);
+            if ( bytes != null )
             {
-                byte[]      bytes = new byte[(int)object.getObjectMetadata().getContentLength()];
-                ByteStreams.read(object.getObjectContent(), bytes, 0, bytes.length);
                 String      lockerId = new String(bytes);
                 long        lockerAge = System.nanoTime() - getNanoStampForKey(key);
                 ownsTheLock = (lockerKey.equals(key) && lockerId.equals(id)) && (lockerAge >= TimeUnit.NANOSECONDS.convert(settlingMs, TimeUnit.MILLISECONDS));
@@ -216,7 +186,7 @@ public class S3PseudoLock
             long    nanoStamp = getNanoStampForKey(key);
             if ( (System.nanoTime() - nanoStamp) > TimeUnit.NANOSECONDS.convert(timeoutMs, TimeUnit.MILLISECONDS) )
             {
-                client.deleteObject(bucket, key);
+                deleteFile(key);
             }
             else
             {

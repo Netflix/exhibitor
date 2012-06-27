@@ -24,6 +24,7 @@ var URL_EXPLORER_ANALYZE = "../explorer/analyze";
 
 var URL_GET_STATE = "../config/get-state";
 var URL_SET_CONFIG = "../config/set";
+var URL_SET_CONTROL_PANEL_CONFIG = "../config/set-control-panel";
 var URL_SET_CONFIG_ROLLING = "../config/set-rolling";
 var URL_ROLLBACK_ROLLING = "../config/rollback-rolling";
 var URL_FORCE_COMMIT_ROLLING = "../config/force-commit-rolling";
@@ -145,13 +146,10 @@ function updateState()
 
             $.unblockUI();
 
-            var     pageTitle = "Exhibitor for ZooKeeper";
             if ( systemState.extraHeadingText )
             {
-                pageTitle += ' - ' + systemState.extraHeadingText;
+                $('#page-title-extra').html(systemState.extraHeadingText);
             }
-
-            $('#page-title').html(pageTitle);
             $('#version').html(systemState.version);
             $('#not-connected-alert').hide();
             $('#instance-hostname').html(systemConfig.hostname);
@@ -223,6 +221,8 @@ function buildNewConfig()
     newConfig.zookeeperInstallDirectory = $('#config-zookeeper-install-dir').val();
     newConfig.zookeeperDataDirectory = $('#config-zookeeper-data-dir').val();
     newConfig.logIndexDirectory = $('#config-log-index-dir').val();
+    newConfig.deadInstancePeriodMs = $('#config-dead-instance-ms').val();
+    newConfig.observerThreshold = $('#config-observer-threshold').val();
     newConfig.serversSpec = $('#config-servers-spec').val();
     newConfig.javaEnvironment = $('#config-java-env').val();
     newConfig.log4jProperties = $('#config-java-log4j').val();
@@ -265,6 +265,31 @@ function turnOffEditableSwitch()
     checkLightSwitch('#config-editable', false);
     handleEditableSwitch();
 }
+
+function changeControlPanelConfig(field, selector)
+{
+    var tab = new Array();
+    var update = {};
+    update.field = field;
+    update.value = $(selector).attr('checked') != undefined;
+    tab.push(update);
+
+    var payload = JSON.stringify(tab);
+    $.ajax({
+        type: 'POST',
+        url: URL_SET_CONTROL_PANEL_CONFIG,
+        data: payload,
+        contentType: 'application/json',
+        success:function(data)
+        {
+            if ( !data.succeeded )
+            {
+                messageDialog("Error", data.message);
+            }
+        }
+    });
+}
+
 function submitConfigChanges(rolling)
 {
     var newConfig = buildNewConfig();
@@ -295,8 +320,12 @@ function getBackupExtraId(obj)
 
 function ableConfig(enable)
 {
+    ableLightSwitch('#cp-auto-init-instances', null, !enable);  // control panel stuff is opposite
+
     $('#config-zookeeper-install-dir').prop('disabled', !enable);
     $('#config-zookeeper-data-dir').prop('disabled', !enable);
+    $('#config-dead-instance-ms').prop('disabled', !enable);
+    $('#config-observer-threshold').prop('disabled', !enable);
     $('#config-log-index-dir').prop('disabled', !enable);
     $('#config-servers-spec').prop('disabled', !enable);
     $('#config-java-env').prop('disabled', !enable);
@@ -323,6 +352,10 @@ function ableConfig(enable)
 
 function updateConfig()
 {
+    if ( systemConfig.controlPanel ) {
+        checkLightSwitch('#cp-auto-init-instances', systemConfig.controlPanel.autoManageInstances);
+    }
+
     if ( !doConfigUpdates ) {
         return;
     }
@@ -335,6 +368,8 @@ function updateConfig()
 
     $('#config-zookeeper-install-dir').val(systemConfig.zookeeperInstallDirectory);
     $('#config-zookeeper-data-dir').val(systemConfig.zookeeperDataDirectory);
+    $('#config-dead-instance-ms').val(systemConfig.deadInstancePeriodMs);
+    $('#config-observer-threshold').val(systemConfig.observerThreshold);
     $('#config-log-index-dir').val(systemConfig.logIndexDirectory);
     $('#config-servers-spec').val(systemConfig.serversSpec);
     $('#config-java-env').val(systemConfig.javaEnvironment);
@@ -509,7 +544,9 @@ $(function ()
             tabData.url = uiTabSpec[i].url;
             customTabs[i] = tabData;
 
-            $('#tabs').append('<div id="' + tabData.id + '" class="ui-helper-hidden"><div id="' + tabData.contentId + '" class="text"></div></div>')
+            var tabContentClass = uiTabSpec[i].html ? 'tab-html' : 'text';
+            var tabContent = '<div id="' + tabData.id + '" class="ui-helper-hidden"><div id="' + tabData.contentId + '" class="' + tabContentClass + '"></div></div>';
+            $('#tabs').append(tabContent);
             $('#tabs-list').append('<li><a href="#' + tabData.id + '">' + uiTabSpec[i].name + '</a></li>');
         }
         $('#tabs').tabs({
@@ -693,6 +730,9 @@ $(function ()
     );
 
     makeLightSwitch('#config-editable', handleEditableSwitch);
+    makeLightSwitch('#cp-auto-init-instances', function(){
+        changeControlPanelConfig('autoManageInstances', '#cp-auto-init-instances');
+    });
     turnOffEditableSwitch();
 
     initRestoreUI();

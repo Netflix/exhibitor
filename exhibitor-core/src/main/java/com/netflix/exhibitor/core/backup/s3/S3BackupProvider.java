@@ -18,7 +18,6 @@
 
 package com.netflix.exhibitor.core.backup.s3;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.model.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;

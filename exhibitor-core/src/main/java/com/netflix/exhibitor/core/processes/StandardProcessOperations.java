@@ -28,6 +28,7 @@ import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.StringConfigs;
 import com.netflix.exhibitor.core.state.ServerList;
 import com.netflix.exhibitor.core.state.ServerSpec;
+import com.netflix.exhibitor.core.state.UsState;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -163,16 +164,13 @@ public class StandardProcessOperations implements ProcessOperations
 
     private void prepConfigFile(Details details) throws IOException
     {
-        InstanceConfig          config = exhibitor.getConfigManager().getConfig();
-
-        ServerList serverList = new ServerList(config.getString(StringConfigs.SERVERS_SPEC));
+        UsState                 usState = new UsState(exhibitor);
 
         File                    idFile = new File(details.dataDirectory, "myid");
-        ServerSpec us = Iterables.find(serverList.getSpecs(), ServerList.isUs(exhibitor.getThisJVMHostname()), null);
-        if ( us != null )
+        if ( usState.getUs() != null )
         {
             Files.createParentDirs(idFile);
-            String                  id = String.format("%d\n", us.getServerId());
+            String                  id = String.format("%d\n", usState.getUs().getServerId());
             Files.write(id.getBytes(), idFile);
         }
         else
@@ -187,10 +185,10 @@ public class StandardProcessOperations implements ProcessOperations
         Properties      localProperties = new Properties();
         localProperties.putAll(details.properties);
 
-        localProperties.setProperty("clientPort", Integer.toString(config.getInt(IntConfigs.CLIENT_PORT)));
+        localProperties.setProperty("clientPort", Integer.toString(usState.getConfig().getInt(IntConfigs.CLIENT_PORT)));
 
-        String          portSpec = String.format(":%d:%d", config.getInt(IntConfigs.CONNECT_PORT), config.getInt(IntConfigs.ELECTION_PORT));
-        for ( ServerSpec spec : serverList.getSpecs() )
+        String          portSpec = String.format(":%d:%d", usState.getConfig().getInt(IntConfigs.CONNECT_PORT), usState.getConfig().getInt(IntConfigs.ELECTION_PORT));
+        for ( ServerSpec spec : usState.getServerList().getSpecs() )
         {
             localProperties.setProperty("server." + spec.getServerId(), spec.getHostname() + portSpec + spec.getServerType().getZookeeperConfigValue());
         }

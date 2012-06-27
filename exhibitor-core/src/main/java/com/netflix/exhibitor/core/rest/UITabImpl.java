@@ -62,11 +62,17 @@ public class UITabImpl implements UITab
      * Return the content (as text/plain) for the tab
      * @return content
      * @throws Exception errors
-     * @param info
+     * @param info request info
      */
     @Override
     public String       getContent(UriInfo info) throws Exception
     {
         return content;
+    }
+
+    @Override
+    public boolean contentIsHtml()
+    {
+        return false;
     }
 }

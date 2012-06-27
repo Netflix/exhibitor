@@ -148,6 +148,17 @@ public class DefaultProperties
                     {
                         return (int)TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
                     }
+
+                    case DEAD_INSTANCE_PERIOD_MS:
+                    {
+                        return (int)TimeUnit.MILLISECONDS.convert(3, TimeUnit.HOURS);
+                    }
+
+                    case OBSERVER_THRESHOLD:
+                    {
+                        return 4;
+                    }
+
                 }
                 return 0;
             }

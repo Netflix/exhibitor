@@ -40,6 +40,25 @@ public class TestRollingConfigChange
             }
 
             @Override
+            public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+            {
+                // TODO
+            }
+
+            @Override
+            public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+            {
+                // TODO
+                return 0;
+            }
+
+            @Override
+            public PseudoLock newPseudoLock() throws Exception
+            {
+                return null;    // TODO
+            }
+
+            @Override
             public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
             {
                 this.config = config;

@@ -24,17 +24,19 @@ import javax.xml.bind.annotation.XmlRootElement;
 @SuppressWarnings("UnusedDeclaration")
 public class UITabSpec
 {
-    private String        name;
-    private String        url;
+    private String      name;
+    private String      url;
+    private boolean     html;
 
     public UITabSpec()
     {
     }
 
-    public UITabSpec(String name, String url)
+    public UITabSpec(String name, String url, boolean isHtml)
     {
         this.name = name;
         this.url = url;
+        this.html = isHtml;
     }
 
     public String getName()
@@ -55,5 +57,15 @@ public class UITabSpec
     public void setUrl(String url)
     {
         this.url = url;
+    }
+
+    public boolean getHtml()
+    {
+        return html;
+    }
+
+    public void setHtml(boolean html)
+    {
+        this.html = html;
     }
 }

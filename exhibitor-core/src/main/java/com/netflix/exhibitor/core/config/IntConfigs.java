@@ -118,6 +118,50 @@ public enum IntConfigs
             return false;
         }
     },
+
+    /**
+     * true/false (0 or 1) - determine if automatic instance management is on/off - default is false
+     */
+    AUTO_MANAGE_INSTANCES()
+    {
+        @Override
+        public boolean isRestartSignificant()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isPartOfControlPanel()
+        {
+            return true;
+        }
+    },
+
+    /**
+     * Period in ms to consider an instance dead and, thus, a candidate for automatic
+     * instance removal - default is 3 hours
+     */
+    DEAD_INSTANCE_PERIOD_MS()
+    {
+        @Override
+        public boolean isRestartSignificant()
+        {
+            return false;
+        }
+    },
+
+    /**
+     * Marks which instances are made Observers by automatic instance management. Instances below
+     * this number are normal instances. Instances from this number and up are Observers.
+     */
+    OBSERVER_THRESHOLD()
+    {
+        @Override
+        public boolean isRestartSignificant()
+        {
+            return false;
+        }
+    }
     ;
 
     /**
@@ -126,4 +170,14 @@ public enum IntConfigs
      * @return true/false
      */
     public abstract boolean     isRestartSignificant();
+
+    /**
+     * Return true if this is on the control panel tab instead of the Config tab
+     *
+     * @return true/false
+     */
+    public boolean isPartOfControlPanel()
+    {
+        return false;
+    }
 }

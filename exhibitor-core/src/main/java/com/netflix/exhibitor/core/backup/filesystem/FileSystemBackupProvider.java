@@ -96,18 +96,30 @@ public class FileSystemBackupProvider implements BackupProvider
     public List<BackupMetaData> getAvailableBackups(Exhibitor exhibitor, Map<String, String> configValues) throws Exception
     {
         ImmutableList.Builder<BackupMetaData>   builder = ImmutableList.builder();
-        File                                    directory = new File(configValues.get(CONFIG_DIRECTORY.getKey()));
-        if ( directory.isDirectory() )
+        String                                  pathname = configValues.get(CONFIG_DIRECTORY.getKey());
+        if ( pathname != null )
         {
-            for ( File nameDir : directory.listFiles() )
+            File                                    directory = new File(pathname);
+            if ( directory.isDirectory() )
             {
-                if ( nameDir.isDirectory() )
+                File[] files = directory.listFiles();
+                if ( files != null )
                 {
-                    for ( File version : nameDir.listFiles() )
+                    for ( File nameDir : files )
                     {
-                        if ( version.isFile() )
+                        if ( nameDir.isDirectory() )
                         {
-                            builder.add(new BackupMetaData(nameDir.getName(), Long.parseLong(version.getName())));
+                            File[] subFiles = nameDir.listFiles();
+                            if ( subFiles != null )
+                            {
+                                for ( File version : subFiles )
+                                {
+                                    if ( version.isFile() )
+                                    {
+                                        builder.add(new BackupMetaData(nameDir.getName(), Long.parseLong(version.getName())));
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -35,6 +35,10 @@ label
     border: 1px solid black;
 }
 
+.tab-html
+{
+}
+
 .tooltip
 {
     display: none;
@@ -77,15 +81,29 @@ label
 {
     margin-bottom: 3px;
     text-shadow: 2px 2px #888;
-    color: #C00;
     width: 100%;
     clear: both;
+    border: none;
+    background: none;
 }
 
 #page-title
 {
     font-size: 2em;
     font-weight: bold;
+    float: left;
+}
+
+#page-title-extra
+{
+    font-size: 1em;
+    padding-top: 1em;
+    font-weight: normal;
+    float: left;
+    text-shadow: none;
+    color: black;
+    margin-left: 10px;
+    font-style: italic;
 }
 
 #version
@@ -118,7 +136,7 @@ label
 #config-group label
 {
     float: left;
-    width: 200px;
+    width: 225px;
 }
 
 #config-group input
@@ -521,3 +539,15 @@ fieldset
     width: 125px;
 }
 
+#cp-auto-init-container
+{
+    margin-bottom: 12px;
+    padding: 5px;
+}
+
+#cp-auto-init-container label
+{
+    float: left;
+    padding-right: 15px;
+    font-weight: normal;
+}

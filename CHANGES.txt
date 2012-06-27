@@ -1,3 +1,20 @@
+1.1.0 - xxxxxxxxxxxxx
+=====================
+* IMPORTANT: CLI arguments have changed a bit to support automatic instance addition/removal in the standalone
+application. For the core version, several parameter blocks have changed.
+
+* Alternate colors are now supported for the UI. Currently, the choices are red and black. You can also
+provide your own version. Go to http://jqueryui.com/download and build a custom style and download it.
+Put it in in the classpath as "com/netflix/exhibitor/core/ui/css/jquery/custom/..." where "..." is
+the contents of the built JQueryUI files. Rename the css file to "jquery-ui.custom.css". Then, pass
+"custom" as the JQueryStyle value.
+
+* Major new feature: Automatic Instance Management. Details here: https://github.com/Netflix/exhibitor/wiki/Automatic-Instance-Management
+
+* Moved to v1.3.11 of the AWS Java SDK
+
+* Additional UITabs now support HTML content. This required adding a new method to the UITab class.
+
 1.0.14 - June 7, 2012
 =====================
 * Removed eTag support - there are too many edge cases and it doesn't really save very much.

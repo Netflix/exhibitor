@@ -64,6 +64,7 @@ public class ActivityLog
     public ActivityLog(int windowSizeLines)
     {
         this.windowSizeLines = windowSizeLines;
+        add(Type.INFO, "Exhibitor started");
     }
 
     /**

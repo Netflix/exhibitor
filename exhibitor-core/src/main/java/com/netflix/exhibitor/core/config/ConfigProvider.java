@@ -41,4 +41,31 @@ public interface ConfigProvider
      * @return return updated loaded values or null
      */
     public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception;
+
+    /**
+     * To track live vs dead instances, a heartbeat is periodically written for instances. The provider
+     * should expire heartbeats as needed.
+     *
+     * @param instanceHostname the instance's hostname
+     * @throws Exception any errors
+     */
+    public void         writeInstanceHeartbeat(String instanceHostname) throws Exception;
+
+    /**
+     * Return the time (epoch) of the last heartbeat that was written for the given instance or
+     * 0 if there is no record of the instance.
+     *
+     * @param instanceHostname the instance's hostname
+     * @return heartbeat time or 0
+     * @throws Exception errors
+     */
+    public long         getLastHeartbeatForInstance(String instanceHostname) throws Exception;
+
+    /**
+     * Allocate a new pseudo-lock for the given prefix
+     *
+     * @return new lock
+     * @throws Exception errors
+     */
+    public PseudoLock   newPseudoLock() throws Exception;
 }

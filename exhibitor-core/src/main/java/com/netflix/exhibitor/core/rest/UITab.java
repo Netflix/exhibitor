@@ -27,7 +27,7 @@ public interface UITab
      *
      * @return name
      */
-    String       getName();
+    public String       getName();
 
     /**
      * Return the content (as text/plain) for the tab
@@ -36,5 +36,14 @@ public interface UITab
      * @return content
      * @throws Exception errors
      */
-    String       getContent(UriInfo info) throws Exception;
+    public String       getContent(UriInfo info) throws Exception;
+
+    /**
+     * Return true if the content of this tab is HTML that should be integrated
+     * into the page (do NOT include &lt;html&gt; tags, etc.). Otherwise it will
+     * be treated as plain text.
+     *
+     * @return true/false
+     */
+    public boolean      contentIsHtml();
 }

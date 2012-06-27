@@ -3,7 +3,7 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 		<title id="app-name">Exhibitor</title>
 
-		<link rel="stylesheet" type="text/css" href="css/blitzer/jquery-ui-1.8.16.custom.css" />
+		<link rel="stylesheet" type="text/css" href="css/jquery/jquery-ui.custom.css" />
         <link rel="stylesheet" type="text/css" href="dynatree/skin/ui.dynatree.css">
         <link rel="stylesheet" type="text/css" href="css/exhibitor.css">
         <link rel="stylesheet" type="text/css" href="colortip-1.0/colortip-1.0-jquery.css">
@@ -30,9 +30,12 @@
 
 	<body>
         <div id="tabs" class="ui-tabs">
-            <div id="title">
-                <span id="page-title"></span>
-                <span id="version"></span>
+            <div id="title" class="ui-state-active">
+                <div id="page-title-container">
+                    <div id="page-title">Exhibitor for ZooKeeper</div>
+                    <div id="page-title-extra"></div>
+                </div>
+                <div id="version"></div><br clear="all"/>
             </div>
 
             <div class="ui-widget ui-helper-hidden" id="not-connected-alert">
@@ -51,6 +54,10 @@
 
 
             <div id="tabs-main" class="ui-helper-hidden">
+                <div id="cp-auto-init-container" class="ui-widget ui-corner-all ui-state-highlight" title="When on, as new instances read the shared config they will automatically add themselves to the ensemble via a rolling release. Additionally, old instances will be automatically removed via rolling release.">
+                    <label for="cp-auto-init-instances">Automatically manage instances</label><input type="checkbox" id="cp-auto-init-instances"><br clear="all"/>
+                </div>
+
                 <div id="base-server-item">
                 </div>
             </div>
@@ -151,7 +158,8 @@
                     </div>
                 </div>
                 <div id="config-warning">
-                    Note: sections colored in <span class="caution-legend">bold red</span> can cause server restarts when changed.
+                    <li>Note: sections colored in <span class="caution-legend">bold red</span> can cause server restarts when changed.<br>
+                    <li>Hover over text boxes for detailed information on each configuration<br>
                 </div>
                 <br clear="all"/>
 
@@ -176,6 +184,12 @@
                         <label for="config-client-port">Client Port</label><input type="text" id="config-client-port" class="mask-pint" name="config-client-port" size="8" title="The port that clients connect to ZooKeeper (usually 2181)"><br clear="all"/>
                         <label for="config-connect-port">Connect Port</label><input type="text" id="config-connect-port" class="mask-pint" name="config-connect-port" size="8" title="The port that other ZooKeeper instances connect to ZooKeeper (usually 2888)"><br clear="all"/>
                         <label for="config-election-port">Election Port</label><input type="text" id="config-election-port" class="mask-pint" name="config-election-port" size="8" title="The port that other ZooKeeper instances connect for election to ZooKeeper (usually 3888)"><br clear="all"/>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Automatic Instance Management</legend>
+                        <label for="config-dead-instance-ms">Dead Instance Threshold (ms)</label><input type="text" id="config-dead-instance-ms" class="mask-pint" name="config-dead-instance-ms" size="8" title="The number of milliseconds to consider an instance dead and, thus, a candidate for automatic instance cleanup."><br clear="all"/>
+                        <label for="config-observer-threshold">Observer Threshold</label><input type="text" id="config-observer-threshold" class="mask-pint" name="config-observer-threshold" size="3" title="Marks which instances are made Observers by automatic instance management. Instances below this number are normal instances. Instances from this number and up are Observers."><br clear="all"/>
                     </fieldset>
 
                     <fieldset>
