@@ -33,6 +33,8 @@ public interface S3Client extends Closeable
 
     public S3Object getObject(String bucket, String key) throws Exception;
 
+    public ObjectMetadata getObjectMetadata(String bucket, String key) throws Exception;
+
     public ObjectListing listObjects(ListObjectsRequest request) throws Exception;
 
     public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing) throws Exception;

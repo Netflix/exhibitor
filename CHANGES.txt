@@ -1,3 +1,7 @@
+1.1.1 - xxxxxxxxxxxxx
+=====================
+* The S3Client could potentially leak connections due to https://forums.aws.amazon.com/message.jspa?messageID=296676
+
 1.1.0 - June 27, 2012
 =====================
 * IMPORTANT: CLI arguments have changed a bit to support automatic instance addition/removal in the standalone

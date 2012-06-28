@@ -98,10 +98,10 @@ public class S3ConfigProvider implements ConfigProvider
     {
         try
         {
-            S3Object    object = s3Client.getObject(arguments.getBucket(), arguments.getHeartbeatKeyPrefix() + instanceHostname);
-            if ( object != null )
+            ObjectMetadata  metadata = s3Client.getObjectMetadata(arguments.getBucket(), arguments.getHeartbeatKeyPrefix() + instanceHostname);
+            if ( metadata != null )
             {
-                return object.getObjectMetadata().getLastModified().getTime();
+                return metadata.getLastModified().getTime();
             }
         }
         catch ( AmazonServiceException ignore )

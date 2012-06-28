@@ -107,6 +107,17 @@ public class MockS3Client implements S3Client
     }
 
     @Override
+    public ObjectMetadata getObjectMetadata(String bucket, String key) throws Exception
+    {
+        S3Object            s3Object = uploads.get(key);
+        if ( s3Object != null )
+        {
+            return s3Object.getObjectMetadata();
+        }
+        return null;
+    }
+
+    @Override
     public synchronized ObjectListing listObjects(ListObjectsRequest request) throws Exception
     {
         if ( listing != null )

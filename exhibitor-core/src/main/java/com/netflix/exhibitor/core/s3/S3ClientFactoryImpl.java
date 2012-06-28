@@ -32,7 +32,6 @@ public class S3ClientFactoryImpl implements S3ClientFactory
         return new S3Client()
         {
             private final AtomicReference<RefCountedClient>   client = new AtomicReference<RefCountedClient>(null);
-
             {
                 changeCredentials(credentials);
             }
@@ -99,6 +98,21 @@ public class S3ClientFactoryImpl implements S3ClientFactory
                 try
                 {
                     return amazonS3Client.getObject(bucket, key);
+                }
+                finally
+                {
+                    holder.release();
+                }
+            }
+
+            @Override
+            public ObjectMetadata getObjectMetadata(String bucket, String key) throws Exception
+            {
+                RefCountedClient holder = client.get();
+                AmazonS3Client amazonS3Client = holder.useClient();
+                try
+                {
+                    return amazonS3Client.getObjectMetadata(bucket, key);
                 }
                 finally
                 {
