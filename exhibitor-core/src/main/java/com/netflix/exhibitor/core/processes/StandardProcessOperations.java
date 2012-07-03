@@ -138,7 +138,7 @@ public class StandardProcessOperations implements ProcessOperations
     {
         Details         details = new Details(exhibitor);
         String          javaEnvironmentScript = exhibitor.getConfigManager().getConfig().getString(StringConfigs.JAVA_ENVIRONMENT);
-        String          log4jProperties = exhibitor.getConfigManager().getConfig().getString(StringConfigs.JAVA_ENVIRONMENT);
+        String          log4jProperties = exhibitor.getConfigManager().getConfig().getString(StringConfigs.LOG4J_PROPERTIES);
 
         prepConfigFile(details);
         if ( (javaEnvironmentScript != null) && (javaEnvironmentScript.trim().length() > 0) )
@@ -149,7 +149,7 @@ public class StandardProcessOperations implements ProcessOperations
 
         if ( (log4jProperties != null) && (log4jProperties.trim().length() > 0) )
         {
-            File     log4jFile = new File(details.configDirectory, "log4jFile.properties");
+            File     log4jFile = new File(details.configDirectory, "log4j.properties");
             Files.write(log4jProperties, log4jFile, Charset.defaultCharset());
         }
 
