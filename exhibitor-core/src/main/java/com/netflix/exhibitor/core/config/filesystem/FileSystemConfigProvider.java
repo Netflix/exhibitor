@@ -97,7 +97,19 @@ public class FileSystemConfigProvider implements ConfigProvider
     @Override
     public PseudoLock newPseudoLock() throws Exception
     {
-        return null;    // TODO
+          return new PseudoLock() {
+            @Override
+            public void lock() throws Exception { }
+
+            @Override
+            public boolean lock(long maxWait, TimeUnit unit) throws Exception
+            {
+                return true;
+            }
+
+            @Override
+            public void unlock() throws Exception { }
+          };
     }
 
     @Override
