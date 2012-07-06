@@ -1,5 +1,7 @@
 package com.netflix.exhibitor.core.config;
 
+import java.util.List;
+
 abstract class ConfigCollectionBase implements ConfigCollection, RollingConfigState
 {
     @Override
@@ -21,8 +23,18 @@ abstract class ConfigCollectionBase implements ConfigCollection, RollingConfigSt
         {
             return "n/a";
         }
-        String          currentRollingHostname = getCurrentRollingHostname();
-        return "Applying to \"" + currentRollingHostname + "\"";
+
+        List<String>    rollingHostNames = getRollingHostNames();
+        int             rollingHostNamesIndex = getRollingHostNamesIndex();
+        String          currentRollingHostname = rollingHostNames.get(rollingHostNamesIndex);
+
+        StringBuilder   status = new StringBuilder("Applying to \"").append(currentRollingHostname).append("\"");
+        if ( (rollingHostNamesIndex + 1) < rollingHostNames.size() )
+        {
+            status.append(" (next will be \"").append(rollingHostNames.get(rollingHostNamesIndex + 1)).append("\")");
+        }
+
+        return status.toString();
     }
 
     @Override
@@ -39,10 +51,5 @@ abstract class ConfigCollectionBase implements ConfigCollection, RollingConfigSt
     public final RollingConfigState getRollingConfigState()
     {
         return this;
-    }
-
-    private String getCurrentRollingHostname()
-    {
-        return getRollingHostNames().get(getRollingHostNamesIndex());
     }
 }

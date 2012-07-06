@@ -40,11 +40,13 @@ import com.netflix.exhibitor.core.index.IndexCache;
 import com.netflix.exhibitor.core.processes.ProcessMonitor;
 import com.netflix.exhibitor.core.processes.ProcessOperations;
 import com.netflix.exhibitor.core.processes.StandardProcessOperations;
+import com.netflix.exhibitor.core.rest.ClusterResource;
 import com.netflix.exhibitor.core.rest.UITab;
-import com.netflix.exhibitor.core.state.AutoInstanceManagement;
+import com.netflix.exhibitor.core.state.AutomaticInstanceManagement;
 import com.netflix.exhibitor.core.state.CleanupManager;
 import com.netflix.exhibitor.core.state.ManifestVersion;
 import com.netflix.exhibitor.core.state.MonitorRunningInstance;
+import com.netflix.exhibitor.core.state.RemoteInstanceRequestClient;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -75,7 +77,7 @@ public class Exhibitor implements Closeable
     private final ControlPanelValues        controlPanelValues;
     private final BackupManager             backupManager;
     private final ConfigManager             configManager;
-    private final Arguments                 arguments;
+    private final ExhibitorArguments arguments;
     private final ProcessMonitor            processMonitor;
     private final RepeatingActivity         autoInstanceManagement;
     private final ManifestVersion           manifestVersion = new ManifestVersion();
@@ -89,33 +91,6 @@ public class Exhibitor implements Closeable
         LATENT,
         STARTED,
         STOPPED
-    }
-
-    public static class Arguments
-    {
-        private final int           connectionTimeOutMs;
-        private final int           logWindowSizeLines;
-        private final int           configCheckMs;
-        private final String        extraHeadingText;
-        private final String        thisJVMHostname;
-        private final boolean       allowNodeMutations;
-        private final JQueryStyle   jQueryStyle;
-
-        public Arguments(int connectionTimeOutMs, int logWindowSizeLines, String thisJVMHostname, int configCheckMs, String extraHeadingText, boolean allowNodeMutations)
-        {
-            this(connectionTimeOutMs, logWindowSizeLines, thisJVMHostname, configCheckMs, extraHeadingText, allowNodeMutations, JQueryStyle.RED);
-        }
-
-        public Arguments(int connectionTimeOutMs, int logWindowSizeLines, String thisJVMHostname, int configCheckMs, String extraHeadingText, boolean allowNodeMutations, JQueryStyle jQueryStyle)
-        {
-            this.connectionTimeOutMs = connectionTimeOutMs;
-            this.logWindowSizeLines = logWindowSizeLines;
-            this.thisJVMHostname = thisJVMHostname;
-            this.configCheckMs = configCheckMs;
-            this.extraHeadingText = extraHeadingText;
-            this.allowNodeMutations = allowNodeMutations;
-            this.jQueryStyle = jQueryStyle;
-        }
     }
 
     /**
@@ -144,7 +119,7 @@ public class Exhibitor implements Closeable
      * @param arguments startup arguments
      * @throws IOException errors
      */
-    public Exhibitor(ConfigProvider configProvider, Collection<? extends UITab> additionalUITabs, BackupProvider backupProvider, Arguments arguments) throws Exception
+    public Exhibitor(ConfigProvider configProvider, Collection<? extends UITab> additionalUITabs, BackupProvider backupProvider, ExhibitorArguments arguments) throws Exception
     {
         System.out.println(getVersion());
 
@@ -157,7 +132,7 @@ public class Exhibitor implements Closeable
         cleanupManager = new CleanupManager(this);
         indexCache = new IndexCache(log);
         processMonitor = new ProcessMonitor(this);
-        autoInstanceManagement = new RepeatingActivity(log, activityQueue, QueueGroups.MAIN, new AutoInstanceManagement(this), AUTO_INSTANCE_MANAGEMENT_PERIOD_MS);
+        autoInstanceManagement = new RepeatingActivity(log, activityQueue, QueueGroups.MAIN, new AutomaticInstanceManagement(this), getAutoInstanceManagementPeriod());
 
         controlPanelValues = new ControlPanelValues();
 
@@ -342,10 +317,34 @@ public class Exhibitor implements Closeable
         return monitorRunningInstance;
     }
 
+    public int getRestPort()
+    {
+        return arguments.restPort;
+    }
+
+    public String getRestPath()
+    {
+        return arguments.restPath;
+    }
+
+    public String getRestScheme()
+    {
+        return arguments.restScheme;
+    }
+
+    public RemoteInstanceRequestClient getRemoteInstanceRequestClient()
+    {
+        return ClusterResource.getRemoteInstanceRequestClient();
+    }
+
     private synchronized void closeLocalConnection()
     {
         Closeables.closeQuietly(localConnection);
         localConnection = null;
     }
 
+    private static int getAutoInstanceManagementPeriod()
+    {
+        return AUTO_INSTANCE_MANAGEMENT_PERIOD_MS + (int)(AUTO_INSTANCE_MANAGEMENT_PERIOD_MS * Math.random());  // add some randomness to avoid overlap with other Exhibitors
+    }
 }

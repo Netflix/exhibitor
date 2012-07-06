@@ -245,7 +245,7 @@ public class ConfigResource
         try
         {
             PseudoLock  lock = context.getExhibitor().getConfigManager().newConfigBasedLock();
-            if ( lock.lock(10, TimeUnit.SECONDS) )  // consider making configurable in the future
+            if ( lock.lock(10, TimeUnit.SECONDS) )  // TODO consider making configurable in the future
             {
                 if ( context.getExhibitor().getConfigManager().startRollingConfig(wrapped) )
                 {
@@ -278,7 +278,7 @@ public class ConfigResource
         try
         {
             PseudoLock  lock = context.getExhibitor().getConfigManager().newConfigBasedLock();
-            if ( lock.lock(10, TimeUnit.SECONDS) )  // consider making configurable in the future
+            if ( lock.lock(10, TimeUnit.SECONDS) )  // TODO consider making configurable in the future
             {
                 try
                 {

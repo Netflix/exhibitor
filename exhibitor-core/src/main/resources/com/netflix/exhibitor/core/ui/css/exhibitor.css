@@ -425,9 +425,9 @@ fieldset
     position: absolute;
     top: 130px;
     left: 50%;
-    width: 400px;
-    height: 250px;
-    margin-left: -200px;
+    width: 500px;
+    height: 300px;
+    margin-left: -250px;
     border: 2px solid #8b0000;
     box-shadow: 4px 4px 4px #888;
     padding: 10px;
@@ -438,9 +438,9 @@ fieldset
 #rolling-config-floater-button-container
 {
     position: absolute;
-    top: 220px;
+    top: 260px;
     left: 50%;
-    margin-left: 60px;
+    margin-left: 110px;
     width: 150px;
 }
 

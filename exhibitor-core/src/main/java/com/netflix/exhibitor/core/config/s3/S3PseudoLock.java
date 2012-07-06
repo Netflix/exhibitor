@@ -1,5 +1,6 @@
 package com.netflix.exhibitor.core.config.s3;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -9,6 +10,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.Closeables;
 import com.netflix.exhibitor.core.config.PseudoLockBase;
 import com.netflix.exhibitor.core.s3.S3Client;
 import java.io.ByteArrayInputStream;
@@ -69,12 +71,27 @@ public class S3PseudoLock extends PseudoLockBase
     @Override
     protected byte[] getFileContents(String key) throws Exception
     {
-        S3Object    object = client.getObject(bucket, key);
+        S3Object    object = null;
+        try
+        {
+            object = client.getObject(bucket, key);
+        }
+        catch ( AmazonServiceException e )
+        {
+            // ignore - treat it as missing
+        }
         if ( object != null )
         {
-            byte[]      bytes = new byte[(int)object.getObjectMetadata().getContentLength()];
-            ByteStreams.read(object.getObjectContent(), bytes, 0, bytes.length);
-            return bytes;
+            try
+            {
+                byte[]      bytes = new byte[(int)object.getObjectMetadata().getContentLength()];
+                ByteStreams.read(object.getObjectContent(), bytes, 0, bytes.length);
+                return bytes;
+            }
+            finally
+            {
+                Closeables.closeQuietly(object.getObjectContent());
+            }
         }
         return null;
     }

@@ -32,7 +32,12 @@ public class ControlPanelValues
 
     public ControlPanelValues()
     {
-        preferences = Preferences.userRoot();
+        this(Preferences.userRoot());
+    }
+
+    public ControlPanelValues(final Preferences preferences)
+    {
+        this.preferences = preferences;
         cache = CacheBuilder.newBuilder().build
         (
             new CacheLoader<ControlPanelTypes, Boolean>()

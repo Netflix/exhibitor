@@ -48,8 +48,7 @@ public class ServerSpec
 
     public String   toSpecString()
     {
-        String hostnameAndType = (serverType != ServerType.STANDARD) ? (serverType.getCode() + hostname) : hostname;
-        return serverId + ":" + hostnameAndType;
+        return serverType.getCodePrefix() + serverId + ":" + hostname;
     }
 
     @SuppressWarnings("RedundantIfStatement")

@@ -1,7 +1,7 @@
 package com.netflix.exhibitor.core.s3;
 
 import com.amazonaws.services.s3.AmazonS3Client;
-import junit.framework.Assert;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;

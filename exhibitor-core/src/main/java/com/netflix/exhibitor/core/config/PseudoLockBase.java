@@ -24,11 +24,14 @@ public abstract class PseudoLockBase implements PseudoLock
     private long      lastUpdateMs = 0;
     private boolean   ownsTheLock;
     private String    key;
+    private long      lockStartMs = 0;
 
     private static final Random             random = new SecureRandom();
 
     private static final String     SEPARATOR = "_";
     private static final int        DEFAULT_SETTLING_MS = 5000;
+
+    private static final int        MISSING_KEY_FACTOR = 10;
 
     /**
      * @param lockPrefix key prefix
@@ -82,6 +85,8 @@ public abstract class PseudoLockBase implements PseudoLock
         {
             throw new IllegalStateException("Already locked");
         }
+
+        lockStartMs = System.currentTimeMillis();
 
         key = lockPrefix + SEPARATOR + newRandomSequence();
 
@@ -160,8 +165,8 @@ public abstract class PseudoLockBase implements PseudoLock
             if ( bytes != null )
             {
                 String      lockerId = new String(bytes);
-                long        lockerAge = System.nanoTime() - getNanoStampForKey(key);
-                ownsTheLock = (lockerKey.equals(key) && lockerId.equals(id)) && (lockerAge >= TimeUnit.NANOSECONDS.convert(settlingMs, TimeUnit.MILLISECONDS));
+                long        lockerAge = System.currentTimeMillis() - getEpochStampForKey(key);
+                ownsTheLock = (lockerKey.equals(key) && lockerId.equals(id)) && (lockerAge >= settlingMs);
             }
             else    // was deleted probably
             {
@@ -170,7 +175,11 @@ public abstract class PseudoLockBase implements PseudoLock
         }
         else
         {
-            throw new Exception("Our key is missing: " + key);
+            long        elapsed = System.currentTimeMillis() - lockStartMs;
+            if ( elapsed > (settlingMs * MISSING_KEY_FACTOR) )
+            {
+                throw new Exception(String.format("Our key is missing. Key: %s, Elapsed: %d, Max Wait: %d", key, elapsed, settlingMs * MISSING_KEY_FACTOR));
+            }
         }
 
         lastUpdateMs = System.currentTimeMillis();
@@ -183,8 +192,8 @@ public abstract class PseudoLockBase implements PseudoLock
         List<String>        newKeys = Lists.newArrayList();
         for ( String key : keys )
         {
-            long    nanoStamp = getNanoStampForKey(key);
-            if ( (System.nanoTime() - nanoStamp) > TimeUnit.NANOSECONDS.convert(timeoutMs, TimeUnit.MILLISECONDS) )
+            long    epochStamp = getEpochStampForKey(key);
+            if ( (System.currentTimeMillis() - epochStamp) > timeoutMs )
             {
                 deleteFile(key);
             }
@@ -196,7 +205,7 @@ public abstract class PseudoLockBase implements PseudoLock
         return newKeys;
     }
 
-    private static long getNanoStampForKey(String key)
+    private static long getEpochStampForKey(String key)
     {
         String[]        parts = key.split(SEPARATOR);
         long            millisecondStamp = 0;
@@ -213,6 +222,6 @@ public abstract class PseudoLockBase implements PseudoLock
 
     private String newRandomSequence()
     {
-        return "" + System.nanoTime() + SEPARATOR + Math.abs(random.nextLong());
+        return "" + System.currentTimeMillis() + SEPARATOR + Math.abs(random.nextLong());
     }
 }

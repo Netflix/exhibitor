@@ -68,7 +68,7 @@ public class RepeatingActivity implements Closeable
                     {
                         if ( log != null )
                         {
-                            log.add(ActivityLog.Type.ERROR, "Unhandled exception in repeating activity - re-queueing", e);
+                            log.add(ActivityLog.Type.ERROR, String.format("Unhandled exception in repeating activity (%s) - re-queueing", actualActivity.getClass().getSimpleName()), e);
                         }
                     }
                     reQueue();

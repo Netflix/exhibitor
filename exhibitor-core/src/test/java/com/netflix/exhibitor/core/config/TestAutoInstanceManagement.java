@@ -4,11 +4,11 @@ import com.google.common.io.Files;
 import com.netflix.curator.test.DirectoryUtils;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.config.filesystem.FileSystemPseudoLock;
-import com.netflix.exhibitor.core.state.AutoInstanceManagement;
+import com.netflix.exhibitor.core.state.AutomaticInstanceManagement;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
 import com.netflix.exhibitor.core.state.MonitorRunningInstance;
-import junit.framework.Assert;
 import org.mockito.Mockito;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.io.File;
 import java.util.Properties;
@@ -65,7 +65,7 @@ public class TestAutoInstanceManagement
                 @Override
                 public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
                 {
-                    return 0;
+                    return System.currentTimeMillis();
                 }
 
                 @Override
@@ -99,7 +99,7 @@ public class TestAutoInstanceManagement
             Mockito.when(monitorRunningInstance.getCurrentInstanceState()).thenReturn(InstanceStateTypes.NOT_SERVING);
             Mockito.when(exhibitor.getMonitorRunningInstance()).thenReturn(monitorRunningInstance);
 
-            final AutoInstanceManagement          management1 = new AutoInstanceManagement(exhibitor)
+            final AutomaticInstanceManagement management1 = new AutomaticInstanceManagement(exhibitor)
             {
                 @Override
                 protected void doWork() throws Exception
@@ -122,7 +122,7 @@ public class TestAutoInstanceManagement
             );
             Assert.assertTrue(isLockedLatch.await(5, TimeUnit.SECONDS));
 
-            final AutoInstanceManagement    management2 = new AutoInstanceManagement(exhibitor)
+            final AutomaticInstanceManagement management2 = new AutomaticInstanceManagement(exhibitor)
             {
                 @Override
                 protected void doWork() throws Exception
@@ -190,7 +190,7 @@ public class TestAutoInstanceManagement
                 @Override
                 public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
                 {
-                    return 0;
+                    return System.currentTimeMillis();
                 }
 
                 @Override
@@ -207,7 +207,7 @@ public class TestAutoInstanceManagement
             Mockito.when(monitorRunningInstance.getCurrentInstanceState()).thenReturn(InstanceStateTypes.NOT_SERVING);
             Mockito.when(exhibitor.getMonitorRunningInstance()).thenReturn(monitorRunningInstance);
 
-            AutoInstanceManagement      management = new AutoInstanceManagement(exhibitor);
+            AutomaticInstanceManagement management = new AutomaticInstanceManagement(exhibitor);
             management.call();
         }
         finally
@@ -252,7 +252,7 @@ public class TestAutoInstanceManagement
                 @Override
                 public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
                 {
-                    return instanceHostname.equals("dead") ? 0 : System.currentTimeMillis();
+                    return instanceHostname.equals("dead") ? 1 : System.currentTimeMillis();    // zero is treated specially to mean no heartbeat yet
                 }
 
                 @Override
@@ -269,7 +269,7 @@ public class TestAutoInstanceManagement
             Mockito.when(monitorRunningInstance.getCurrentInstanceState()).thenReturn(InstanceStateTypes.NOT_SERVING);
             Mockito.when(exhibitor.getMonitorRunningInstance()).thenReturn(monitorRunningInstance);
 
-            AutoInstanceManagement      management = new AutoInstanceManagement(exhibitor);
+            AutomaticInstanceManagement management = new AutomaticInstanceManagement(exhibitor, 1);
             management.call();
         }
         finally

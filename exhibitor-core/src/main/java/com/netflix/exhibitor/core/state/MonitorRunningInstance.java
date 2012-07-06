@@ -18,6 +18,7 @@
 
 package com.netflix.exhibitor.core.state;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.activity.Activity;
 import com.netflix.exhibitor.core.activity.ActivityLog;
@@ -37,6 +38,8 @@ public class MonitorRunningInstance implements Closeable
     private final Exhibitor                         exhibitor;
     private final AtomicReference<InstanceState>    currentInstanceState = new AtomicReference<InstanceState>();
     private final RepeatingActivity                 repeatingActivity;
+
+    private static final int    DOWN_RECHECK_FACTOR = 10;
 
     public MonitorRunningInstance(Exhibitor exhibitor)
     {
@@ -88,7 +91,8 @@ public class MonitorRunningInstance implements Closeable
         return (state != null) ? state.getState() : InstanceStateTypes.LATENT;
     }
 
-    private void doWork() throws Exception
+    @VisibleForTesting
+    void doWork() throws Exception
     {
         InstanceConfig  config = exhibitor.getConfigManager().getConfig();
         InstanceState   instanceState = new InstanceState(new ServerList(config.getString(StringConfigs.SERVERS_SPEC)), new Checker(exhibitor).calculateState(), new RestartSignificantConfig(config));
@@ -96,7 +100,22 @@ public class MonitorRunningInstance implements Closeable
         exhibitor.getConfigManager().checkRollingConfig(instanceState);
 
         InstanceState   localCurrentInstanceState = currentInstanceState.get();
-        if ( !instanceState.equals(localCurrentInstanceState) )
+        if ( instanceState.equals(localCurrentInstanceState) )
+        {
+            if ( (localCurrentInstanceState.getState() == InstanceStateTypes.DOWN) || (localCurrentInstanceState.getState() == InstanceStateTypes.NOT_SERVING) )
+            {
+                if ( !exhibitor.getConfigManager().isRolling() )
+                {
+                    long        elapsedMs = System.currentTimeMillis() - localCurrentInstanceState.getTimestampMs();
+                    if ( elapsedMs > (config.getInt(IntConfigs.CHECK_MS) * DOWN_RECHECK_FACTOR) )
+                    {
+                        exhibitor.getLog().add(ActivityLog.Type.INFO, "Restarting down/not-serving ZooKeeper after " + elapsedMs + " ms pause");
+                        restartZooKeeper(localCurrentInstanceState);
+                    }
+                }
+            }
+        }
+        else
         {
             boolean         serverListChange = (localCurrentInstanceState != null) && !localCurrentInstanceState.getServerList().equals(instanceState.getServerList());
             boolean         configChange = (localCurrentInstanceState != null) && !localCurrentInstanceState.getCurrentConfig().equals(instanceState.getCurrentConfig());
@@ -107,12 +126,12 @@ public class MonitorRunningInstance implements Closeable
             if ( serverListChange )
             {
                 exhibitor.getLog().add(ActivityLog.Type.INFO, "Server list has changed");
-                restartZooKeeper();
+                restartZooKeeper(localCurrentInstanceState);
             }
             else if ( configChange )
             {
                 exhibitor.getLog().add(ActivityLog.Type.INFO, "ZooKeeper related configuration has changed");
-                restartZooKeeper();
+                restartZooKeeper(localCurrentInstanceState);
             }
             else
             {
@@ -120,7 +139,7 @@ public class MonitorRunningInstance implements Closeable
                 {
                     case DOWN:
                     {
-                        restartZooKeeper();
+                        restartZooKeeper(localCurrentInstanceState);
                         break;
                     }
 
@@ -134,8 +153,13 @@ public class MonitorRunningInstance implements Closeable
         }
     }
 
-    private void restartZooKeeper() throws Exception
+    @VisibleForTesting
+    protected void restartZooKeeper(InstanceState currentInstanceState) throws Exception
     {
+        if ( currentInstanceState != null )
+        {
+            currentInstanceState.updateTimestampMs();
+        }
         if ( !exhibitor.getControlPanelValues().isSet(ControlPanelTypes.RESTARTS) )
         {
             return;

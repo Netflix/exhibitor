@@ -2,7 +2,7 @@ package com.netflix.exhibitor.core.config.s3;
 
 import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.backup.s3.MockS3Client;
-import junit.framework.Assert;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.List;
 import java.util.concurrent.Callable;

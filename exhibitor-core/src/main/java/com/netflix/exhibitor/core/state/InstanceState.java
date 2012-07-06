@@ -24,11 +24,22 @@ public class InstanceState
     private final ServerList                serverList;
     private final RestartSignificantConfig  currentConfig;
 
+    private volatile long                      timestampMs;
+
+    public InstanceState()
+    {
+        state = InstanceStateTypes.LATENT;
+        serverList = new ServerList("");
+        currentConfig = null;
+    }
+
     public InstanceState(ServerList serverList, InstanceStateTypes state, RestartSignificantConfig currentConfig)
     {
         this.serverList = serverList;
         this.state = state;
         this.currentConfig = currentConfig;
+
+        updateTimestampMs();
     }
 
     public ServerList getServerList()
@@ -44,6 +55,16 @@ public class InstanceState
     public RestartSignificantConfig getCurrentConfig()
     {
         return currentConfig;
+    }
+
+    public long getTimestampMs()
+    {
+        return timestampMs;
+    }
+
+    public void updateTimestampMs()
+    {
+        timestampMs = System.currentTimeMillis();
     }
 
     @SuppressWarnings("RedundantIfStatement")

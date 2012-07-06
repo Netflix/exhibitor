@@ -16,8 +16,8 @@ class RollingHostNamesBuilder
         ServerList  rootServers = new ServerList(rootConfig.getString(StringConfigs.SERVERS_SPEC));
         ServerList  rollingServers = new ServerList(rollingConfig.getString(StringConfigs.SERVERS_SPEC));
 
-        Set<String>     newServers = Sets.difference(Sets.newHashSet(rollingServers.getHostnames()), Sets.newHashSet(rootServers.getHostnames()));
-        Set<String>     unchangedServers = Sets.intersection(Sets.newHashSet(rollingServers.getHostnames()), Sets.newHashSet(rootServers.getHostnames()));
+        Set<String>     newServers = Sets.difference(Sets.newTreeSet(rollingServers.getHostnames()), Sets.newTreeSet(rootServers.getHostnames()));
+        Set<String>     unchangedServers = Sets.intersection(Sets.newTreeSet(rollingServers.getHostnames()), Sets.newTreeSet(rootServers.getHostnames()));
 
         if ( newServers.size() > 1 )
         {

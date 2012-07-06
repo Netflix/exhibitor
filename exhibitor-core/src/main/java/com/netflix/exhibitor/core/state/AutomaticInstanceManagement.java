@@ -14,13 +14,22 @@ import com.netflix.exhibitor.core.config.StringConfigs;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class AutoInstanceManagement implements Activity
+public class AutomaticInstanceManagement implements Activity
 {
     private final Exhibitor exhibitor;
+    private final int minInstances;
 
-    public AutoInstanceManagement(Exhibitor exhibitor)
+    private static final int DEFAULT_MIN_INSTANCES = 3;
+
+    public AutomaticInstanceManagement(Exhibitor exhibitor)
+    {
+        this(exhibitor, DEFAULT_MIN_INSTANCES);
+    }
+
+    public AutomaticInstanceManagement(Exhibitor exhibitor, int minInstances)
     {
         this.exhibitor = exhibitor;
+        this.minInstances = minInstances;
     }
 
     @Override
@@ -71,23 +80,36 @@ public class AutoInstanceManagement implements Activity
 
     private void checkForStaleInstances(UsState usState) throws Exception
     {
-        List<ServerSpec>            newSpecList = Lists.newArrayList();
-        boolean                     hasRemovals = false;
-        for ( ServerSpec spec : usState.getServerList().getSpecs() )
+        List<ServerSpec>            serverSpecList = usState.getServerList().getSpecs();
+        if ( serverSpecList.size() <= minInstances )
         {
-            long        elapsedSinceLastHeartbeat = usState.getUs().equals(spec) ? 0 : (System.currentTimeMillis() - exhibitor.getConfigManager().getLastHeartbeatForInstance(spec.getHostname()));
-            if ( elapsedSinceLastHeartbeat <= exhibitor.getConfigManager().getConfig().getInt(IntConfigs.DEAD_INSTANCE_PERIOD_MS) )
+            return;
+        }
+
+        List<ServerSpec>            newSpecList = Lists.newArrayList();
+        List<String>                removals = Lists.newArrayList();
+        for ( ServerSpec spec : serverSpecList )
+        {
+            if ( (usState.getUs() != null) && usState.getUs().equals(spec) )
             {
                 newSpecList.add(spec);
             }
             else
             {
-                exhibitor.getLog().add(ActivityLog.Type.INFO, "Potentially removing stale instance from servers list: " + spec.getHostname());
-                hasRemovals = true;
+                long        lastHeartbeatForInstance = exhibitor.getConfigManager().getLastHeartbeatForInstance(spec.getHostname());
+                long        elapsedSinceLastHeartbeat = System.currentTimeMillis() - lastHeartbeatForInstance;
+                if ( (lastHeartbeatForInstance <= 0) || (elapsedSinceLastHeartbeat <= exhibitor.getConfigManager().getConfig().getInt(IntConfigs.DEAD_INSTANCE_PERIOD_MS)) )
+                {
+                    newSpecList.add(spec);
+                }
+                else
+                {
+                    removals.add(spec.getHostname());
+                }
             }
         }
 
-        if ( hasRemovals )
+        if ( removals.size() > 0 )
         {
             List<String>    transformed = Lists.transform
             (
@@ -102,7 +124,8 @@ public class AutoInstanceManagement implements Activity
                 }
             );
             String          newSpec = Joiner.on(',').join(transformed);
-            adjustConfig(exhibitor.getConfigManager().getConfig(), newSpec);
+            String          reason = Joiner.on(", ").join(removals);
+            adjustConfig(exhibitor.getConfigManager().getConfig(), newSpec, "Removing stale instance(s) from servers list: " + reason);
         }
     }
 
@@ -125,11 +148,10 @@ public class AutoInstanceManagement implements Activity
         String                  spec = currentConfig.getString(StringConfigs.SERVERS_SPEC);
         String                  thisValue = new ServerSpec(exhibitor.getThisJVMHostname(), maxServerId + 1, serverType).toSpecString();
         final String            newSpec = Joiner.on(',').skipNulls().join((spec.length() > 0) ? spec : null, thisValue);
-        exhibitor.getLog().add(ActivityLog.Type.INFO, "Adding this instance to server list due to automatic instance management");
-        adjustConfig(currentConfig, newSpec);
+        adjustConfig(currentConfig, newSpec, "Adding this instance to server list due to automatic instance management");
     }
 
-    private void adjustConfig(final InstanceConfig currentConfig, final String newSpec) throws Exception
+    private void adjustConfig(final InstanceConfig currentConfig, final String newSpec, String reason) throws Exception
     {
         InstanceConfig          newConfig = new InstanceConfig()
         {
@@ -149,6 +171,9 @@ public class AutoInstanceManagement implements Activity
                 return currentConfig.getInt(config);
             }
         };
-        exhibitor.getConfigManager().startRollingConfig(newConfig); // if this fails due to an old config it's fine - it will just try again next time
+        if ( exhibitor.getConfigManager().startRollingConfig(newConfig) ) // if this fails due to an old config it's fine - it will just try again next time
+        {
+            exhibitor.getLog().add(ActivityLog.Type.INFO, reason);
+        }
     }
 }

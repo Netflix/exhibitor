@@ -311,6 +311,11 @@ function submitConfigChanges(rolling)
         }
     });
     turnOffEditableSwitch();
+
+    if ( rolling )
+    {
+        messageDialog("Rolling Config", "The rolling configuration change has been submitted and will start in a moment.", true);
+    }
 }
 
 function getBackupExtraId(obj)

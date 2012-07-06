@@ -22,9 +22,11 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.netflix.exhibitor.core.Exhibitor;
+import com.netflix.exhibitor.core.ExhibitorArguments;
 import com.netflix.exhibitor.core.backup.BackupProvider;
 import com.netflix.exhibitor.core.backup.filesystem.FileSystemBackupProvider;
 import com.netflix.exhibitor.core.backup.s3.S3BackupProvider;
+import com.netflix.exhibitor.core.config.AutoManageLockArguments;
 import com.netflix.exhibitor.core.config.ConfigProvider;
 import com.netflix.exhibitor.core.config.DefaultProperties;
 import com.netflix.exhibitor.core.config.JQueryStyle;
@@ -59,6 +61,7 @@ public class ExhibitorMain implements Closeable
     private static final String FILESYSTEMCONFIG_DIRECTORY = "fsconfigdir";
     private static final String FILESYSTEMCONFIG_NAME = "fsconfigname";
     private static final String FILESYSTEMCONFIG_PREFIX = "fsconfigprefix";
+    private static final String FILESYSTEMCONFIG_LOCK_PREFIX = "fsconfiglockprefix";
     private static final String S3_CREDENTIALS = "s3credentials";
     private static final String S3_BACKUP = "s3backup";
     private static final String S3_CONFIG = "s3config";
@@ -76,7 +79,8 @@ public class ExhibitorMain implements Closeable
     private static final String JQUERY_STYLE = "jquerystyle";
 
     private static final String DEFAULT_FILESYSTEMCONFIG_NAME = "exhibitor.properties";
-    private static final String DEFAULT_FILESYSTEMCONFIG_PREFIX = "_exhibitor_";
+    private static final String DEFAULT_FILESYSTEMCONFIG_PREFIX = "exhibitor-";
+    private static final String DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX = "exhibitor-lock-";
 
     public static void main(String[] args) throws Exception
     {
@@ -86,6 +90,7 @@ public class ExhibitorMain implements Closeable
         options.addOption(null, FILESYSTEMCONFIG_DIRECTORY, true, "Directory to store Exhibitor properties (cannot be used with s3config). Exhibitor uses file system locks so you can specify a shared location so as to enable complete ensemble management. Default location is " + System.getProperty("user.dir"));
         options.addOption(null, FILESYSTEMCONFIG_NAME, true, "The name of the file to store config in. Used in conjunction with " + FILESYSTEMCONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_NAME);
         options.addOption(null, FILESYSTEMCONFIG_PREFIX, true, "A prefix for various config values such as heartbeats. Used in conjunction with " + FILESYSTEMCONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_PREFIX);
+        options.addOption(null, FILESYSTEMCONFIG_LOCK_PREFIX, true, "A prefix for a locking mechanism. Used in conjunction with " + FILESYSTEMCONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX);
         options.addOption(null, S3_CREDENTIALS, true, "Required if you use s3backup or s3config. Argument is the path to an AWS credential properties file with two properties: " + PropertyBasedS3Credential.PROPERTY_S3_KEY_ID + " and " + PropertyBasedS3Credential.PROPERTY_S3_SECRET_KEY);
         options.addOption(null, S3_BACKUP, true, "If true, enables AWS S3 backup of ZooKeeper log files (s3credentials must be provided as well).");
         options.addOption(null, S3_CONFIG, true, "Enables AWS S3 shared config files as opposed to file system config files (s3credentials must be provided as well). Argument is [bucket name]:[key].");
@@ -149,10 +154,18 @@ public class ExhibitorMain implements Closeable
             backupProvider = new FileSystemBackupProvider();
         }
 
+        int         timeoutMs = Integer.parseInt(commandLine.getOptionValue(TIMEOUT, "30000"));
+        int         logWindowSizeLines = Integer.parseInt(commandLine.getOptionValue(LOGLINES, "1000"));
+        int         configCheckMs = Integer.parseInt(commandLine.getOptionValue(CONFIGCHECKMS, "30000"));
+        String      useHostname = commandLine.getOptionValue(HOSTNAME, hostname);
+        int         httpPort = Integer.parseInt(commandLine.getOptionValue(HTTP_PORT, "8080"));
+        String      extraHeadingText = commandLine.getOptionValue(EXTRA_HEADING_TEXT, null);
+        boolean     allowNodeMutations = "true".equalsIgnoreCase(commandLine.getOptionValue(NODE_MUTATIONS));
+
         ConfigProvider      provider;
         if ( commandLine.hasOption(S3_CONFIG) )
         {
-            provider = getS3Provider(options, commandLine, awsCredentials);
+            provider = getS3Provider(options, commandLine, awsCredentials, useHostname);
         }
         else
         {
@@ -164,13 +177,6 @@ public class ExhibitorMain implements Closeable
             return;
         }
         
-        int         timeoutMs = Integer.parseInt(commandLine.getOptionValue(TIMEOUT, "30000"));
-        int         logWindowSizeLines = Integer.parseInt(commandLine.getOptionValue(LOGLINES, "1000"));
-        int         configCheckMs = Integer.parseInt(commandLine.getOptionValue(CONFIGCHECKMS, "30000"));
-        String      useHostname = commandLine.getOptionValue(HOSTNAME, hostname);
-        int         httpPort = Integer.parseInt(commandLine.getOptionValue(HTTP_PORT, "8080"));
-        String      extraHeadingText = commandLine.getOptionValue(EXTRA_HEADING_TEXT, null);
-        boolean     allowNodeMutations = "true".equalsIgnoreCase(commandLine.getOptionValue(NODE_MUTATIONS));
         JQueryStyle jQueryStyle;
         try
         {
@@ -182,7 +188,17 @@ public class ExhibitorMain implements Closeable
             return;
         }
 
-        Exhibitor.Arguments     arguments = new Exhibitor.Arguments(timeoutMs, logWindowSizeLines, useHostname, configCheckMs, extraHeadingText, allowNodeMutations, jQueryStyle);
+        ExhibitorArguments arguments = ExhibitorArguments.builder()
+            .connectionTimeOutMs(timeoutMs)
+            .logWindowSizeLines(logWindowSizeLines)
+            .thisJVMHostname(useHostname)
+            .configCheckMs(configCheckMs)
+            .extraHeadingText(extraHeadingText)
+            .allowNodeMutations(allowNodeMutations)
+            .jQueryStyle(jQueryStyle)
+            .restPort(httpPort)
+            .build();
+
         ExhibitorMain exhibitorMain = new ExhibitorMain(backupProvider, provider, arguments, httpPort);
         exhibitorMain.start();
         exhibitorMain.join();
@@ -210,10 +226,11 @@ public class ExhibitorMain implements Closeable
         File directory = commandLine.hasOption(FILESYSTEMCONFIG_DIRECTORY) ? new File(commandLine.getOptionValue(FILESYSTEMCONFIG_DIRECTORY)) : new File(System.getProperty("user.dir"));
         String name = commandLine.hasOption(FILESYSTEMCONFIG_NAME) ? commandLine.getOptionValue(FILESYSTEMCONFIG_NAME) : DEFAULT_FILESYSTEMCONFIG_NAME;
         String prefix = commandLine.hasOption(FILESYSTEMCONFIG_PREFIX) ? commandLine.getOptionValue(FILESYSTEMCONFIG_PREFIX) : DEFAULT_FILESYSTEMCONFIG_PREFIX;
-        return new FileSystemConfigProvider(directory, name, prefix, DefaultProperties.get(backupProvider));
+        String lockPrefix = commandLine.hasOption(FILESYSTEMCONFIG_LOCK_PREFIX) ? commandLine.getOptionValue(FILESYSTEMCONFIG_LOCK_PREFIX) : DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX;
+        return new FileSystemConfigProvider(directory, name, prefix, DefaultProperties.get(backupProvider), new AutoManageLockArguments(lockPrefix));
     }
 
-    private static ConfigProvider getS3Provider(Options options, CommandLine commandLine, PropertyBasedS3Credential awsCredentials) throws Exception
+    private static ConfigProvider getS3Provider(Options options, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, String hostname) throws Exception
     {
         ConfigProvider provider;
         if ( awsCredentials == null )
@@ -224,7 +241,7 @@ public class ExhibitorMain implements Closeable
         else
         {
             String  prefix = options.hasOption(S3_CONFIG_PREFIX) ? commandLine.getOptionValue(S3_CONFIG_PREFIX) : DEFAULT_FILESYSTEMCONFIG_PREFIX;
-            provider = new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, getS3Arguments(commandLine.getOptionValue(S3_CONFIG), options, prefix));
+            provider = new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, getS3Arguments(commandLine.getOptionValue(S3_CONFIG), options, prefix), hostname);
         }
         return provider;
     }
@@ -252,7 +269,7 @@ public class ExhibitorMain implements Closeable
         return new S3ConfigArguments(parts[0].trim(), parts[1].trim(), prefix, new S3ConfigAutoManageLockArguments(prefix + "_lock_"));
     }
 
-    public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, Exhibitor.Arguments arguments, int httpPort) throws Exception
+    public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments arguments, int httpPort) throws Exception
     {
         Exhibitor               exhibitor = new Exhibitor(configProvider, null, backupProvider, arguments);
         exhibitor.start();

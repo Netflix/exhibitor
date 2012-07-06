@@ -21,6 +21,8 @@ package com.netflix.exhibitor.core.backup.s3;
 import com.amazonaws.services.s3.model.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
@@ -52,7 +54,7 @@ public class S3BackupProvider implements BackupProvider
 
     private static final BackupConfigSpec CONFIG_THROTTLE = new BackupConfigSpec("throttle", "Throttle (bytes/ms)", "Data throttling. Maximum bytes per millisecond.", Integer.toString(1024 * 1024), BackupConfigSpec.Type.INTEGER);
     private static final BackupConfigSpec CONFIG_BUCKET = new BackupConfigSpec("bucket-name", "S3 Bucket Name", "The S3 bucket to use", "", BackupConfigSpec.Type.STRING);
-    private static final BackupConfigSpec CONFIG_KEY_PREFIX = new BackupConfigSpec("key-prefix", "S3 Key Prefix", "The prefix for S3 backup keys", "exhibitor-backup-", BackupConfigSpec.Type.STRING);
+    private static final BackupConfigSpec CONFIG_KEY_PREFIX = new BackupConfigSpec("key-prefix", "S3 Key Prefix", "The prefix for S3 backup keys", "exhibitor-backup", BackupConfigSpec.Type.STRING);
     private static final BackupConfigSpec CONFIG_MAX_RETRIES = new BackupConfigSpec("max-retries", "Max Retries", "Maximum retries when uploading/downloading S3 data", "3", BackupConfigSpec.Type.INTEGER);
     private static final BackupConfigSpec CONFIG_RETRY_SLEEP_MS = new BackupConfigSpec("retry-sleep-ms", "Retry Sleep (ms)", "Sleep time in milliseconds when retrying", "1000", BackupConfigSpec.Type.INTEGER);
 
@@ -61,7 +63,7 @@ public class S3BackupProvider implements BackupProvider
     private static final int        MIN_S3_PART_SIZE = 5 * (1024 * 1024);
 
     @VisibleForTesting
-    static final String       SEPARATOR = "|";
+    static final String       SEPARATOR = "/";
     private static final String       SEPARATOR_REPLACEMENT = "_";
 
     public S3BackupProvider(S3ClientFactory factory, S3Credential credential) throws Exception
@@ -165,7 +167,6 @@ public class S3BackupProvider implements BackupProvider
     @Override
     public void downloadBackup(Exhibitor exhibitor, BackupMetaData backup, OutputStream destination, Map<String, String> configValues) throws Exception
     {
-        S3Object        object = s3Client.getObject(configValues.get(CONFIG_BUCKET.getKey()), toKey(backup, configValues));
 
         byte[]          buffer = new byte[MIN_S3_PART_SIZE];
 
@@ -173,12 +174,14 @@ public class S3BackupProvider implements BackupProvider
         RetryPolicy     retryPolicy = makeRetryPolicy(configValues);
         int             retryCount = 0;
         boolean         done = false;
+
         while ( !done )
         {
             Throttle            throttle = makeThrottle(configValues);
             InputStream         in = null;
             try
             {
+                S3Object            object = s3Client.getObject(configValues.get(CONFIG_BUCKET.getKey()), toKey(backup, configValues));
                 in = object.getObjectContent();
 
                 for(;;)
@@ -224,21 +227,34 @@ public class S3BackupProvider implements BackupProvider
         do
         {
             listing = (listing == null) ? s3Client.listObjects(request) : s3Client.listNextBatchOfObjects(listing);
-            completeList.addAll
+
+            Iterable<S3ObjectSummary> filtered = Iterables.filter
             (
-                Lists.transform
-                (
-                    listing.getObjectSummaries(),
-                    new Function<S3ObjectSummary, BackupMetaData>()
+                listing.getObjectSummaries(),
+                new Predicate<S3ObjectSummary>()
+                {
+                    @Override
+                    public boolean apply(S3ObjectSummary summary)
                     {
-                        @Override
-                        public BackupMetaData apply(S3ObjectSummary summary)
-                        {
-                            return fromKey(summary.getKey());
-                        }
+                        return fromKey(summary.getKey()) != null;
                     }
-                )
+                }
             );
+
+            Iterable<BackupMetaData> transformed = Iterables.transform
+            (
+                filtered,
+                new Function<S3ObjectSummary, BackupMetaData>()
+                {
+                    @Override
+                    public BackupMetaData apply(S3ObjectSummary summary)
+                    {
+                        return fromKey(summary.getKey());
+                    }
+                }
+            );
+
+            completeList.addAll(Lists.newArrayList(transformed));
         } while ( listing.isTruncated() );
         return completeList;
     }
@@ -289,7 +305,7 @@ public class S3BackupProvider implements BackupProvider
     private PartETag uploadChunk(byte[] buffer, int bytesRead, InitiateMultipartUploadResult initResponse, int index) throws Exception
     {
         byte[]          md5 = S3Utils.md5(buffer, bytesRead);
-        
+
         UploadPartRequest   request = new UploadPartRequest();
         request.setBucketName(initResponse.getBucketName());
         request.setKey(initResponse.getKey());
@@ -305,7 +321,7 @@ public class S3BackupProvider implements BackupProvider
         {
             throw new Exception("Unable to match MD5 for part " + index);
         }
-        
+
         return partETag;
     }
 
@@ -344,9 +360,13 @@ public class S3BackupProvider implements BackupProvider
         return prefix;
     }
 
-    private BackupMetaData fromKey(String key)
+    private static BackupMetaData fromKey(String key)
     {
         String[]        parts = key.split("\\" + SEPARATOR);
+        if ( parts.length != 3 )
+        {
+            return null;
+        }
         return new BackupMetaData(parts[1], Long.parseLong(parts[2]));
     }
 }

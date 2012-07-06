@@ -56,7 +56,7 @@ public interface ConfigProvider
      * 0 if there is no record of the instance.
      *
      * @param instanceHostname the instance's hostname
-     * @return heartbeat time or 0
+     * @return heartbeat time or 0 if not set
      * @throws Exception errors
      */
     public long         getLastHeartbeatForInstance(String instanceHostname) throws Exception;

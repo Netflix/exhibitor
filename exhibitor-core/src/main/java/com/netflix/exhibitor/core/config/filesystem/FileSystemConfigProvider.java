@@ -20,6 +20,7 @@ package com.netflix.exhibitor.core.config.filesystem;
 
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
+import com.netflix.exhibitor.core.config.AutoManageLockArguments;
 import com.netflix.exhibitor.core.config.ConfigCollection;
 import com.netflix.exhibitor.core.config.ConfigProvider;
 import com.netflix.exhibitor.core.config.LoadedInstanceConfig;
@@ -48,6 +49,7 @@ public class FileSystemConfigProvider implements ConfigProvider
     private final String propertyFileName;
     private final String heartbeatFilePrefix;
     private final Properties defaults;
+    private final AutoManageLockArguments autoManageLockArguments;
     private final AtomicLong lastHeartbeatCleanup = new AtomicLong(0);
 
     private static final String             FILE_CONTENT = "foo";
@@ -56,32 +58,32 @@ public class FileSystemConfigProvider implements ConfigProvider
     private static final int                MAX_AGE_MS = (int)TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
 
     /**
-    *
-     *
      * @param propertiesDirectory where to store the properties
      * @param propertyFileName name of the file to store properties in
      * @param heartbeatFilePrefix prefix for heartbeat files
+     * @param autoManageLockArguments config arguments for auto managing instances
      * @throws IOException if directory cannot be created
     */
-    @SuppressWarnings("UnusedDeclaration")
-    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix) throws IOException
+    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix, AutoManageLockArguments autoManageLockArguments) throws IOException
     {
-        this(propertiesDirectory, propertyFileName, heartbeatFilePrefix, new Properties());
+        this(propertiesDirectory, propertyFileName, heartbeatFilePrefix, new Properties(), autoManageLockArguments);
     }
 
     /**
-     *
      * @param propertiesDirectory where to store the properties
      * @param propertyFileName name of the file to store properties in
      * @param heartbeatFilePrefix prefix for heartbeat files
      * @param defaults default values  @throws IOException if directory cannot be created
+     * @param autoManageLockArguments config arguments for auto managing instances
+     * @throws IOException if directory cannot be created
      */
-    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix, Properties defaults) throws IOException
+    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix, Properties defaults, AutoManageLockArguments autoManageLockArguments) throws IOException
     {
         this.propertiesDirectory = propertiesDirectory;
         this.propertyFileName = propertyFileName;
         this.heartbeatFilePrefix = heartbeatFilePrefix;
         this.defaults = defaults;
+        this.autoManageLockArguments = autoManageLockArguments;
 
         if ( propertiesDirectory.exists() && !propertiesDirectory.isDirectory() )
         {
@@ -97,7 +99,7 @@ public class FileSystemConfigProvider implements ConfigProvider
     @Override
     public PseudoLock newPseudoLock() throws Exception
     {
-        return null;    // TODO
+        return new FileSystemPseudoLock(propertiesDirectory, autoManageLockArguments.getPrefix(), autoManageLockArguments.getTimeoutMs(), autoManageLockArguments.getPollingMs());
     }
 
     @Override
@@ -185,7 +187,7 @@ public class FileSystemConfigProvider implements ConfigProvider
         }
 
         File file = getHeartbeatFile(instanceHostname);
-        return file.lastModified();
+        return file.exists() ? file.lastModified() : 0;
     }
 
     private void doCleanup()

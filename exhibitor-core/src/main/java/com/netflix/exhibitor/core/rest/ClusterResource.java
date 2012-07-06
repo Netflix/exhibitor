@@ -18,9 +18,6 @@
 
 package com.netflix.exhibitor.core.rest;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.netflix.exhibitor.core.activity.QueueGroups;
 import com.netflix.exhibitor.core.config.InstanceConfig;
 import com.netflix.exhibitor.core.config.IntConfigs;
@@ -30,10 +27,9 @@ import com.netflix.exhibitor.core.entities.Result;
 import com.netflix.exhibitor.core.state.FourLetterWord;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
 import com.netflix.exhibitor.core.state.KillRunningInstance;
+import com.netflix.exhibitor.core.state.RemoteInstanceRequest;
 import com.netflix.exhibitor.core.state.ServerList;
 import com.netflix.exhibitor.core.state.ServerSpec;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.WebResource;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
@@ -44,10 +40,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ContextResolver;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.util.concurrent.Callable;
 
@@ -59,25 +53,17 @@ import java.util.concurrent.Callable;
 public class ClusterResource
 {
     private final UIContext context;
-    private final Client client;
-    private final LoadingCache<URI, WebResource> webResources = CacheBuilder.newBuilder()
-        .softValues()
-        .build
-        (
-            new CacheLoader<URI, WebResource>()
-            {
-                @Override
-                public WebResource load(URI remoteUri) throws Exception
-                {
-                    return client.resource(remoteUri);
-                }
-            }
-        );
+
+    private static final RemoteInstanceRequestClientImpl        remoteInstanceRequestClient = new RemoteInstanceRequestClientImpl();
+
+    public static RemoteInstanceRequestClientImpl getRemoteInstanceRequestClient()
+    {
+        return remoteInstanceRequestClient;
+    }
 
     public ClusterResource(@Context ContextResolver<UIContext> resolver)
     {
         context = resolver.getContext(UIContext.class);
-        client = Client.create();
     }
 
     @Path("state/{hostname}")
@@ -87,7 +73,7 @@ public class ClusterResource
     {
         return makeRemoteRequest
         (
-            uriInfo,
+            "getStatus",
             hostname,
             new Callable<String>()
             {
@@ -107,7 +93,7 @@ public class ClusterResource
     {
         return makeRemoteRequest
         (
-            uriInfo, 
+            "setControlPanelSetting",
             hostname,
             new Callable<String>()
             {
@@ -127,7 +113,7 @@ public class ClusterResource
     {
         return makeRemoteRequest
         (
-            uriInfo,
+            "stopStartZooKeeper",
             hostname,
             new Callable<String>()
             {
@@ -147,7 +133,7 @@ public class ClusterResource
     {
         return makeRemoteRequest
         (
-            uriInfo,
+            "getFourLetterWord",
             hostname,
             false,
             new Callable<String>()
@@ -168,7 +154,7 @@ public class ClusterResource
     {
         return makeRemoteRequest
             (
-                uriInfo,
+                "getLog",
                 hostname,
                 false,
                 new Callable<String>()
@@ -317,12 +303,12 @@ public class ClusterResource
         return response.toString();
     }
 
-    private String    makeRemoteRequest(UriInfo uriInfo, String hostname, Callable<String> proc) throws Exception
+    private String    makeRemoteRequest(String methodName, String hostname, Callable<String> proc) throws Exception
     {
-        return makeRemoteRequest(uriInfo, hostname, true, proc);
+        return makeRemoteRequest(methodName, hostname, true, proc);
     }
 
-    private String    makeRemoteRequest(UriInfo uriInfo, String hostname, boolean responseIsJson, Callable<String> proc) throws Exception
+    private String    makeRemoteRequest(String methodName, String hostname, boolean responseIsJson, Callable<String> proc) throws Exception
     {
         String      remoteResponse;
         String      errorMessage;
@@ -335,18 +321,11 @@ public class ClusterResource
         {
             try
             {
-                String      thisPath = uriInfo.getRequestUri().getRawPath();
-                if ( !thisPath.endsWith(hostname) )
-                {
-                    throw new IllegalStateException("Unknown path format: " + thisPath);
-                }
-                String      remotePath = thisPath.substring(0, thisPath.length() - hostname.length());
-                UriBuilder  builder = uriInfo.getRequestUriBuilder();
-                URI         remoteUri = builder.replacePath(remotePath).host(hostname).build();
+                RemoteInstanceRequest           request = new RemoteInstanceRequest(context.getExhibitor(), hostname);
+                RemoteInstanceRequest.Result    result = request.makeRequest(remoteInstanceRequestClient, methodName);
 
-                WebResource         resource = webResources.get(remoteUri);
-                remoteResponse = resource.accept(MediaType.APPLICATION_JSON_TYPE).get(String.class);
-                errorMessage = "";
+                remoteResponse = result.remoteResponse;
+                errorMessage = result.errorMessage;
             }
             catch ( Exception e )
             {
