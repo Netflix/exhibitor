@@ -1,3 +1,19 @@
+/*
+ * Copyright 2012 Netflix, Inc.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.netflix.exhibitor.core.processes;
 
 import java.util.Arrays;
@@ -5,35 +21,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-// found at http://www.java2s.com/Code/Java/Collections-Data-Structure/NaturalOrderComparator.htm
-
-/**
-NaturalOrderComparator.java -- Perform 'natural order' comparisons of strings in Java.
-Copyright (C) 2003 by Pierre-Luc Paour <natorder@paour.com>
-<p>
-
-Based on the C version by Martin Pool, of which this is more or less a straight conversion.
-Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
-<p>
-
-This software is provided 'as-is', without any express or implied
-warranty.  In no event will the authors be held liable for any damages
-arising from the use of this software.
-<p>
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-<p>
-
-1. The origin of this software must not be misrepresented; you must not
-claim that you wrote the original software. If you use this software
-in a product, an acknowledgment in the product documentation would be
-appreciated but is not required.<br>
-2. Altered source versions must be plainly marked as such, and must not be
-misrepresented as being the original software.<br>
-3. This notice may not be removed or altered from any source distribution.<br>
-*/
 public class NaturalOrderComparator implements Comparator<String>
 {
     int compareRight(String a, String b)

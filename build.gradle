@@ -1,6 +1,6 @@
 // Establish version and status
 def performingRelease = project.hasProperty('release') && Boolean.parseBoolean(project.release)
-def releaseVersion = '1.2.0'
+def releaseVersion = '1.2.1'
 def versionPostfix = performingRelease?'':'-SNAPSHOT'
 version = "${releaseVersion}${versionPostfix}"
 status = performingRelease?'release':'snapshot'
@@ -134,10 +134,11 @@ project(':exhibitor-core') {
             // JLine pulls this in as a compile dependency, they have fixed it in future versions
             exclude group: 'junit', module: 'junit'
         }
-        compile 'com.netflix.curator:curator-framework:1.0.14'
+        compile 'com.netflix.curator:curator-framework:1.0.15'
         compile 'com.google.guava:guava:11.0.1'
         compile 'javax.ws.rs:jsr311-api:1.1.1'
-        compile 'org.codehaus.jackson:jackson-mapper-asl:1.1.0'
+        compile 'org.codehaus.jackson:jackson-mapper-a
+        sl:1.1.0'
         compile 'org.apache.lucene:lucene-core:3.5.0'
         compile 'com.sun.jersey:jersey-client:1.11'
 
@@ -145,7 +146,7 @@ project(':exhibitor-core') {
         compile 'com.sun.jersey:jersey-bundle:1.1.4'  // should be provided - gradle doesn't support
         compile 'com.sun.xml.bind:jaxb-impl:2.2.4'   // should be provided - gradle doesn't support
 
-        testCompile 'com.netflix.curator:curator-test:1.0.14'
+        testCompile 'com.netflix.curator:curator-test:1.0.15'
         testCompile 'org.mortbay.jetty:jetty:6.1.9'
         testCompile 'org.mockito:mockito-core:1.9.0'
     }

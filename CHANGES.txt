@@ -1,3 +1,7 @@
+1.2.1 - July 12, 2012
+=====================
+* Issue 32: PseudoLock contained an underscore in the prefix. Thanks to user "nmickuli".
+
 1.2.0 - July 5, 2012
 ====================
 * The S3Client could potentially leak connections due to https://forums.aws.amazon.com/message.jspa?messageID=296676
