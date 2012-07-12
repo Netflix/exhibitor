@@ -266,7 +266,7 @@ public class ExhibitorMain implements Closeable
             printHelp(options);
             return null;
         }
-        return new S3ConfigArguments(parts[0].trim(), parts[1].trim(), prefix, new S3ConfigAutoManageLockArguments(prefix + "_lock_"));
+        return new S3ConfigArguments(parts[0].trim(), parts[1].trim(), prefix, new S3ConfigAutoManageLockArguments(prefix + "-lock-"));
     }
 
     public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments arguments, int httpPort) throws Exception
