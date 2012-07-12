@@ -242,9 +242,16 @@ public class ConfigResource
             PseudoLock  lock = context.getExhibitor().getConfigManager().newConfigBasedLock();
             if ( lock.lock(10, TimeUnit.SECONDS) )  // TODO consider making configurable in the future
             {
-                if ( context.getExhibitor().getConfigManager().startRollingConfig(wrapped) )
+                try
                 {
-                    result = new Result("OK", true);
+                    if ( context.getExhibitor().getConfigManager().startRollingConfig(wrapped) )
+                    {
+                        result = new Result("OK", true);
+                    }
+                }
+                finally
+                {
+                    lock.unlock();
                 }
             }
 

@@ -91,7 +91,7 @@ public class TestS3PseudoLock
         for ( int i = 0; i < QTY; ++i )
         {
             MockS3Client        client = new MockS3Client();
-            S3PseudoLock        lock = new S3PseudoLock(client, "foo", "bar", 10000, POLLING_MS, 0);
+            S3PseudoLock        lock = new S3PseudoLock(client, "foo", "-prefix-", 10000, POLLING_MS, 0);
             locks.add(lock);
         }
 
