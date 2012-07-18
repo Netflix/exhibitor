@@ -14,25 +14,12 @@
  *    limitations under the License.
  */
 
-package com.netflix.exhibitor.core.controlpanel;
+package com.netflix.exhibitor.core.backup;
 
-public enum ControlPanelTypes
+import java.io.Closeable;
+import java.io.InputStream;
+
+public interface BackupStream extends Closeable
 {
-    RESTARTS,
-    CLEANUP,
-    BACKUPS
-    ;
-    
-    public static ControlPanelTypes fuzzyFind(String s)
-    {
-        for ( ControlPanelTypes type : ControlPanelTypes.values() )
-        {
-            String  fuzzy = type.name().replace("_", "");
-            if ( fuzzy.equalsIgnoreCase(s) )
-            {
-                return type;
-            }
-        }
-        return null;
-    }
+    public InputStream      getStream();
 }

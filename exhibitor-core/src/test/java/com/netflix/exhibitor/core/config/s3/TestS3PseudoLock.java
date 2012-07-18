@@ -21,6 +21,8 @@ import com.netflix.exhibitor.core.backup.s3.MockS3Client;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
@@ -30,6 +32,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestS3PseudoLock
 {
+    @Test
+    public void  testGCOldLockFiles() throws Exception
+    {
+        final BlockingQueue<String>   queue = new ArrayBlockingQueue<String>(1);
+        MockS3Client                  client = new MockS3Client(null, null)
+        {
+            @Override
+            public void deleteObject(String bucket, String key) throws Exception
+            {
+                queue.put(key);
+            }
+        };
+        S3PseudoLock        lock = new S3PseudoLock(client, "foo", "bar", 10, 10, 0);
+        lock.lock();
+        Thread.sleep(20);
+        S3PseudoLock        lock2 = new S3PseudoLock(client, "foo", "bar", 10, 10, 0);
+        lock2.lock();   // should clean the previous lock
+
+        String              cleaned = queue.poll(5, TimeUnit.SECONDS);
+        Assert.assertNotNull(cleaned);
+    }
+
     @Test
     public void         testBlocking() throws Exception
     {

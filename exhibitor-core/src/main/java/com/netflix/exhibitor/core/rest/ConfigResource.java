@@ -240,19 +240,19 @@ public class ConfigResource
         try
         {
             PseudoLock  lock = context.getExhibitor().getConfigManager().newConfigBasedLock();
-            if ( lock.lock(10, TimeUnit.SECONDS) )  // TODO consider making configurable in the future
+            try
             {
-                try
+                if ( lock.lock(10, TimeUnit.SECONDS) )  // TODO consider making configurable in the future
                 {
                     if ( context.getExhibitor().getConfigManager().startRollingConfig(wrapped) )
                     {
                         result = new Result("OK", true);
                     }
                 }
-                finally
-                {
-                    lock.unlock();
-                }
+            }
+            finally
+            {
+                lock.unlock();
             }
 
             if ( result == null )
@@ -280,19 +280,19 @@ public class ConfigResource
         try
         {
             PseudoLock  lock = context.getExhibitor().getConfigManager().newConfigBasedLock();
-            if ( lock.lock(10, TimeUnit.SECONDS) )  // TODO consider making configurable in the future
+            try
             {
-                try
+                if ( lock.lock(10, TimeUnit.SECONDS) )  // TODO consider making configurable in the future
                 {
                     if ( context.getExhibitor().getConfigManager().updateConfig(wrapped) )
                     {
                         result = new Result("OK", true);
                     }
                 }
-                finally
-                {
-                    lock.unlock();
-                }
+            }
+            finally
+            {
+                lock.unlock();
             }
 
             if ( result == null )

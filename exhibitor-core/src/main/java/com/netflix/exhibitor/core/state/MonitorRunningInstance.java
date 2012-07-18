@@ -160,6 +160,7 @@ public class MonitorRunningInstance implements Closeable
         }
         if ( !exhibitor.getControlPanelValues().isSet(ControlPanelTypes.RESTARTS) )
         {
+            exhibitor.getLog().add(ActivityLog.Type.INFO, "Restart of ZooKeeper skipped due to control panel setting");
             return;
         }
 

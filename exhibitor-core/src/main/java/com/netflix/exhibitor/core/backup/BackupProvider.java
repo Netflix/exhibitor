@@ -62,6 +62,17 @@ public interface BackupProvider
     public List<BackupMetaData> getAvailableBackups(Exhibitor exhibitor, Map<String, String> configValues) throws Exception;
 
     /**
+     * Return a stream for the specified backup
+     *
+     * @param exhibitor instance
+     * @param metaData the backup to get
+     * @param configValues values for provider-specific config
+     * @return the stream or null if the stream doesn't exist
+     * @throws Exception errors
+     */
+    public BackupStream getBackupStream(Exhibitor exhibitor, BackupMetaData metaData, Map<String, String> configValues) throws Exception;
+
+    /**
      * Delete the given backup
      *
      * @param exhibitor instance

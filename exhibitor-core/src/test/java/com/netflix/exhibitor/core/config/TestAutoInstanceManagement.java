@@ -79,6 +79,11 @@ public class TestAutoInstanceManagement
                 }
 
                 @Override
+                public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+                {
+                }
+
+                @Override
                 public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
                 {
                     return System.currentTimeMillis();
@@ -204,6 +209,11 @@ public class TestAutoInstanceManagement
                 }
 
                 @Override
+                public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+                {
+                }
+
+                @Override
                 public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
                 {
                     return System.currentTimeMillis();
@@ -262,6 +272,11 @@ public class TestAutoInstanceManagement
 
                 @Override
                 public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+                {
+                }
+
+                @Override
+                public void clearInstanceHeartbeat(String instanceHostname) throws Exception
                 {
                 }
 

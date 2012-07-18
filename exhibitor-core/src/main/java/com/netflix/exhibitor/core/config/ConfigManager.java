@@ -303,12 +303,25 @@ public class ConfigManager implements Closeable
         LoadedInstanceConfig updated = provider.storeConfig(newCollection, config.get().getLastModified());
         if ( updated != null )
         {
-            config.set(updated);
-            notifyListeners();
+            setNewConfig(updated);
             return true;
         }
 
         return false;
+    }
+
+    private void setNewConfig(LoadedInstanceConfig newConfig) throws Exception
+    {
+        LoadedInstanceConfig previousConfig = config.getAndSet(newConfig);
+        if ( previousConfig != null )
+        {
+            if ( newConfig.getConfig().getRootConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES) != previousConfig.getConfig().getRootConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES) )
+            {
+                provider.clearInstanceHeartbeat(exhibitor.getThisJVMHostname());
+            }
+        }
+
+        notifyListeners();
     }
 
     private synchronized void notifyListeners()
@@ -324,8 +337,7 @@ public class ConfigManager implements Closeable
         LoadedInstanceConfig    newConfig = provider.loadConfig();
         if ( newConfig.getLastModified() != config.get().getLastModified() )
         {
-            config.set(newConfig);
-            notifyListeners();
+            setNewConfig(newConfig);
         }
     }
 }

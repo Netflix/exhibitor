@@ -23,7 +23,12 @@ import com.netflix.exhibitor.core.backup.BackupProvider;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.backup.BackupConfigSpec;
+import com.netflix.exhibitor.core.backup.BackupStream;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -133,6 +138,34 @@ public class FileSystemBackupProvider implements BackupProvider
         {
             exhibitor.getLog().add(ActivityLog.Type.ERROR, "Could not delete old backup: " + destinationFile);
         }
+    }
+
+    @Override
+    public BackupStream getBackupStream(Exhibitor exhibitor, BackupMetaData backup, Map<String, String> configValues) throws Exception
+    {
+        File        directory = new File(configValues.get(CONFIG_DIRECTORY.getKey()));
+        File        nameDirectory = new File(directory, backup.getName());
+        File        source = new File(nameDirectory, Long.toString(backup.getModifiedDate()));
+        if ( !source.exists() )
+        {
+            return null;
+        }
+
+        final InputStream   in = new BufferedInputStream(new FileInputStream(source));
+        return new BackupStream()
+        {
+            @Override
+            public InputStream getStream()
+            {
+                return in;
+            }
+
+            @Override
+            public void close() throws IOException
+            {
+                in.close();
+            }
+        };
     }
 
     @Override

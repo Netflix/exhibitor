@@ -6,8 +6,6 @@ var STATE_LATENT = 0;
 var STATE_DOWN = 1;
 var STATE_NOT_SERVING = 2;
 var STATE_SERVING = 3;
-var STATE_DOWN_BECAUSE_UNLISTED = 4;
-var STATE_DOWN_BECAUSE_RESTARTS_TURNED_OFF = 5;
 
 function makeServersList()
 {
@@ -83,7 +81,6 @@ function internalBuildServerItems(serversList)
 
         makeLightSwitch(domId + '-instance-restarts-enabled', null, true);
         makeLightSwitch(domId + '-cleanup-enabled', null, true);
-        makeLightSwitch(domId + '-unlisted-restarts', null, true);
         makeLightSwitch(domId + '-backups-enabled', null, true);
         if ( systemState.backupActive )
         {
@@ -138,11 +135,14 @@ function stopStartDialog(hostname)
 function logDialog(hostname)
 {
     return function() {
+        $('#log-text').text("Loading...");
+
         makeRemoteCall(URL_CLUSTER_LOG_BASE, hostname, function(text){
             $('#log-text').text(text);
-            $('#log-dialog').dialog("option", "title", hostname);
-            $('#log-dialog').dialog("open");
         });
+
+        $('#log-dialog').dialog("option", "title", hostname);
+        $('#log-dialog').dialog("open");
     };
 }
 
@@ -150,10 +150,13 @@ function word4ltrDialog(hostname)
 {
     return function() {
         $('#word-4ltr-button').click(function(){
+            $('#word-4ltr-text').text("Loading...");
             makeRemoteCall(URL_CLUSTER_4LTR_BASE + $('#word-4ltr').val() + "/", hostname, function(text){
-                $('#word-4ltr-text').text(text)
+                $('#word-4ltr-text').text(text);
             })
         });
+
+        $('#word-4ltr-text').text("");
         $('#word-4ltr-dialog').dialog("option", "title", hostname);
         $('#word-4ltr-dialog').dialog("open");
     };
@@ -195,18 +198,16 @@ function updateOneServerState(index, data, hostname)
 
         $(domId + '-power-button').button("option", "disabled", false);
         $(domId + '-4ltr-button').button("option", "disabled", !isRunning);
-        $(domId + '-log-button').button("option", "disabled", !isRunning);
+        $(domId + '-log-button').button("option", "disabled", false);
 
         $(domId + '-power-button').button("option", "label", data.response.switches.restarts ? "Restart..." : "Stop...");
 
         ableLightSwitch(domId + '-instance-restarts-enabled', handleSwitch(hostname, "restarts"));
         ableLightSwitch(domId + '-cleanup-enabled', handleSwitch(hostname, "cleanup"));
-        ableLightSwitch(domId + '-unlisted-restarts', handleSwitch(hostname, "unlistedRestarts"));
         ableLightSwitch(domId + '-backups-enabled', handleSwitch(hostname, "backups"));
 
         checkLightSwitch(domId + '-instance-restarts-enabled', data.response.switches.restarts);
         checkLightSwitch(domId + '-cleanup-enabled', data.response.switches.cleanup);
-        checkLightSwitch(domId + '-unlisted-restarts', data.response.switches.unlistedRestarts);
         checkLightSwitch(domId + '-backups-enabled', data.response.switches.backups);
 
         statusMessage = data.response.description;
@@ -226,8 +227,6 @@ function updateOneServerState(index, data, hostname)
             }
 
             case STATE_NOT_SERVING:
-            case STATE_DOWN_BECAUSE_UNLISTED:
-            case STATE_DOWN_BECAUSE_RESTARTS_TURNED_OFF:
             {
                 statusColor = "#FF0";
                 break;
@@ -248,7 +247,6 @@ function updateOneServerState(index, data, hostname)
 
         ableLightSwitch(domId + '-instance-restarts-enabled', null, false);
         ableLightSwitch(domId + '-cleanup-enabled', null, false);
-        ableLightSwitch(domId + '-unlisted-restarts', null, false);
         ableLightSwitch(domId + '-backups-enabled', null, false);
 
         statusColor = "#F00";

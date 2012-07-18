@@ -143,13 +143,9 @@ public abstract class PseudoLockBase implements PseudoLock
      */
     public synchronized void unlock() throws Exception
     {
-        if ( !ownsTheLock )
-        {
-            throw new IllegalStateException("Already unlocked");
-        }
-
         deleteFile(key);
         notifyAll();
+        ownsTheLock = false;
     }
 
     protected abstract void createFile(String key, byte[] contents) throws Exception;
@@ -159,6 +155,11 @@ public abstract class PseudoLockBase implements PseudoLock
     protected abstract byte[] getFileContents(String key) throws Exception;
 
     protected abstract List<String> getFileNames(String lockPrefix) throws Exception;
+
+    public String getLockPrefix()
+    {
+        return lockPrefix;
+    }
 
     private void checkUpdate() throws Exception
     {
@@ -206,7 +207,7 @@ public abstract class PseudoLockBase implements PseudoLock
         for ( String key : keys )
         {
             long    epochStamp = getEpochStampForKey(key);
-            if ( (System.currentTimeMillis() - epochStamp) > timeoutMs )
+            if ( !key.equals(this.key) && ((System.currentTimeMillis() - epochStamp) > timeoutMs) )
             {
                 deleteFile(key);
             }

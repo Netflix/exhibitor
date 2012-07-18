@@ -5,60 +5,9 @@ var ACTION_NAMES = [
     "Set Data"
 ];
 
-var restoreDialogNames = null;
-function updateBackups()
+function startIndex()
 {
-    var filterValue = parseInt($('#new-index-backup-names-filter').val());
-
-    var options = "";
-    var now = new Date();
-    var actualCount = 0;
-    for ( var i = 0; i < restoreDialogNames.length; ++i )
-    {
-        var d = new Date(restoreDialogNames[i].modifiedDate);
-        if ( (filterValue < 0) || ((now.getTime() - d.getTime()) <= filterValue) )
-        {
-            options += '<option id="existing-backup-' + i + '">' + restoreDialogNames[i].name + ' - ' + d.toGMTString() + '</option>';
-            ++actualCount;
-        }
-    }
-    $('#new-index-backup-names').html(options);
-    for ( i = 0; i < restoreDialogNames.length; ++i )
-    {
-        var val = JSON.stringify(restoreDialogNames[i]);
-        $("#existing-backup-" + i).val(val);
-    }
-
-    if ( actualCount > 0 )
-    {
-        $('#new-index-radio-backup').attr('disabled', false);
-    }
-    else
-    {
-        if ( $('#new-index-radio-backup').attr('checked') )
-        {
-            $('#new-index-radio-default').attr('checked', true);
-        }
-        $('#new-index-radio-backup').attr('disabled', true);
-    }
-}
-
-function loadBackups()
-{
-    $.getJSON(URL_GET_BACKUPS, function(data){
-        restoreDialogNames = $.makeArray(data);
-        if ( restoreDialogNames.length == 0 )
-        {
-            $('#new-index-backups-section').hide();
-        }
-        else
-        {
-            updateBackups();
-            $('#new-index-backups-section').show();
-        }
-        $('#new-index-loading-dialog').dialog("close");
-        $('#new-index-dialog').dialog("open");
-    });
+    $.getJSON(URL_NEW_INDEX);
 }
 
 function initRestoreUI()
@@ -95,43 +44,9 @@ function initRestoreUI()
             primary:"ui-icon-document"
         }
     }).click(function(){
-            if ( systemState.backupActive )
-            {
-                $('#new-index-loading-dialog').dialog("open");
-                loadBackups();
-            }
-            else
-            {
-                $('#new-index-dialog').dialog("open");
-            }
-            return false;
-        });
-
-    $('#index-query-filter-button').button({
-        icons:{
-            primary:"ui-icon-search"
-        }
-    }).click(function(){
-            $('#index-query-dialog').dialog("open");
-            return false;
-        });
-    $('#index-query-clear-filter-button').button({
-        icons:{
-            primary: "ui-icon-close"
-        },
-        disabled: true
-    }).click(function(){
-            var indexName = $('#index-query-dialog').attr("indexName");
-            openIndex(indexName);
-            return false;
-        });
-    $('#index-query-clear-restore-button').button({
-        icons:{
-            primary: "ui-icon-alert"
-        },
-        disabled: true
-    }).click(function(){
-            openModifyDialog((selectedIndexData.type == 2) ? "delete" : "update", selectedIndexData.path, selectedIndexData.dataBytes, "binary");
+            okCancelDialog("Index", "All backups and the current ZooKeeper logs will be added to the index. Check the log for the index progress.", function(){
+                startIndex();
+            }, true);
             return false;
         });
 
@@ -165,82 +80,12 @@ function initRestoreUI()
         }
     );
 
-    $('#new-index-loading-progressbar').progressbar({
-        value: 100
-    });
-    $('#new-index-loading-dialog').dialog({
-        modal: true,
-        autoOpen: false,
-        title: 'Loading...',
-        resizable: false,
-        height: 100
-    });
-
-    $('#new-index-dialog').dialog({
-        modal: true,
-        autoOpen: false,
-        title: 'New Index',
-        minWidth: 450
-    });
-    $('#new-index-dialog').dialog("option", "buttons",
-        {
-            "Cancel":function ()
-            {
-                $(this).dialog("close");
-            },
-
-            "OK":function ()
-            {
-                var newIndexRequest = {};
-                newIndexRequest.type = $('input[name=new-index-specified]:checked').val();
-                if ( newIndexRequest.type === "path" )
-                {
-                    newIndexRequest.value = $('#new-index-path').val();
-                }
-                else if ( newIndexRequest.type === "backup" )
-                {
-                    newIndexRequest.value = "";
-                    newIndexRequest.backup = JSON.parse($("#new-index-backup-names option:selected").val());
-                }
-                else
-                {
-                    newIndexRequest.value = "";
-                }
-
-                $(this).dialog("close");
-                var payload = JSON.stringify(newIndexRequest);
-                $.ajax({
-                    type: 'POST',
-                    url: URL_NEW_INDEX,
-                    data: payload,
-                    contentType: 'application/json'
-                });
-                messageDialog('Index', 'Indexing has started. Check the log for details.');
-            }
-        }
-    );
-
-    $('#new-index-path').focus(function(){
-        $('#new-index-radio-path').prop("checked", true);
-    });
-    $('#new-index-radio-backup').click(function(){
-        if ( !$('#new-index-backup-names').val() )
-        {
-            $('#new-index-backup-names').prop("selectedIndex", 0);
-        }
-    });
-    $('#new-index-backup-names').focus(function(){
-        $('#new-index-radio-backup').prop("checked", true);
-    });
-    $('#new-index-backup-names-filter').change(function(){
-        updateBackups();
-    });
-
     $('#index-query-results-dialog').dialog({
         modal: true,
         autoOpen: false,
         title: 'Results',
-        minWidth: 800
+        minWidth: 800,
+        minHeight: 400
     });
 }
 
@@ -314,10 +159,22 @@ function applySelectedValue(data)
     $('#index-query-results-selected-data-string').html(data.dataAsString);
 }
 
-function viewIndex(indexName, indexHandle, isFromFilter)
+var viewIndexTableNeedsRebuild = false;
+var viewIndexTableExists = false;
+var viewIndexIsFiltered = false;
+function buildViewIndexTable(indexName, indexHandle)
 {
-    $('#index-query-dialog').attr("indexName", indexName);
-    $('#index-query-dialog').attr("indexHandle", indexHandle);
+    if ( viewIndexTableExists )
+    {
+        viewIndexTableExists = false;
+        $('#index-query-results-table').dataTable().fnDestroy(true);
+    }
+
+    var template = $('#index-query-table-template').html();
+    template = template.replace(/\$FOO\$/g, '');
+    $('#index-query-results-dialog-content').html(template);
+
+    var height = ($('#index-query-results-dialog').height() - 190) + "px";
 
     var emptyData = {
         type: 0,
@@ -328,18 +185,24 @@ function viewIndex(indexName, indexHandle, isFromFilter)
     };
     applySelectedValue(emptyData);
     var selectedRowId = -1;
-    $('#index-query-results-table').dataTable({
+    var table = $('#index-query-results-table').dataTable({
         sAjaxSource: URL_INDEX_DATA_BASE + indexName + "/" + indexHandle,
-        bDestroy: true,
         bProcessing: true,
         bServerSide: true,
         bStateSave: false,
+        bDestroy: true,
         bFilter: false,
+        bScrollCollapse: true,
         bSort: false,
-        sScrollY: "300px",
+        sScrollY: height,
         sDom: "frtiS",
         bDeferRender: true,
         iDeferLoading: false,
+        aoColumns:[
+            {sTitle: "TYPE"},
+            {sTitle: "DATE"},
+            {sTitle: "PATH"}
+        ],
         fnRowCallback: function( row, data, index ) {
             if ( data.DT_RowId === selectedRowId ) {
                 $(row).addClass('row_selected');
@@ -347,6 +210,7 @@ function viewIndex(indexName, indexHandle, isFromFilter)
             return row;
         }
     });
+    viewIndexTableExists = true;
 
     $('#index-query-results-table tbody tr').live('click', function () {
         var id = this.id;
@@ -366,16 +230,79 @@ function viewIndex(indexName, indexHandle, isFromFilter)
         }
     });
 
-    $('#index-query-clear-filter-button').button("option", "disabled", !isFromFilter);
+    $('#index-query-filter-button').button({
+        icons:{
+            primary:"ui-icon-search"
+        }
+    }).click(function(){
+            $('#index-query-dialog').dialog("open");
+            return false;
+        });
+    $('#index-query-clear-filter-button').button({
+        icons:{
+            primary: "ui-icon-close"
+        },
+        disabled: true
+    }).click(function(){
+            var indexName = $('#index-query-dialog').attr("indexName");
+            openIndex(indexName);
+            return false;
+        });
+    $('#index-query-clear-restore-button').button({
+        icons:{
+            primary: "ui-icon-alert"
+        },
+        disabled: true
+    }).click(function(){
+            openModifyDialog((selectedIndexData.type == 2) ? "delete" : "update", selectedIndexData.path, selectedIndexData.dataBytes, "binary");
+            return false;
+        });
+
+    $('#index-query-clear-filter-button').button("option", "disabled", !viewIndexIsFiltered);
     $('#index-query-clear-restore-button').button("option", "disabled", true);
 
+    table.fnDraw(false);
+}
+
+function viewIndex(indexName, indexHandle)
+{
+    $('#index-query-dialog').attr("indexName", indexName);
+    $('#index-query-dialog').attr("indexHandle", indexHandle);
+
+    var intervalHandle;
+
     $('#index-query-results-dialog').bind('dialogclose', function(event, ui) {
+        viewIndexTableNeedsRebuild = false;
+        viewIndexIsFiltered = false;
+        window.clearInterval(intervalHandle);
         $.get(URL_RELEASE_CACHE_INDEX_SEARCH_BASE + indexName + '/' + indexHandle);
+    });
+    $('#index-query-results-dialog').bind('dialogresizestop', function(event, ui){
+        viewIndexTableNeedsRebuild = true;
     });
 
     $('#index-query-results-dialog').dialog("option", "title", 'Results for ' + indexName);
     $('#index-query-results-dialog').dialog("option", "maxHeight", 600);
     $('#index-query-results-dialog').dialog("open");
+    viewIndexTableNeedsRebuild = true;
+
+    intervalHandle = window.setInterval(function(){
+            if ( viewIndexTableNeedsRebuild )
+            {
+                viewIndexTableNeedsRebuild = false;
+
+                buildViewIndexTable($('#index-query-dialog').attr("indexName"), $('#index-query-dialog').attr("indexHandle"));
+
+                window.setTimeout(function(){
+                        var table = $('#index-query-results-table').dataTable();
+                        table.fnAdjustColumnSizing();
+                    },
+                    2500
+                );
+            }
+        },
+        50
+    );
 }
 
 function buildSearchRequestFromFilter(indexName, indexHandle)
@@ -401,7 +328,8 @@ function filterIndex(indexName, searchRequest, isFromFilter)
         data: payload,
         contentType: 'application/json',
         success: function(data){
-            viewIndex(indexName, data.id, isFromFilter);
+            viewIndexIsFiltered = isFromFilter;
+            viewIndex(indexName, data.id);
         }
     });
 }
@@ -415,5 +343,6 @@ function openIndex(indexName)
     searchRequest.reuseHandle = null;
     searchRequest.maxResults = 0;
 
+    viewIndexIsFiltered = false;
     filterIndex(indexName, searchRequest, false);
 }

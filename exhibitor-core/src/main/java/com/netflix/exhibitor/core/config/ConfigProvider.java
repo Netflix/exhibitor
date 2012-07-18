@@ -57,6 +57,15 @@ public interface ConfigProvider
     public long         getLastHeartbeatForInstance(String instanceHostname) throws Exception;
 
     /**
+     * Remove/clear the instance heartbeat. This will be called when the auto-manage instance state
+     * has changed.
+     *
+     * @param instanceHostname the instance's hostname
+     * @throws Exception errors
+     */
+    public void clearInstanceHeartbeat(String instanceHostname) throws Exception;
+
+    /**
      * Allocate a new pseudo-lock for the given prefix
      *
      * @return new lock

@@ -78,7 +78,14 @@ public class S3PseudoLock extends PseudoLockBase
     @Override
     protected void deleteFile(String key) throws Exception
     {
-        client.deleteObject(bucket, key);
+        try
+        {
+            client.deleteObject(bucket, key);
+        }
+        catch ( AmazonServiceException ignore )
+        {
+            // ignore these
+        }
     }
 
     @Override

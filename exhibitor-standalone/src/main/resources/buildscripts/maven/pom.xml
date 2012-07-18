@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>exhibitor</groupId>
     <artifactId>exhibitor</artifactId>
-    <version>1.2.2</version>
+    <version>1.2.3</version>
 
     <dependencies>
         <dependency>
             <groupId>com.netflix.exhibitor</groupId>
             <artifactId>exhibitor-standalone</artifactId>
-            <version>1.2.2</version>
+            <version>1.2.3</version>
         </dependency>
     </dependencies>
 

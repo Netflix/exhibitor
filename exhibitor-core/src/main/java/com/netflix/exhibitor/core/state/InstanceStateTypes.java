@@ -21,9 +21,7 @@ public enum InstanceStateTypes
     LATENT(0),
     DOWN(1),
     NOT_SERVING(2),
-    SERVING(3),
-    UNLISTED_DOWN(4),
-    NO_RESTARTS_DOWN(5)
+    SERVING(3)
     ;
 
     private final int code;

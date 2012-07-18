@@ -37,7 +37,6 @@ class NaturalNotationContextResolver implements ContextResolver<JAXBContext>
             (
                 JSONConfiguration.natural().build(),
                 Index.class,
-                NewIndexRequest.class,
                 Result.class,
                 SearchId.class,
                 SearchRequest.class,

@@ -187,7 +187,7 @@ public class ClusterResource
         }
         catch ( IllegalArgumentException e )
         {
-            return "* unknown *";
+            value = "* unknown *";
         }
 
         return JsonUtil.writeValueAsString(value);

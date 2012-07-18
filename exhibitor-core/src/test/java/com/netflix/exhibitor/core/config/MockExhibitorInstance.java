@@ -79,6 +79,11 @@ class MockExhibitorInstance implements Closeable
             }
 
             @Override
+            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+            {
+            }
+
+            @Override
             public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
             {
                 return 0;

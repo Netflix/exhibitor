@@ -132,6 +132,18 @@ public class BackupManager implements Closeable
     }
 
     /**
+     * Return a stream for the specified backup
+     *
+     * @param metaData the backup to get
+     * @return the stream or null if the stream doesn't exist
+     * @throws Exception errors
+     */
+    public BackupStream getBackupStream(BackupMetaData metaData) throws Exception
+    {
+        return backupProvider.get().getBackupStream(exhibitor, metaData, getBackupConfig());
+    }
+
+    /**
      * Return the stored backup config
      *
      * @return backup config
@@ -219,7 +231,7 @@ public class BackupManager implements Closeable
                 {
                     case SUCCEEDED:
                     {
-                        exhibitor.getLog().add(ActivityLog.Type.INFO, "Backing up: " + f);
+                        exhibitor.getLog().add(ActivityLog.Type.DEBUG, "Backing up: " + f);
                         break;
                     }
 
@@ -263,7 +275,7 @@ public class BackupManager implements Closeable
             return;
         }
 
-        exhibitor.getLog().add(ActivityLog.Type.INFO, "Checking for elapsed backups");
+        exhibitor.getLog().add(ActivityLog.Type.DEBUG, "Checking for elapsed backups");
 
         List<BackupMetaData>        availableBackups = backupProvider.get().getAvailableBackups(exhibitor, config);
         for ( BackupMetaData backup : availableBackups )
@@ -271,7 +283,7 @@ public class BackupManager implements Closeable
             long        age = System.currentTimeMillis() - backup.getModifiedDate();
             if ( age > exhibitor.getConfigManager().getConfig().getInt(IntConfigs.BACKUP_MAX_STORE_MS) )
             {
-                exhibitor.getLog().add(ActivityLog.Type.INFO, "Cleaning backup: " + backup);
+                exhibitor.getLog().add(ActivityLog.Type.DEBUG, "Cleaning backup: " + backup);
                 backupProvider.get().deleteBackup(exhibitor, backup, config);
             }
         }

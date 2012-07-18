@@ -34,6 +34,7 @@ var URL_GET_TABS = "tabs";
 var URL_RESTART = "stop";
 
 var doConfigUpdates = true;
+var configChangesBeingSubmitted = false;
 
 function messageDialog(title, message, noIcon)
 {
@@ -58,8 +59,17 @@ function messageDialog(title, message, noIcon)
     $("#message-dialog").dialog("open");
 }
 
-function okCancelDialog(title, message, okFunction)
+function okCancelDialog(title, message, okFunction, noIcon)
 {
+    if ( noIcon )
+    {
+        $('#message-dialog-icon').hide();
+    }
+    else
+    {
+        $('#message-dialog-icon').show();
+    }
+
     $('#message-dialog-text').html(message);
     $("#message-dialog").dialog("option", "title", title);
     $("#message-dialog").dialog("option", "buttons",
@@ -101,7 +111,7 @@ function updateState()
         success: function (data, dummy, jqXHR){
             systemState = data;
 
-            if ( doConfigUpdates ) {
+            if ( doConfigUpdates && !configChangesBeingSubmitted ) {
                 systemConfig = systemState.config;
             }
 
@@ -292,22 +302,33 @@ function changeControlPanelConfig(field, selector)
 
 function submitConfigChanges(rolling)
 {
+    if ( configChangesBeingSubmitted )
+    {
+        messageDialog("Please Wait", "A previous config change is still being submitted");
+        return;
+    }
+
     var newConfig = buildNewConfig();
 
     systemConfig = newConfig;
 
     var payload = JSON.stringify(newConfig);
+
+    configChangesBeingSubmitted = true;
     $.ajax({
         type: 'POST',
         url: rolling ? URL_SET_CONFIG_ROLLING : URL_SET_CONFIG,
         data: payload,
         contentType: 'application/json',
-        success:function(data)
-        {
+        success:function(data){
+            configChangesBeingSubmitted = false;
             if ( !data.succeeded )
             {
                 messageDialog("Error", data.message);
             }
+        },
+        error:function(){
+            configChangesBeingSubmitted = false;
         }
     });
     turnOffEditableSwitch();
@@ -361,7 +382,7 @@ function updateConfig()
         checkLightSwitch('#cp-auto-init-instances', systemConfig.controlPanel.autoManageInstances);
     }
 
-    if ( !doConfigUpdates ) {
+    if ( !doConfigUpdates || configChangesBeingSubmitted ) {
         return;
     }
 
@@ -510,6 +531,7 @@ function checkConfigConfirmation()
         || (newConfig.electionPort != systemConfig.electionPort)
         || (newConfig.javaEnvironment != systemConfig.javaEnvironment)
         || (newConfig.log4jProperties != systemConfig.log4jProperties)
+        || (JSON.stringify(newConfig.zooCfgExtra) != JSON.stringify(systemConfig.zooCfgExtra))
     ;
 
     if ( !hasEnsembleLevelChange )

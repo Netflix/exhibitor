@@ -95,6 +95,19 @@ public class S3ConfigProvider implements ConfigProvider
     }
 
     @Override
+    public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+    {
+        try
+        {
+            s3Client.deleteObject(arguments.getBucket(), arguments.getHeartbeatKeyPrefix() + instanceHostname);
+        }
+        catch ( AmazonServiceException ignore )
+        {
+            // ignore
+        }
+    }
+
+    @Override
     public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
     {
         try

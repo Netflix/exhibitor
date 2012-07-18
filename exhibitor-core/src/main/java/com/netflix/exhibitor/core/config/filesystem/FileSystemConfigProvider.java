@@ -163,6 +163,17 @@ public class FileSystemConfigProvider implements ConfigProvider
         Files.write(FILE_CONTENT.getBytes(), file);
     }
 
+    @Override
+    public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+    {
+        File    f = getHeartbeatFile(instanceHostname);
+        if ( f.exists() )
+        {
+            //noinspection ResultOfMethodCallIgnored
+            f.delete();
+        }
+    }
+
     private File getHeartbeatFile(String instanceHostname) throws UnsupportedEncodingException
     {
         String      fixedHostname = URLEncoder.encode(instanceHostname, "UTF-8");

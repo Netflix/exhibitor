@@ -59,19 +59,19 @@ public class AutomaticInstanceManagement implements Activity
         if ( exhibitor.getConfigManager().getConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES) != 0 )
         {
             PseudoLock  lock = exhibitor.getConfigManager().newConfigBasedLock();
-            if ( lock.lock(Exhibitor.AUTO_INSTANCE_MANAGEMENT_PERIOD_MS / 2, TimeUnit.MILLISECONDS) )
+            try
             {
-                try
+                if ( lock.lock(Exhibitor.AUTO_INSTANCE_MANAGEMENT_PERIOD_MS / 2, TimeUnit.MILLISECONDS) )
                 {
                     if ( !exhibitor.getConfigManager().isRolling() )
                     {
                         doWork();
                     }
                 }
-                finally
-                {
-                    lock.unlock();
-                }
+            }
+            finally
+            {
+                lock.unlock();
             }
         }
         return true;

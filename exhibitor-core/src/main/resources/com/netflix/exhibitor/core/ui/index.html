@@ -49,7 +49,7 @@
                 <li><a href="#tabs-main">Control Panel</a></li>
                 <li><a href="#tabs-explorer">Explorer</a></li>
                 <li><a href="#tabs-config">Config</a></li>
-                <li><a href="#tabs-restore">Restore</a></li>
+                <li><a href="#tabs-restore">Backup and Restore</a></li>
             </ul>
 
 
@@ -82,9 +82,6 @@
                             </div>
                             <div title="When on, the ZooKeeper log cleanup task is active">
                                 <label for="$BASE_ID$-cleanup-enabled">Log Cleanup Task</label><input type="checkbox" id="$BASE_ID$-cleanup-enabled" name="$BASE_ID$-cleanup-enabled"/><br clear="all"/>
-                            </div>
-                            <div title="When on, the ZooKeeper instance will get restarted even if it is not in the config list of servers">
-                                <label for="$BASE_ID$-unlisted-restarts">Restarts When Unlisted</label><input type="checkbox" id="$BASE_ID$-unlisted-restarts" name="unlisted-restarts"/><br clear="all"/>
                             </div>
                             <div title="When on, the ZooKeeper log backup task is active" id="$BASE_ID$-backups-enabled-control" class="ui-helper-hidden">
                                 <label for="$BASE_ID$-backups-enabled">Backup Logs Task</label><input type="checkbox" id="$BASE_ID$-backups-enabled" name="backups-enabled"/><br clear="all"/>
@@ -266,55 +263,8 @@
             </select><br clear="all"/>
         </div>
 
-        <div id="new-index-loading-dialog" class="ui-helper-hidden">
-            <div id="new-index-loading-progressbar"></div>
-        </div>
-
-        <div id="new-index-dialog" class="ui-helper-hidden">
-            <input type="radio" id="new-index-radio-default" name="new-index-specified" value="default" checked><label for="new-index-radio-default">Use Current Logs</label><br clear="all"/>
-            <input type="radio" id="new-index-radio-path" name="new-index-specified" value="path"><label for="new-index-radio-path">Log File Path</label><input type="text" id="new-index-path" name="index-query-path" size="30">
-            <div id="new-index-backups-section" class="ui-helper-hidden">
-                <input type="radio" id="new-index-radio-backup" name="new-index-specified" value="backup"><label for="new-index-radio-backup">From Backup</label>
-                - <label for="new-index-backup-names-filter">Filter</label><select id="new-index-backup-names-filter" name="new-index-backup-names-filter" size="1">
-                    <option value="-1">All</option>
-                    <option value="3600000">Last Hour</option>
-                    <option value="7200000">Last Two Hours</option>
-                    <option value="14400000">Last Four Hours</option>
-                    <option value="28800000">Last Eight Hours</option>
-                    <option value="86400000">Last Day</option>
-                    <option value="259200000">Last 3 Days</option>
-                    <option value="604800000">Last Week</option>
-                </select><br clear="all"/>
-                <select id="new-index-backup-names" size="10"></select><br clear="all"/>
-            </div>
-        </div>
-
         <div id="index-query-results-dialog" class="ui-helper-hidden">
-            <table id="index-query-results-table">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Date</th>
-                        <th>Path</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </tbody>
-            </table><br clear="all"/>
-            <div id="index-query-results-selected">
-                <span class="label">Path</span><span id="index-query-results-selected-path" class="value"></span><br clear="all"/>
-                <span class="label">Date</span><span id="index-query-results-selected-date" class="value"></span><br clear="all"/>
-                <span class="label">Data Bytes</span><span id="index-query-results-selected-data-bytes" class="value"></span><br clear="all"/>
-                <span class="label">Data as String</span><span id="index-query-results-selected-data-string" class="value"></span><br clear="all"/>
-            </div>
-            <button id="index-query-filter-button">Filter...</button>
-            <button id="index-query-clear-filter-button">Clear Filter</button>
-            <button id="index-query-clear-restore-button">Restore...</button>
+            <div id="index-query-results-dialog-content"></div>
         </div>
 
         <div id="word-4ltr-dialog" class="ui-helper-hidden">
@@ -427,6 +377,19 @@
                 Enter a starting path for the listing and the maximum size path for traversal (i.e. paths with Max Traversal children will not be recursively listed). A detailed listing
                 will be generated showing all the paths, their creation time, their immediate children count and their deep children count.
             </div>
+        </div>
+
+        <div id="index-query-table-template" class="ui-helper-hidden">
+            <table id="$FOO$index-query-results-table"></table><br clear="all"/>
+            <div id="$FOO$index-query-results-selected">
+                <span class="label">Path</span><span id="$FOO$index-query-results-selected-path" class="value"></span><br clear="all"/>
+                <span class="label">Date</span><span id="$FOO$index-query-results-selected-date" class="value"></span><br clear="all"/>
+                <span class="label">Data Bytes</span><span id="$FOO$index-query-results-selected-data-bytes" class="value"></span><br clear="all"/>
+                <span class="label">Data as String</span><span id="$FOO$index-query-results-selected-data-string" class="value"></span><br clear="all"/>
+            </div>
+            <button id="$FOO$index-query-filter-button">Filter...</button>
+            <button id="$FOO$index-query-clear-filter-button">Clear Filter</button>
+            <button id="$FOO$index-query-clear-restore-button">Restore...</button>
         </div>
     </body>
 </html>

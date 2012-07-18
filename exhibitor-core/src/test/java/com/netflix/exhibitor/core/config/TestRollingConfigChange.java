@@ -80,6 +80,11 @@ public class TestRollingConfigChange
             }
 
             @Override
+            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+            {
+            }
+
+            @Override
             public PseudoLock newPseudoLock() throws Exception
             {
                 return null;
@@ -150,6 +155,11 @@ public class TestRollingConfigChange
 
             @Override
             public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+            {
+            }
+
+            @Override
+            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
             {
             }
 
@@ -268,6 +278,11 @@ public class TestRollingConfigChange
             }
 
             @Override
+            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+            {
+            }
+
+            @Override
             public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
             {
                 return 0;
@@ -375,6 +390,11 @@ public class TestRollingConfigChange
 
             @Override
             public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+            {
+            }
+
+            @Override
+            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
             {
             }
 

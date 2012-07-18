@@ -17,10 +17,6 @@
 package com.netflix.exhibitor.core.index;
 
 import com.google.common.io.Closeables;
-import com.google.common.io.CountingInputStream;
-import com.google.common.io.InputSupplier;
-import com.netflix.exhibitor.core.Exhibitor;
-import com.netflix.exhibitor.core.activity.ActivityLog;
 import org.apache.jute.Record;
 import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Document;
@@ -35,7 +31,6 @@ import org.apache.zookeeper.txn.CreateTxn;
 import org.apache.zookeeper.txn.DeleteTxn;
 import org.apache.zookeeper.txn.SetDataTxn;
 import org.apache.zookeeper.txn.TxnHeader;
-import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -44,68 +39,38 @@ import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class LogIndexer implements Closeable
+public class IndexBuilder implements Closeable
 {
-    private final File indexDirectory;
-    private final CountingInputStream inputStream;
-    private final IndexWriter writer;
-    private final NIOFSDirectory directory;
-    private final ZooKeeperLogParser logParser;
-    private final long sourceLength;
-    private final String sourceName;
-    private final Exhibitor exhibitor;
+    private final File              directory;
+    private final AtomicInteger     count = new AtomicInteger(0);
+    private final AtomicLong        from = new AtomicLong(Long.MAX_VALUE);
+    private final AtomicLong        to = new AtomicLong(Long.MIN_VALUE);
 
-    public LogIndexer(Exhibitor exhibitor, InputSupplier<InputStream> source, String sourceName, long sourceLength, File indexDirectory) throws Exception
+    private NIOFSDirectory niofsDirectory;
+    private IndexWriter writer;
+
+    public IndexBuilder(File directory)
     {
-        this.exhibitor = exhibitor;
-        if ( !indexDirectory.exists() && !indexDirectory.mkdirs() )
+        this.directory = directory;
+    }
+
+    public void open() throws Exception
+    {
+        if ( !directory.exists() && !directory.mkdirs() )
         {
-            throw new IOException("Could not make: " + indexDirectory);
+            throw new IOException("Could not make: " + directory);
         }
-        this.sourceLength = sourceLength;
-        this.sourceName = sourceName;
 
-        this.indexDirectory = indexDirectory;
-        inputStream = new CountingInputStream(new BufferedInputStream(source.getInput()));
+        IndexWriterConfig conf = new IndexWriterConfig(Version.LUCENE_35, new KeywordAnalyzer()).setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 
-        IndexWriter     localWriter = null;
-        NIOFSDirectory  localDirectory = null;
+        niofsDirectory = new NIOFSDirectory(directory, new SingleInstanceLockFactory());
+        writer = new IndexWriter(niofsDirectory, conf);
+    }
 
-        logParser = new ZooKeeperLogParser(inputStream);
+    public void add(InputStream stream) throws Exception
+    {
+        ZooKeeperLogParser  logParser = new ZooKeeperLogParser(stream);
         if ( logParser.isValid() )
-        {
-            IndexWriterConfig conf = new IndexWriterConfig(Version.LUCENE_35, new KeywordAnalyzer())
-                .setOpenMode(IndexWriterConfig.OpenMode.CREATE);
-
-            localDirectory = new NIOFSDirectory(indexDirectory, new SingleInstanceLockFactory());
-            localWriter = new IndexWriter(localDirectory, conf);
-        }
-        writer = localWriter;
-        directory = localDirectory;
-    }
-
-    @Override
-    public void close() throws IOException
-    {
-        Closeables.closeQuietly(inputStream);
-    }
-
-    public boolean      isValid()
-    {
-        return logParser.isValid();
-    }
-
-    public void index() throws Exception
-    {
-        if ( !logParser.isValid() )
-        {
-            return;
-        }
-        
-        final AtomicInteger         count = new AtomicInteger(0);
-        final AtomicLong            from = new AtomicLong(Long.MAX_VALUE);
-        final AtomicLong            to = new AtomicLong(Long.MIN_VALUE);
-        try
         {
             logParser.parse
             (
@@ -118,34 +83,25 @@ public class LogIndexer implements Closeable
                     }
                 }
             );
-
-            IndexMetaData       metaData = new IndexMetaData(new Date(from.get()), new Date(to.get()), count.get());
-            IndexMetaData.write(metaData, IndexMetaData.getMetaDataFile(indexDirectory));
-        }
-        finally
-        {
-            Closeables.closeQuietly(writer);
-            Closeables.closeQuietly(directory);
-        }
-
-        if ( count.get() == 0 )
-        {
-            exhibitor.getLog().add(ActivityLog.Type.INFO, sourceName + " has no entries and has not been indexed");
-            exhibitor.getIndexCache().delete(indexDirectory);
         }
     }
 
-    public int getPercentDone()
+    public void writeMetaData() throws Exception
     {
-        synchronized(inputStream)   // inputStream.getCount() should be sync/volatile but it isn't
-        {
-            return (int)((100 * inputStream.getCount()) / sourceLength);
-        }
+        IndexMetaData       metaData = new IndexMetaData(new Date(from.get()), new Date(to.get()), count.get());
+        IndexMetaData.write(metaData, IndexMetaData.getMetaDataFile(directory));
     }
 
-    public String getLogSourceName()
+    @Override
+    public void close() throws IOException
     {
-        return sourceName;
+        Closeables.closeQuietly(writer);
+        Closeables.closeQuietly(niofsDirectory);
+    }
+
+    public int  getCurrentCount()
+    {
+        return count.get();
     }
 
     private void indexRecord(TxnHeader header, Record record, AtomicInteger count, AtomicLong from, AtomicLong to) throws IOException
