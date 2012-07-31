@@ -70,6 +70,7 @@ public class ClusterResource
         (
             "getStatus",
             hostname,
+            true,
             new Callable<String>()
             {
                 @Override
@@ -90,6 +91,7 @@ public class ClusterResource
         (
             "setControlPanelSetting",
             hostname,
+            true,
             new Callable<String>()
             {
                 @Override
@@ -97,7 +99,9 @@ public class ClusterResource
                 {
                     return setControlPanelSetting(typeStr, newValue);
                 }
-            }
+            },
+            typeStr,
+            newValue
         );
     }
 
@@ -110,6 +114,7 @@ public class ClusterResource
         (
             "stopStartZooKeeper",
             hostname,
+            true,
             new Callable<String>()
             {
                 @Override
@@ -138,7 +143,8 @@ public class ClusterResource
                 {
                     return getFourLetterWord(word);
                 }
-            }
+            },
+            word
         );
     }
 
@@ -209,7 +215,6 @@ public class ClusterResource
     @Produces(MediaType.APPLICATION_JSON)
     public String setControlPanelSetting(@PathParam("type") String typeStr, @PathParam("value") boolean newValue) throws Exception
     {
-
         ControlPanelTypes   type = null;
         try
         {
@@ -298,12 +303,7 @@ public class ClusterResource
         return response.toString();
     }
 
-    private String    makeRemoteRequest(String methodName, String hostname, Callable<String> proc) throws Exception
-    {
-        return makeRemoteRequest(methodName, hostname, true, proc);
-    }
-
-    private String    makeRemoteRequest(String methodName, String hostname, boolean responseIsJson, Callable<String> proc) throws Exception
+    private String    makeRemoteRequest(String methodName, String hostname, boolean responseIsJson, Callable<String> proc, Object... values) throws Exception
     {
         String      remoteResponse;
         String      errorMessage;
@@ -317,7 +317,7 @@ public class ClusterResource
             try
             {
                 RemoteInstanceRequest           request = new RemoteInstanceRequest(context.getExhibitor(), hostname);
-                RemoteInstanceRequest.Result    result = request.makeRequest(remoteInstanceRequestClient, methodName);
+                RemoteInstanceRequest.Result    result = request.makeRequest(remoteInstanceRequestClient, methodName, values);
 
                 remoteResponse = result.remoteResponse;
                 errorMessage = result.errorMessage;

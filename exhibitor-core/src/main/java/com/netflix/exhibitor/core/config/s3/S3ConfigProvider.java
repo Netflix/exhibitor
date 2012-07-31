@@ -190,7 +190,7 @@ public class S3ConfigProvider implements ConfigProvider
         }
         catch ( AmazonS3Exception e )
         {
-            if ( e.getStatusCode() != 404 )
+            if ( !isNotFoundError(e) )
             {
                 throw e;
             }
@@ -210,11 +210,16 @@ public class S3ConfigProvider implements ConfigProvider
         }
         catch ( AmazonS3Exception e )
         {
-            if ( e.getStatusCode() != 404 )
+            if ( !isNotFoundError(e) )
             {
                 throw e;
             }
         }
         return null;
+    }
+
+    private boolean isNotFoundError(AmazonS3Exception e)
+    {
+        return (e.getStatusCode() == 404) || (e.getStatusCode() == 403);
     }
 }
