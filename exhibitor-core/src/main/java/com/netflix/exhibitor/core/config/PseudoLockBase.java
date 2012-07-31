@@ -18,18 +18,21 @@ package com.netflix.exhibitor.core.config;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.netflix.exhibitor.core.Exhibitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public abstract class PseudoLockBase implements PseudoLock
 {
+    private static final Logger log = LoggerFactory.getLogger(PseudoLockBase.class);
+
     private final String                    lockPrefix;
     private final int                       timeoutMs;
-    private final String                    id;
     private final int                       pollingMs;
     private final int                       settlingMs;
 
@@ -38,6 +41,8 @@ public abstract class PseudoLockBase implements PseudoLock
     private boolean   ownsTheLock;
     private String    key;
     private long      lockStartMs = 0;
+
+    private static final String         content = Exhibitor.getHostname();
 
     private static final Random             random = new SecureRandom();
 
@@ -70,8 +75,6 @@ public abstract class PseudoLockBase implements PseudoLock
         this.pollingMs = pollingMs;
         this.lockPrefix = lockPrefix;
         this.timeoutMs = timeoutMs;
-
-        id = UUID.randomUUID().toString() + SEPARATOR + System.currentTimeMillis();
     }
 
     /**
@@ -108,7 +111,7 @@ public abstract class PseudoLockBase implements PseudoLock
         long        maxWaitMs = hasMaxWait ? TimeUnit.MILLISECONDS.convert(maxWait, unit) : Long.MAX_VALUE;
         Preconditions.checkState(maxWaitMs >= settlingMs, String.format("The maxWait ms (%d) is less than the settling ms (%d)", maxWaitMs, settlingMs));
 
-        createFile(key, id.getBytes());
+        createFile(key, content.getBytes());
 
         for(;;)
         {
@@ -124,6 +127,7 @@ public abstract class PseudoLockBase implements PseudoLock
                 thisWaitMs = maxWaitMs - elapsedMs;
                 if ( thisWaitMs <= 0 )
                 {
+                    log.debug(String.format("Could not acquire lock within %d ms, polling: %d ms, key: %s", maxWaitMs, pollingMs, key));
                     break;
                 }
             }
@@ -152,8 +156,6 @@ public abstract class PseudoLockBase implements PseudoLock
 
     protected abstract void deleteFile(String key) throws Exception;
 
-    protected abstract byte[] getFileContents(String key) throws Exception;
-
     protected abstract List<String> getFileNames(String lockPrefix) throws Exception;
 
     public String getLockPrefix()
@@ -169,23 +171,16 @@ public abstract class PseudoLockBase implements PseudoLock
         }
 
         List<String>        keys = getFileNames(lockPrefix);
+        log.debug(String.format("keys: %s", keys));
         keys = cleanOldObjects(keys);
+        log.debug(String.format("cleaned keys: %s", keys));
         Collections.sort(keys);
 
         if ( keys.size() > 0 )
         {
             String      lockerKey = keys.get(0);
-            byte[]      bytes = getFileContents(lockerKey);
-            if ( bytes != null )
-            {
-                String      lockerId = new String(bytes);
-                long        lockerAge = System.currentTimeMillis() - getEpochStampForKey(key);
-                ownsTheLock = (lockerKey.equals(key) && lockerId.equals(id)) && (lockerAge >= settlingMs);
-            }
-            else    // was deleted probably
-            {
-                ownsTheLock = false;
-            }
+            long        lockerAge = System.currentTimeMillis() - getEpochStampForKey(key);
+            ownsTheLock = (lockerKey.equals(key) && (lockerAge >= settlingMs));
         }
         else
         {

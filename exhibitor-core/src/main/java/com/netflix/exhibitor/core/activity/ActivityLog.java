@@ -20,6 +20,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.netflix.exhibitor.core.ExhibitorArguments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
@@ -64,10 +65,12 @@ public class ActivityLog
     /**
      * Return the current window lines
      *
+     *
      * @param separator line separator
+     * @param logDirection display direction
      * @return lines
      */
-    public List<String> toDisplayList(final String separator)
+    public List<String> toDisplayList(final String separator, ExhibitorArguments.LogDirection logDirection)
     {
         Iterable<String> transformed = Iterables.transform
         (
@@ -80,7 +83,8 @@ public class ActivityLog
                 }
             }
         );
-        return Lists.reverse(ImmutableList.copyOf(transformed));
+        ImmutableList<String> list = ImmutableList.copyOf(transformed);
+        return (logDirection == ExhibitorArguments.LogDirection.NATURAL) ? list : Lists.reverse(list);
     }
 
     /**

@@ -32,6 +32,11 @@ public class EncodedConfigParser
     
     public EncodedConfigParser(String encodedValue)
     {
+        if ( encodedValue == null )
+        {
+            encodedValue = "";
+        }
+
         ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
 
         Set<String>     usedKeys = Sets.newHashSet();

@@ -65,7 +65,7 @@ public class Exhibitor implements Closeable
     private final ControlPanelValues        controlPanelValues;
     private final BackupManager             backupManager;
     private final ConfigManager             configManager;
-    private final ExhibitorArguments arguments;
+    private final ExhibitorArguments        arguments;
     private final ProcessMonitor            processMonitor;
     private final RepeatingActivity         autoInstanceManagement;
     private final ManifestVersion           manifestVersion = new ManifestVersion();
@@ -320,9 +320,19 @@ public class Exhibitor implements Closeable
         return arguments.restScheme;
     }
 
+    public Runnable getShutdownProc()
+    {
+        return arguments.shutdownProc;
+    }
+
     public RemoteInstanceRequestClient getRemoteInstanceRequestClient()
     {
         return ClusterResource.getRemoteInstanceRequestClient();
+    }
+
+    public ExhibitorArguments.LogDirection getLogDirection()
+    {
+        return arguments.logDirection;
     }
 
     private synchronized void closeLocalConnection()

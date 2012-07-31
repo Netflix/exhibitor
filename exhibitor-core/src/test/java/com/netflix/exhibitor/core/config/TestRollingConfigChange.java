@@ -36,6 +36,59 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TestRollingConfigChange
 {
     @Test
+    public void testLongQuorumSuccess() throws Exception
+    {
+        ServerList          serverList = new ServerList("1:one");
+
+        RemoteInstanceRequestClient     mockClient = new RemoteInstanceRequestClient()
+        {
+            @Override
+            public <T> T getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception
+            {
+                throw new Exception();
+            }
+        };
+
+        ActivityLog         log = new ActivityLog(100);
+        ActivityQueue       activityQueue = new ActivityQueue();
+        Exhibitor           mockExhibitor = Mockito.mock(Exhibitor.class);
+        Mockito.when(mockExhibitor.getLog()).thenReturn(log);
+        Mockito.when(mockExhibitor.getActivityQueue()).thenReturn(activityQueue);
+        Mockito.when(mockExhibitor.getThisJVMHostname()).thenReturn("one");
+        Mockito.when(mockExhibitor.getRemoteInstanceRequestClient()).thenReturn(mockClient);
+
+        ConfigProvider      provider = new ConfigWrapper(new AtomicLong(1));
+
+        Properties                      properties = new Properties();
+        properties.setProperty(PropertyBasedInstanceConfig.toName(StringConfigs.SERVERS_SPEC, PropertyBasedInstanceConfig.ROOT_PROPERTY_PREFIX), serverList.toSpecString());
+        properties.setProperty(PropertyBasedInstanceConfig.toName(StringConfigs.SERVERS_SPEC, PropertyBasedInstanceConfig.ROLLING_PROPERTY_PREFIX), serverList.toSpecString());
+        properties.setProperty(PropertyBasedInstanceConfig.PROPERTY_ROLLING_HOSTNAMES, "one");
+        properties.setProperty(PropertyBasedInstanceConfig.PROPERTY_ROLLING_HOSTNAMES_INDEX, "0");
+        PropertyBasedInstanceConfig     config = new PropertyBasedInstanceConfig(properties, DefaultProperties.get(null));
+        provider.storeConfig(config, 0);
+
+        final int                       MAX_ATTEMPTS = 3;
+        ConfigManager                   manager = new ConfigManager(mockExhibitor, provider, 10, MAX_ATTEMPTS);
+        manager.start();
+        try
+        {
+
+            InstanceState                   instanceState = new InstanceState(serverList, InstanceStateTypes.NOT_SERVING, new RestartSignificantConfig(null));
+            for ( int i = 0; i < (MAX_ATTEMPTS - 1); ++i )
+            {
+                manager.checkRollingConfig(instanceState);
+                Assert.assertTrue(manager.isRolling());
+            }
+            manager.checkRollingConfig(instanceState);
+            Assert.assertFalse(manager.isRolling());
+        }
+        finally
+        {
+            Closeables.closeQuietly(manager);
+        }
+    }
+
+    @Test
     public void testAllDownInstances() throws Exception
     {
         ServerList          serverList = new ServerList("1:one,2:two,3:three");
@@ -57,48 +110,7 @@ public class TestRollingConfigChange
         Mockito.when(mockExhibitor.getThisJVMHostname()).thenReturn("_xxxx_");
         Mockito.when(mockExhibitor.getRemoteInstanceRequestClient()).thenReturn(mockClient);
 
-        final AtomicLong    modified = new AtomicLong(1);
-        ConfigProvider      provider = new ConfigProvider()
-        {
-            private volatile ConfigCollection      config = new PropertyBasedInstanceConfig(new Properties(), new Properties());
-
-            @Override
-            public LoadedInstanceConfig loadConfig() throws Exception
-            {
-                return new LoadedInstanceConfig(config, modified.get());
-            }
-
-            @Override
-            public void writeInstanceHeartbeat(String instanceHostname) throws Exception
-            {
-            }
-
-            @Override
-            public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
-            {
-                return 0;
-            }
-
-            @Override
-            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
-            {
-            }
-
-            @Override
-            public PseudoLock newPseudoLock() throws Exception
-            {
-                return null;
-            }
-
-            @Override
-            public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
-            {
-                this.config = config;
-                modified.incrementAndGet();
-                return loadConfig();
-            }
-        };
-
+        ConfigProvider      provider = new ConfigWrapper(new AtomicLong(1));
         ConfigManager       manager = new ConfigManager(mockExhibitor, provider, 10, 1);
         manager.start();
         try
@@ -143,46 +155,7 @@ public class TestRollingConfigChange
         Mockito.when(mockExhibitor.getRemoteInstanceRequestClient()).thenReturn(mockClient);
 
         final AtomicLong    modified = new AtomicLong(1);
-        ConfigProvider      provider = new ConfigProvider()
-        {
-            private volatile ConfigCollection      config = new PropertyBasedInstanceConfig(new Properties(), new Properties());
-
-            @Override
-            public LoadedInstanceConfig loadConfig() throws Exception
-            {
-                return new LoadedInstanceConfig(config, modified.get());
-            }
-
-            @Override
-            public void writeInstanceHeartbeat(String instanceHostname) throws Exception
-            {
-            }
-
-            @Override
-            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
-            {
-            }
-
-            @Override
-            public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
-            {
-                return 0;
-            }
-
-            @Override
-            public PseudoLock newPseudoLock() throws Exception
-            {
-                return null;
-            }
-
-            @Override
-            public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
-            {
-                this.config = config;
-                modified.incrementAndGet();
-                return loadConfig();
-            }
-        };
+        ConfigProvider      provider = new ConfigWrapper(modified);
 
         InstanceState       state = new InstanceState(serverList, InstanceStateTypes.SERVING, new RestartSignificantConfig(null));
 
@@ -450,6 +423,54 @@ public class TestRollingConfigChange
         finally
         {
             Closeables.closeQuietly(manager);
+        }
+    }
+
+    private static class ConfigWrapper implements ConfigProvider
+    {
+        private volatile ConfigCollection config;
+        private final AtomicLong modified;
+
+        public ConfigWrapper(AtomicLong modified)
+        {
+            this.modified = modified;
+            config = new PropertyBasedInstanceConfig(new Properties(), new Properties());
+        }
+
+        @Override
+        public LoadedInstanceConfig loadConfig() throws Exception
+        {
+            return new LoadedInstanceConfig(config, modified.get());
+        }
+
+        @Override
+        public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+        {
+        }
+
+        @Override
+        public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+        {
+            return 0;
+        }
+
+        @Override
+        public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+        {
+        }
+
+        @Override
+        public PseudoLock newPseudoLock() throws Exception
+        {
+            return null;
+        }
+
+        @Override
+        public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
+        {
+            this.config = config;
+            modified.incrementAndGet();
+            return loadConfig();
         }
     }
 }
