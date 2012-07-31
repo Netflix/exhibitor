@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 class RollingConfigAdvanceAttempt
 {
-    private final String    hostname;
-    private AtomicInteger   attemptCount = new AtomicInteger(0);
+    private final String            hostname;
+    private final AtomicInteger     attemptCount = new AtomicInteger(0);
 
     RollingConfigAdvanceAttempt(String hostname)
     {

@@ -1,3 +1,18 @@
+1.2.4 - xxxxxxxxxxxxx
+=====================
+* Support shutting down. The Standalone version now sets a shutdown hook. There is also a REST
+API for shutting down. Core-only users must set the shutdownProc in the ExhibitorArguments.
+
+* Modified rolling config behavior. If an instance is NOT_SERVING, wait a bit before moving to next
+server so as to avoid quorum loss.
+
+* Fixed several problems with remote calls. In the UI this exhibited as control panel buttons not
+working for remote servers.
+
+* Change to 1.2.0 feature "Down or Not-Serving instances will now get restarted periodically". The
+time period of restart is now based on the tickTime/initLimit/syncLimit (if available). It will
+be 2 * max of tickTime * initLimit or syncLimit.
+
 1.2.3 - July 18, 2012
 =====================
 * Fixed some edge cases in pseudo lock that might leave lock files around

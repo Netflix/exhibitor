@@ -23,6 +23,7 @@ import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.activity.QueueGroups;
 import com.netflix.exhibitor.core.activity.RepeatingActivity;
 import com.netflix.exhibitor.core.config.ConfigListener;
+import com.netflix.exhibitor.core.config.EncodedConfigParser;
 import com.netflix.exhibitor.core.config.InstanceConfig;
 import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.StringConfigs;
@@ -105,10 +106,15 @@ public class MonitorRunningInstance implements Closeable
                 if ( !exhibitor.getConfigManager().isRolling() )
                 {
                     long        elapsedMs = System.currentTimeMillis() - localCurrentInstanceState.getTimestampMs();
-                    if ( elapsedMs > (config.getInt(IntConfigs.CHECK_MS) * DOWN_RECHECK_FACTOR) )
+                    int         downInstanceRestartMs = getDownInstanceRestartMs(config);
+                    if ( elapsedMs > downInstanceRestartMs )
                     {
                         exhibitor.getLog().add(ActivityLog.Type.INFO, "Restarting down/not-serving ZooKeeper after " + elapsedMs + " ms pause");
                         restartZooKeeper(localCurrentInstanceState);
+                    }
+                    else
+                    {
+                        exhibitor.getLog().add(ActivityLog.Type.INFO, "ZooKeeper down/not-serving waiting " + elapsedMs + " of " + downInstanceRestartMs + " ms before restarting");
                     }
                 }
             }
@@ -165,5 +171,33 @@ public class MonitorRunningInstance implements Closeable
         }
 
         exhibitor.getActivityQueue().add(QueueGroups.MAIN, new KillRunningInstance(exhibitor, true));
+    }
+
+    private int getDownInstanceRestartMs(InstanceConfig config)
+    {
+        EncodedConfigParser parser = new EncodedConfigParser(exhibitor.getConfigManager().getConfig().getString(StringConfigs.ZOO_CFG_EXTRA));
+        int              tickTime = parseInt(parser.getValues().get("tickTime"));
+        int              initLimit = parseInt(parser.getValues().get("initLimit"));
+        int              syncLimit = parseInt(parser.getValues().get("syncLimit"));
+
+        if ( (tickTime > 0) && ((initLimit > 0) || (syncLimit > 0)) )
+        {
+            return 2 * tickTime * Math.max(initLimit, syncLimit);  // ZK should sync or fail within the initLimit/syncLimit
+        }
+
+        return (config.getInt(IntConfigs.CHECK_MS) * DOWN_RECHECK_FACTOR);
+    }
+
+    private int parseInt(String str)
+    {
+        try
+        {
+            return (str != null) ? Integer.parseInt(str) : 0;
+        }
+        catch ( NumberFormatException e )
+        {
+            // ignore
+        }
+        return 0;
     }
 }

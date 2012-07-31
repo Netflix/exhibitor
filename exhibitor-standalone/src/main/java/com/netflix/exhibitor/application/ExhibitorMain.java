@@ -21,6 +21,7 @@ package com.netflix.exhibitor.application;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import com.google.common.io.Closeables;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.ExhibitorArguments;
 import com.netflix.exhibitor.core.backup.BackupProvider;
@@ -49,14 +50,21 @@ import org.apache.commons.cli.PosixParser;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ExhibitorMain implements Closeable
 {
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final Server server;
+    private final AtomicBoolean isClosed = new AtomicBoolean(false);
+    private final Exhibitor exhibitor;
+    private final AtomicBoolean shutdownSignaled = new AtomicBoolean(false);
 
     private static final String FILESYSTEMCONFIG_DIRECTORY = "fsconfigdir";
     private static final String FILESYSTEMCONFIG_NAME = "fsconfigname";
@@ -188,7 +196,7 @@ public class ExhibitorMain implements Closeable
             return;
         }
 
-        ExhibitorArguments arguments = ExhibitorArguments.builder()
+        ExhibitorArguments.Builder builder = ExhibitorArguments.builder()
             .connectionTimeOutMs(timeoutMs)
             .logWindowSizeLines(logWindowSizeLines)
             .thisJVMHostname(useHostname)
@@ -197,11 +205,20 @@ public class ExhibitorMain implements Closeable
             .allowNodeMutations(allowNodeMutations)
             .jQueryStyle(jQueryStyle)
             .restPort(httpPort)
-            .build();
+        ;
 
-        ExhibitorMain exhibitorMain = new ExhibitorMain(backupProvider, provider, arguments, httpPort);
+        ExhibitorMain exhibitorMain = new ExhibitorMain(backupProvider, provider, builder, httpPort);
+        setShutdown(exhibitorMain);
+
         exhibitorMain.start();
-        exhibitorMain.join();
+        try
+        {
+            exhibitorMain.join();
+        }
+        finally
+        {
+            exhibitorMain.close();
+        }
     }
 
     private static String getStyleOptions()
@@ -269,9 +286,10 @@ public class ExhibitorMain implements Closeable
         return new S3ConfigArguments(parts[0].trim(), parts[1].trim(), prefix, new S3ConfigAutoManageLockArguments(prefix + "-lock-"));
     }
 
-    public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments arguments, int httpPort) throws Exception
+    public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments.Builder builder, int httpPort) throws Exception
     {
-        Exhibitor               exhibitor = new Exhibitor(configProvider, null, backupProvider, arguments);
+        builder.shutdownProc(makeShutdownProc(this));
+        exhibitor = new Exhibitor(configProvider, null, backupProvider, builder.build());
         exhibitor.start();
 
         DefaultResourceConfig   application = JerseySupport.newApplicationConfig(new UIContext(exhibitor));
@@ -286,15 +304,62 @@ public class ExhibitorMain implements Closeable
         server.start();
     }
 
-    public void join() throws Exception
+    public void join()
     {
-        server.join();
+        try
+        {
+            while ( !shutdownSignaled.get() && !Thread.currentThread().isInterrupted() )
+            {
+                Thread.sleep(5000);
+            }
+        }
+        catch ( InterruptedException e )
+        {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
     public void close() throws IOException
     {
-        server.destroy();
+        if ( isClosed.compareAndSet(false, true) )
+        {
+            log.info("Shutting down");
+
+            Closeables.closeQuietly(exhibitor);
+            try
+            {
+                server.stop();
+            }
+            catch ( Exception e )
+            {
+                log.error("Error shutting down Jetty", e);
+            }
+            server.destroy();
+        }
+    }
+
+    private static void setShutdown(final ExhibitorMain exhibitorMain)
+    {
+        Runtime.getRuntime().addShutdownHook
+        (
+            new Thread
+            (
+                makeShutdownProc(exhibitorMain)
+            )
+        );
+    }
+
+    private static Runnable makeShutdownProc(final ExhibitorMain exhibitorMain)
+    {
+        return new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                exhibitorMain.shutdownSignaled.set(true);
+            }
+        };
     }
 
     private static void printHelp(Options options)

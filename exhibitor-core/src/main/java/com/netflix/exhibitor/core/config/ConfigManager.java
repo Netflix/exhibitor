@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ConfigManager implements Closeable
@@ -44,6 +45,7 @@ public class ConfigManager implements Closeable
     private final AtomicReference<LoadedInstanceConfig> config = new AtomicReference<LoadedInstanceConfig>();
     private final Set<ConfigListener> configListeners = Sets.newSetFromMap(Maps.<ConfigListener, Boolean>newConcurrentMap());
     private final AtomicReference<RollingConfigAdvanceAttempt> rollingConfigAdvanceAttempt = new AtomicReference<RollingConfigAdvanceAttempt>(null);
+    private final AtomicInteger waitingForQuorumAttempts = new AtomicInteger(0);
 
     @VisibleForTesting
     final static int DEFAULT_MAX_ATTEMPTS = 4;
@@ -141,7 +143,7 @@ public class ConfigManager implements Closeable
         ConfigCollection localConfig = getCollection();
         if ( localConfig.isRolling() )
         {
-            rollingConfigAdvanceAttempt.set(null);
+            clearAttempts();
 
             InstanceConfig          newConfig = (mode == CancelMode.ROLLBACK) ? localConfig.getRootConfig() : localConfig.getRollingConfig();
             ConfigCollection        newCollection = new ConfigCollectionImpl(newConfig, null);
@@ -159,9 +161,20 @@ public class ConfigManager implements Closeable
             {
                 if ( state.serverListHasSynced() )
                 {
-                    if ( (instanceState.getState() == InstanceStateTypes.SERVING) || (instanceState.getState() == InstanceStateTypes.NOT_SERVING) )
+                    if ( instanceState.getState() == InstanceStateTypes.SERVING )
                     {
                         advanceRollingConfig(localConfig);
+                    }
+                    else if ( instanceState.getState() == InstanceStateTypes.NOT_SERVING )
+                    {
+                        if ( waitingForQuorumAttempts.incrementAndGet() >= maxAttempts )
+                        {
+                            advanceRollingConfig(localConfig);
+                        }
+                        else
+                        {
+                            exhibitor.getLog().add(ActivityLog.Type.INFO, "Waiting for instance sync before advancing rolling config. Attempt " + waitingForQuorumAttempts.get() + " of " + maxAttempts);
+                        }
                     }
                 }
             }
@@ -179,7 +192,7 @@ public class ConfigManager implements Closeable
         InstanceConfig          currentConfig = getCollection().getRootConfig();
         RollingHostNamesBuilder builder = new RollingHostNamesBuilder(currentConfig, newConfig, exhibitor.getLog());
 
-        rollingConfigAdvanceAttempt.set(null);
+        clearAttempts();
 
         ConfigCollection        newCollection = new ConfigCollectionImpl(currentConfig, newConfig, builder.getRollingHostNames(), 0);
         return advanceOrStartRollingConfig(newCollection, -1);
@@ -193,7 +206,7 @@ public class ConfigManager implements Closeable
             return false;
         }
 
-        rollingConfigAdvanceAttempt.set(null);
+        clearAttempts();
 
         ConfigCollection        newCollection = new ConfigCollectionImpl(newConfig, null);
         return internalUpdateConfig(newCollection);
@@ -219,12 +232,14 @@ public class ConfigManager implements Closeable
 
     private boolean advanceOrStartRollingConfig(ConfigCollection config, int rollingHostNamesIndex) throws Exception
     {
+        waitingForQuorumAttempts.set(0);
+
         List<String>        rollingHostNames = config.getRollingConfigState().getRollingHostNames();
         boolean             updateConfigResult;
         ConfigCollection    newCollection = checkNextInstanceState(config, rollingHostNames, rollingHostNamesIndex);
         if ( newCollection != null )
         {
-            rollingConfigAdvanceAttempt.set(null);
+            clearAttempts();
             updateConfigResult = internalUpdateConfig(newCollection);
         }
         else
@@ -236,7 +251,7 @@ public class ConfigManager implements Closeable
                 Collections.rotate(newRollingHostNames, -1);
                 ConfigCollection        collection = new ConfigCollectionImpl(config.getRootConfig(), config.getRollingConfig(), newRollingHostNames, rollingHostNamesIndex + 1);
 
-                rollingConfigAdvanceAttempt.set(null);
+                clearAttempts();
                 updateConfigResult = internalUpdateConfig(collection);
             }
             else
@@ -245,6 +260,12 @@ public class ConfigManager implements Closeable
             }
         }
         return updateConfigResult;
+    }
+
+    private void clearAttempts()
+    {
+        rollingConfigAdvanceAttempt.set(null);
+        waitingForQuorumAttempts.set(0);
     }
 
     private ConfigCollection checkNextInstanceState(ConfigCollection config, List<String> rollingHostNames, int rollingHostNamesIndex)

@@ -60,12 +60,6 @@ public class FileSystemPseudoLock extends PseudoLockBase
     }
 
     @Override
-    protected byte[] getFileContents(String key) throws Exception
-    {
-        return Files.toByteArray(getFile(key));
-    }
-
-    @Override
     protected List<String> getFileNames(String lockPrefix) throws Exception
     {
         File[] files = directory.listFiles();

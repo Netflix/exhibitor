@@ -38,8 +38,11 @@ public class PropertyBasedInstanceConfig extends ConfigCollectionBase
     @VisibleForTesting
     static final String ROLLING_PROPERTY_PREFIX = "com.netflix.exhibitor-rolling.";
 
-    private static final String PROPERTY_ROLLING_HOSTNAMES = "com.netflix.exhibitor-rolling-hostnames";
-    private static final String PROPERTY_ROLLING_HOSTNAMES_INDEX = "com.netflix.exhibitor-rolling-hostnames-index";
+    @VisibleForTesting
+    static final String PROPERTY_ROLLING_HOSTNAMES = "com.netflix.exhibitor-rolling-hostnames";
+
+    @VisibleForTesting
+    static final String PROPERTY_ROLLING_HOSTNAMES_INDEX = "com.netflix.exhibitor-rolling-hostnames-index";
 
     /**
      * Used to wrap an existing config

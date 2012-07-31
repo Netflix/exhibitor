@@ -184,9 +184,22 @@ public class UIResource
         return JsonUtil.writeValueAsString(node);
     }
 
+    @Path("shutdown")
+    @GET
+    public Response shutdown()
+    {
+        Runnable shutdownProc = context.getExhibitor().getShutdownProc();
+        if ( shutdownProc == null )
+        {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        shutdownProc.run();
+        return Response.ok().build();
+    }
+
     static String getLog(UIContext context)
     {
-        List<String> log = context.getExhibitor().getLog().toDisplayList("\t");
+        List<String> log = context.getExhibitor().getLog().toDisplayList("\t", context.getExhibitor().getLogDirection());
         StringBuilder str = new StringBuilder();
         for ( String s : log )
         {
