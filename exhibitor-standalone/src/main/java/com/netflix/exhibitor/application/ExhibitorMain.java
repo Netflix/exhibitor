@@ -99,9 +99,9 @@ public class ExhibitorMain implements Closeable
         options.addOption(null, FILESYSTEMCONFIG_NAME, true, "The name of the file to store config in. Used in conjunction with " + FILESYSTEMCONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_NAME);
         options.addOption(null, FILESYSTEMCONFIG_PREFIX, true, "A prefix for various config values such as heartbeats. Used in conjunction with " + FILESYSTEMCONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_PREFIX);
         options.addOption(null, FILESYSTEMCONFIG_LOCK_PREFIX, true, "A prefix for a locking mechanism. Used in conjunction with " + FILESYSTEMCONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX);
-        options.addOption(null, S3_CREDENTIALS, true, "Required if you use s3backup or s3config. Argument is the path to an AWS credential properties file with two properties: " + PropertyBasedS3Credential.PROPERTY_S3_KEY_ID + " and " + PropertyBasedS3Credential.PROPERTY_S3_SECRET_KEY);
-        options.addOption(null, S3_BACKUP, true, "If true, enables AWS S3 backup of ZooKeeper log files (s3credentials must be provided as well).");
-        options.addOption(null, S3_CONFIG, true, "Enables AWS S3 shared config files as opposed to file system config files (s3credentials must be provided as well). Argument is [bucket name]:[key].");
+        options.addOption(null, S3_CREDENTIALS, true, "Optional credentials to use for s3backup or s3config. Argument is the path to an AWS credential properties file with two properties: " + PropertyBasedS3Credential.PROPERTY_S3_KEY_ID + " and " + PropertyBasedS3Credential.PROPERTY_S3_SECRET_KEY);
+        options.addOption(null, S3_BACKUP, true, "If true, enables AWS S3 backup of ZooKeeper log files (s3credentials may be provided as well).");
+        options.addOption(null, S3_CONFIG, true, "Enables AWS S3 shared config files as opposed to file system config files (s3credentials may be provided as well). Argument is [bucket name]:[key].");
         options.addOption(null, S3_CONFIG_PREFIX, true, "When using AWS S3 shared config files, the prefix to use for values such as heartbeats. Default is " + DEFAULT_FILESYSTEMCONFIG_PREFIX);
         options.addOption(null, FILESYSTEMBACKUP, true, "If true, enables file system backup of ZooKeeper log files.");
         options.addOption(null, TIMEOUT, true, "Connection timeout (ms) for ZK connections. Default is 30000.");
@@ -149,12 +149,6 @@ public class ExhibitorMain implements Closeable
         BackupProvider      backupProvider = null;
         if ( "true".equalsIgnoreCase(commandLine.getOptionValue(S3_BACKUP)) )
         {
-            if ( awsCredentials == null )
-            {
-                System.err.println("s3backup not specified");
-                printHelp(options);
-                return;
-            }
             backupProvider = new S3BackupProvider(new S3ClientFactoryImpl(), awsCredentials);
         }
         else if ( "true".equalsIgnoreCase(commandLine.getOptionValue(FILESYSTEMBACKUP)) )
@@ -250,16 +244,8 @@ public class ExhibitorMain implements Closeable
     private static ConfigProvider getS3Provider(Options options, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, String hostname) throws Exception
     {
         ConfigProvider provider;
-        if ( awsCredentials == null )
-        {
-            System.err.println("s3backup not specified");
-            provider = null;
-        }
-        else
-        {
-            String  prefix = options.hasOption(S3_CONFIG_PREFIX) ? commandLine.getOptionValue(S3_CONFIG_PREFIX) : DEFAULT_FILESYSTEMCONFIG_PREFIX;
-            provider = new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, getS3Arguments(commandLine.getOptionValue(S3_CONFIG), options, prefix), hostname);
-        }
+        String  prefix = options.hasOption(S3_CONFIG_PREFIX) ? commandLine.getOptionValue(S3_CONFIG_PREFIX) : DEFAULT_FILESYSTEMCONFIG_PREFIX;
+        provider = new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, getS3Arguments(commandLine.getOptionValue(S3_CONFIG), options, prefix), hostname);
         return provider;
     }
 

@@ -37,7 +37,7 @@ public class S3ClientFactoryImpl implements S3ClientFactory
             @Override
             public void changeCredentials(S3Credential credential) throws Exception
             {
-                RefCountedClient   newRefCountedClient = (credential != null) ? new RefCountedClient(new AmazonS3Client(new BasicAWSCredentials(credentials.getAccessKeyId(), credentials.getSecretAccessKey()))) : null;
+                RefCountedClient   newRefCountedClient = (credential != null) ? new RefCountedClient(new AmazonS3Client(new BasicAWSCredentials(credentials.getAccessKeyId(), credentials.getSecretAccessKey()))) : new RefCountedClient(new AmazonS3Client());
                 RefCountedClient   oldRefCountedClient = client.getAndSet(newRefCountedClient);
                 if ( oldRefCountedClient != null )
                 {
