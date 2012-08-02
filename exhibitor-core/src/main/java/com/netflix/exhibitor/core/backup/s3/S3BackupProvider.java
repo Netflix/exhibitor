@@ -25,6 +25,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
+import com.netflix.curator.RetryLoop;
 import com.netflix.curator.RetryPolicy;
 import com.netflix.curator.retry.ExponentialBackoffRetry;
 import com.netflix.exhibitor.core.Exhibitor;
@@ -184,7 +185,7 @@ public class S3BackupProvider implements BackupProvider
                     return null;
                 }
 
-                if ( !retryPolicy.allowRetry(retryCount++, System.currentTimeMillis() - startMs) )
+                if ( !retryPolicy.allowRetry(retryCount++, System.currentTimeMillis() - startMs, RetryLoop.getDefaultRetrySleeper()) )
                 {
                     return null;
                 }
@@ -282,7 +283,7 @@ public class S3BackupProvider implements BackupProvider
             }
             catch ( Exception e )
             {
-                if ( !retryPolicy.allowRetry(retryCount++, System.currentTimeMillis() - startMs) )
+                if ( !retryPolicy.allowRetry(retryCount++, System.currentTimeMillis() - startMs, RetryLoop.getDefaultRetrySleeper()) )
                 {
                     done = true;
                 }
@@ -376,7 +377,7 @@ public class S3BackupProvider implements BackupProvider
             }
             catch ( Exception e )
             {
-                if ( !retryPolicy.allowRetry(retries++, System.currentTimeMillis() - startMs) )
+                if ( !retryPolicy.allowRetry(retries++, System.currentTimeMillis() - startMs, RetryLoop.getDefaultRetrySleeper()) )
                 {
                     throw e;
                 }
