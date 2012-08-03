@@ -1,5 +1,5 @@
 // Establish version and status
-def releaseVersion = '1.2.5'
+ext.releaseVersion = '1.2.5'
 ext.githubProjectName = rootProject.name
 
 buildscript {
@@ -11,7 +11,7 @@ allprojects {
 }
 
 //apply from: file('gradle/release.gradle') // Not fully tested
-//apply from: file('gradle/convention.gradle')
+apply from: file('gradle/convention.gradle')
 apply from: file('gradle/maven.gradle')
 //apply from: file('gradle/check.gradle')
 //apply from: file('gradle/license.gradle') // Waiting for re-release
@@ -19,7 +19,6 @@ apply from: file('gradle/maven.gradle')
 apply plugin: 'idea'
 
 subprojects {
-    apply plugin: 'java'
     apply plugin: 'idea'
 
     // Closure to configure all the POM with extra info, common to all projects
