@@ -48,6 +48,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.mortbay.jetty.Server;
+import org.mortbay.jetty.security.BasicAuthenticator;
+import org.mortbay.jetty.security.Constraint;
+import org.mortbay.jetty.security.ConstraintMapping;
+import org.mortbay.jetty.security.Credential;
+import org.mortbay.jetty.security.HashUserRealm;
+import org.mortbay.jetty.security.SecurityHandler;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -90,6 +96,12 @@ public class ExhibitorMain implements Closeable
     private static final String DEFAULT_FILESYSTEMCONFIG_PREFIX = "exhibitor-";
     private static final String DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX = "exhibitor-lock-";
 
+    private static final String BASIC_AUTH_REALM = "basicauthrealm";
+    private static final String CONSOLE_USER = "consoleuser";
+    private static final String CURATOR_USER = "curatoruser";
+    private static final String CONSOLE_PASSWORD = "consolepassword";
+    private static final String CURATOR_PASSWORD = "curatorpassword";
+
     public static void main(String[] args) throws Exception
     {
         String      hostname = Exhibitor.getHostname();
@@ -112,6 +124,11 @@ public class ExhibitorMain implements Closeable
         options.addOption(null, EXTRA_HEADING_TEXT, true, "Extra text to display in UI header");
         options.addOption(null, NODE_MUTATIONS, true, "If true, the Explorer UI will allow nodes to be modified (use with caution).");
         options.addOption(null, JQUERY_STYLE, true, "Styling used for the JQuery-based UI. Currently available options: " + getStyleOptions());
+        options.addOption(null, BASIC_AUTH_REALM, true, "Basic Auth Realm to Protect the Exhibitor UI");
+        options.addOption(null, CONSOLE_USER, true, "Basic Auth Username to Protect the Exhibitor UI");
+        options.addOption(null, CONSOLE_PASSWORD, true, "Basic Auth Password to Protect the Exhibitor UI");
+        options.addOption(null, CURATOR_USER, true, "Basic Auth Password to Protect the cluster list api");
+        options.addOption(null, CURATOR_PASSWORD, true, "Basic Auth Password to Protect cluster list api");
         options.addOption(ALT_HELP, HELP, false, "Print this help");
 
         CommandLine         commandLine;
@@ -178,7 +195,7 @@ public class ExhibitorMain implements Closeable
             printHelp(options);
             return;
         }
-        
+
         JQueryStyle jQueryStyle;
         try
         {
@@ -188,6 +205,18 @@ public class ExhibitorMain implements Closeable
         {
             printHelp(options);
             return;
+        }
+
+        String realm = commandLine.getOptionValue(BASIC_AUTH_REALM);
+        String user = commandLine.getOptionValue(CONSOLE_USER);
+        String password = commandLine.getOptionValue(CONSOLE_PASSWORD);
+        String curatorUser = commandLine.getOptionValue(CURATOR_USER);
+        String curatorPassword = commandLine.getOptionValue(CURATOR_PASSWORD);
+
+        SecurityHandler handler = null;
+        if( notNullOrEmpty(realm) && notNullOrEmpty(user) && notNullOrEmpty(password) && notNullOrEmpty(curatorUser) && notNullOrEmpty(curatorPassword))
+        {
+          handler = getSecurityHandler(realm,user,password,curatorUser,curatorPassword);
         }
 
         ExhibitorArguments.Builder builder = ExhibitorArguments.builder()
@@ -201,7 +230,7 @@ public class ExhibitorMain implements Closeable
             .restPort(httpPort)
         ;
 
-        ExhibitorMain exhibitorMain = new ExhibitorMain(backupProvider, configProvider, builder, httpPort);
+        ExhibitorMain exhibitorMain = new ExhibitorMain(backupProvider, configProvider, builder, httpPort, handler);
         setShutdown(exhibitorMain);
 
         exhibitorMain.start();
@@ -274,6 +303,12 @@ public class ExhibitorMain implements Closeable
 
     public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments.Builder builder, int httpPort) throws Exception
     {
+        this(backupProvider,configProvider,builder,httpPort,null);
+    }
+
+
+    public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments.Builder builder, int httpPort, SecurityHandler security) throws Exception
+    {
         builder.shutdownProc(makeShutdownProc(this));
         exhibitor = new Exhibitor(configProvider, null, backupProvider, builder.build());
         exhibitor.start();
@@ -283,6 +318,10 @@ public class ExhibitorMain implements Closeable
         server = new Server(httpPort);
         Context root = new Context(server, "/", Context.SESSIONS);
         root.addServlet(new ServletHolder(container), "/*");
+        if(security != null)
+        {
+            root.setSecurityHandler(security);
+        }
     }
 
     public void start() throws Exception
@@ -353,5 +392,45 @@ public class ExhibitorMain implements Closeable
         HelpFormatter       formatter = new HelpFormatter();
         formatter.printHelp("ExhibitorMain", options);
         System.exit(0);
+    }
+
+    private static boolean notNullOrEmpty(String arg)
+    {
+        return arg != null && (! "".equals(arg));
+    }
+
+    private static SecurityHandler getSecurityHandler(String realm, String consoleUser, String consolePassword, String curatorUser, String curatorPassword)
+    {
+
+        HashUserRealm userRealm = new HashUserRealm(realm);
+        userRealm.put(consoleUser, Credential.getCredential(consolePassword));
+        userRealm.addUserToRole(consoleUser,"console");
+        userRealm.put(curatorUser, Credential.getCredential(curatorPassword));
+        userRealm.addUserToRole(curatorUser, "curator");
+
+        Constraint console = new Constraint();
+        console.setName("consoleauth");
+        console.setRoles(new String[]{"console"});
+        console.setAuthenticate(true);
+
+        Constraint curator = new Constraint();
+        curator.setName("curatorauth");
+        curator.setRoles(new String[]{"curator", "console"});
+        curator.setAuthenticate(true);
+
+        ConstraintMapping consoleMapping = new ConstraintMapping();
+        consoleMapping.setConstraint(console);
+        consoleMapping.setPathSpec("/*");
+
+        ConstraintMapping curatorMapping = new ConstraintMapping();
+        curatorMapping.setConstraint(curator);
+        curatorMapping.setPathSpec("/exhibitor/v1/cluster/list");
+
+        SecurityHandler handler = new SecurityHandler();
+        handler.setUserRealm(userRealm);
+        handler.setConstraintMappings(new ConstraintMapping[]{consoleMapping,curatorMapping});
+        handler.setAuthenticator(new BasicAuthenticator());
+
+        return handler;
     }
 }
