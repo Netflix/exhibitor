@@ -273,13 +273,18 @@ public class Exhibitor implements Closeable
     {
         if ( localConnection == null )
         {
-            localConnection = CuratorFrameworkFactory.newClient
-            (
-                "localhost:" + configManager.getConfig().getInt(IntConfigs.CLIENT_PORT),
-                arguments.connectionTimeOutMs * 10,
-                arguments.connectionTimeOutMs,
-                new ExponentialBackoffRetry(10, 3)
-            );
+            CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
+                .connectString("localhost:" + configManager.getConfig().getInt(IntConfigs.CLIENT_PORT))
+                .sessionTimeoutMs(arguments.connectionTimeOutMs * 10)
+                .connectionTimeoutMs(arguments.connectionTimeOutMs)
+                .retryPolicy(new ExponentialBackoffRetry(10, 3));
+
+            if ( arguments.aclProvider != null )
+            {
+                builder = builder.aclProvider(arguments.aclProvider);
+            }
+
+            localConnection = builder.build();
             localConnection.start();
         }
         return localConnection;

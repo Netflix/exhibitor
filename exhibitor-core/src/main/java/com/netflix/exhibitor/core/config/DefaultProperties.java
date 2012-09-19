@@ -151,7 +151,7 @@ public class DefaultProperties
 
                     case OBSERVER_THRESHOLD:
                     {
-                        return 5;
+                        return 999;
                     }
 
                 }

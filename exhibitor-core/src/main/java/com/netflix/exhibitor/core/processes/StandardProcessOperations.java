@@ -39,6 +39,9 @@ public class StandardProcessOperations implements ProcessOperations
 {
     private final Exhibitor exhibitor;
 
+    private static final int    SLEEP_KILL_TIME_MS = 100;
+    private static final int    SLEEP_KILL_WAIT_COUNT = 3;
+
     public StandardProcessOperations(Exhibitor exhibitor) throws IOException
     {
         this.exhibitor = exhibitor;
@@ -76,55 +79,14 @@ public class StandardProcessOperations implements ProcessOperations
 
         exhibitor.getProcessMonitor().destroy(ProcessTypes.ZOOKEEPER);
 
-        ProcessBuilder          builder = new ProcessBuilder("jps");
-        Process                 jpsProcess = builder.start();
-        String                  pid = null;
-        try
-        {
-            BufferedReader in = new BufferedReader(new InputStreamReader(jpsProcess.getInputStream()));
-            for(;;)
-            {
-                String  line = in.readLine();
-                if ( line == null )
-                {
-                    break;
-                }
-                String[]  components = line.split("[ \t]");
-                if ( (components.length == 2) && components[1].equals("QuorumPeerMain") )
-                {
-                    pid = components[0];
-                    break;
-                }
-            }
-        }
-        finally
-        {
-                Closeables.closeQuietly(jpsProcess.getErrorStream());
-                Closeables.closeQuietly(jpsProcess.getInputStream());
-                Closeables.closeQuietly(jpsProcess.getOutputStream());
-
-                jpsProcess.destroy();
-        }
-
+        String pid = getPid();
         if ( pid == null )
         {
             exhibitor.getLog().add(ActivityLog.Type.INFO, "jps didn't find instance - assuming ZK is not running");
         }
         else
         {
-            builder = new ProcessBuilder("kill", "-9", pid);
-            try
-            {
-                int     result = builder.start().waitFor();
-                exhibitor.getLog().add(ActivityLog.Type.INFO, "Kill attempted result: " + result);
-            }
-            catch ( InterruptedException e )
-            {
-                // don't reset thread interrupted status
-
-                exhibitor.getLog().add(ActivityLog.Type.ERROR, "Process interrupted while running: kill -9 " + pid);
-                throw e;
-            }
+            waitForKill(pid);
         }
     }
 
@@ -197,6 +159,78 @@ public class StandardProcessOperations implements ProcessOperations
         finally
         {
             Closeables.closeQuietly(out);
+        }
+    }
+
+    private String getPid() throws IOException
+    {
+        ProcessBuilder          builder = new ProcessBuilder("jps");
+        Process                 jpsProcess = builder.start();
+        String                  pid = null;
+        try
+        {
+            BufferedReader in = new BufferedReader(new InputStreamReader(jpsProcess.getInputStream()));
+            for(;;)
+            {
+                String  line = in.readLine();
+                if ( line == null )
+                {
+                    break;
+                }
+                String[]  components = line.split("[ \t]");
+                if ( (components.length == 2) && components[1].equals("QuorumPeerMain") )
+                {
+                    pid = components[0];
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            Closeables.closeQuietly(jpsProcess.getErrorStream());
+            Closeables.closeQuietly(jpsProcess.getInputStream());
+            Closeables.closeQuietly(jpsProcess.getOutputStream());
+
+            jpsProcess.destroy();
+        }
+        return pid;
+    }
+
+    private void waitForKill(String pid) throws IOException, InterruptedException
+    {
+        boolean     success = false;
+        for ( int i = 0; i < SLEEP_KILL_WAIT_COUNT; ++i )
+        {
+            internalKill(pid, i > 0);
+            Thread.sleep(i * SLEEP_KILL_TIME_MS);
+            if ( !pid.equals(getPid()) )
+            {
+                success = true;
+                break;  // assume it was successfully killed
+            }
+        }
+
+        if ( !success )
+        {
+            exhibitor.getLog().add(ActivityLog.Type.ERROR, "Could not kill zookeeper process: " + pid);
+        }
+    }
+
+    private void internalKill(String pid, boolean force) throws IOException, InterruptedException
+    {
+        ProcessBuilder builder;
+        builder = force ? new ProcessBuilder("kill", "-9", pid) : new ProcessBuilder("kill", pid);
+        try
+        {
+            int     result = builder.start().waitFor();
+            exhibitor.getLog().add(ActivityLog.Type.INFO, "Kill attempted result: " + result);
+        }
+        catch ( InterruptedException e )
+        {
+            // don't reset thread interrupted status
+
+            exhibitor.getLog().add(ActivityLog.Type.ERROR, "Process interrupted while running: kill -9 " + pid);
+            throw e;
         }
     }
 }

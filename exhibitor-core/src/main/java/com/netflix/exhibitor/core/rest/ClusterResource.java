@@ -22,12 +22,15 @@ import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.StringConfigs;
 import com.netflix.exhibitor.core.controlpanel.ControlPanelTypes;
 import com.netflix.exhibitor.core.entities.Result;
+import com.netflix.exhibitor.core.entities.ServerStatus;
+import com.netflix.exhibitor.core.rest.jersey.ClusterStatusTask;
 import com.netflix.exhibitor.core.state.FourLetterWord;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
 import com.netflix.exhibitor.core.state.KillRunningInstance;
 import com.netflix.exhibitor.core.state.RemoteInstanceRequest;
 import com.netflix.exhibitor.core.state.ServerList;
 import com.netflix.exhibitor.core.state.ServerSpec;
+import jsr166y.ForkJoinPool;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
@@ -37,10 +40,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ContextResolver;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 @SuppressWarnings("UnusedDeclaration")
@@ -48,6 +54,7 @@ import java.util.concurrent.Callable;
 public class ClusterResource
 {
     private final UIContext context;
+    private final ForkJoinPool forkJoinPool;
 
     private static final RemoteInstanceRequestClientImpl        remoteInstanceRequestClient = new RemoteInstanceRequestClientImpl();
 
@@ -59,6 +66,22 @@ public class ClusterResource
     public ClusterResource(@Context ContextResolver<UIContext> resolver)
     {
         context = resolver.getContext(UIContext.class);
+        forkJoinPool = new ForkJoinPool();
+    }
+
+    @Path("status")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getClusterStatus() throws Exception
+    {
+        InstanceConfig      config = context.getExhibitor().getConfigManager().getConfig();
+        ServerList          serverList = new ServerList(config.getString(StringConfigs.SERVERS_SPEC));
+
+        ClusterStatusTask   task = new ClusterStatusTask(context.getExhibitor(), serverList.getSpecs());
+        List<ServerStatus>  statuses = forkJoinPool.invoke(task);
+
+        GenericEntity<List<ServerStatus>> entity = new GenericEntity<List<ServerStatus>>(statuses){};
+        return Response.ok(entity).build();
     }
 
     @Path("state/{hostname}")

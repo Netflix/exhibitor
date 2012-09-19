@@ -48,7 +48,8 @@ class NaturalNotationContextResolver implements ContextResolver<JAXBContext>
                 PathAnalysisRequest.class,
                 IdList.class,
                 UsageListingRequest.class,
-                FieldValue.class
+                FieldValue.class,
+                ServerStatus.class
             );
         }
         catch ( JAXBException e )

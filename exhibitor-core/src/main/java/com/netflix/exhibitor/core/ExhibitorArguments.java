@@ -17,6 +17,7 @@
 package com.netflix.exhibitor.core;
 
 import com.google.common.base.Preconditions;
+import com.netflix.curator.framework.api.ACLProvider;
 import com.netflix.exhibitor.core.config.JQueryStyle;
 
 public class ExhibitorArguments
@@ -33,6 +34,7 @@ public class ExhibitorArguments
     final String        restScheme;
     final Runnable      shutdownProc;
     final LogDirection  logDirection;
+    final ACLProvider   aclProvider;
 
     public enum LogDirection
     {
@@ -50,7 +52,7 @@ public class ExhibitorArguments
          */
         public Builder connectionTimeOutMs(int connectionTimeOutMs)
         {
-            arguments = new ExhibitorArguments(connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -60,7 +62,7 @@ public class ExhibitorArguments
          */
         public Builder logWindowSizeLines(int logWindowSizeLines)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -70,7 +72,7 @@ public class ExhibitorArguments
          */
         public Builder configCheckMs(int configCheckMs)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -80,7 +82,7 @@ public class ExhibitorArguments
          */
         public Builder extraHeadingText(String extraHeadingText)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -90,7 +92,7 @@ public class ExhibitorArguments
          */
         public Builder thisJVMHostname(String thisJVMHostname)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -100,7 +102,7 @@ public class ExhibitorArguments
          */
         public Builder allowNodeMutations(boolean allowNodeMutations)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -110,7 +112,7 @@ public class ExhibitorArguments
          */
         public Builder jQueryStyle(JQueryStyle jQueryStyle)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -120,7 +122,7 @@ public class ExhibitorArguments
          */
         public Builder restPort(int restPort)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -130,7 +132,7 @@ public class ExhibitorArguments
          */
         public Builder restPath(String restPath)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -140,7 +142,7 @@ public class ExhibitorArguments
          */
         public Builder restScheme(String restScheme)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, restScheme, arguments.shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, restScheme, arguments.shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -150,7 +152,7 @@ public class ExhibitorArguments
          */
         public Builder shutdownProc(Runnable shutdownProc)
         {
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, shutdownProc, arguments.logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, shutdownProc, arguments.logDirection, arguments.aclProvider);
             return this;
         }
 
@@ -161,7 +163,19 @@ public class ExhibitorArguments
         public Builder logDirection(LogDirection logDirection)
         {
             logDirection = Preconditions.checkNotNull(logDirection, "logDirection cannot be null");
-            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, logDirection);
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, logDirection, arguments.aclProvider);
+            return this;
+        }
+
+        /**
+         * If your ZooKeeper cluster has ACL enabled you need to set the ACL in Exhibitor so that it can successfully connect to the cluster
+         *
+         * @param aclProvider the acl provider to use
+         * @return this
+         */
+        public Builder aclProvider(ACLProvider aclProvider)
+        {
+            arguments = new ExhibitorArguments(arguments.connectionTimeOutMs, arguments.logWindowSizeLines, arguments.configCheckMs, arguments.extraHeadingText, arguments.thisJVMHostname, arguments.allowNodeMutations, arguments.jQueryStyle, arguments.restPort, arguments.restPath, arguments.restScheme, arguments.shutdownProc, arguments.logDirection, aclProvider);
             return this;
         }
 
@@ -189,10 +203,10 @@ public class ExhibitorArguments
 
     private ExhibitorArguments()
     {
-        this(30000, 1000, 5000, null, null, false, JQueryStyle.RED, 0, "/", "http", null, LogDirection.INVERTED);
+        this(30000, 1000, 5000, null, null, false, JQueryStyle.RED, 0, "/", "http", null, LogDirection.INVERTED, null);
     }
 
-    public ExhibitorArguments(int connectionTimeOutMs, int logWindowSizeLines, int configCheckMs, String extraHeadingText, String thisJVMHostname, boolean allowNodeMutations, JQueryStyle jQueryStyle, int restPort, String restPath, String restScheme, Runnable shutdownProc, LogDirection logDirection)
+    public ExhibitorArguments(int connectionTimeOutMs, int logWindowSizeLines, int configCheckMs, String extraHeadingText, String thisJVMHostname, boolean allowNodeMutations, JQueryStyle jQueryStyle, int restPort, String restPath, String restScheme, Runnable shutdownProc, LogDirection logDirection, ACLProvider aclProvider)
     {
         this.connectionTimeOutMs = connectionTimeOutMs;
         this.logWindowSizeLines = logWindowSizeLines;
@@ -206,5 +220,6 @@ public class ExhibitorArguments
         this.restScheme = restScheme;
         this.shutdownProc = shutdownProc;
         this.logDirection = logDirection;
+        this.aclProvider = aclProvider;
     }
 }

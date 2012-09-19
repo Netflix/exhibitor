@@ -1,6 +1,23 @@
+1.2.6 - xxxxxxxxxxxxxx
+======================
+* When shutting down ZooKeeper, attempt a simple kill first before trying kill -9.
+
+* Issue 51: Include log4j in standalone version
+
+* Reworked how CLI options are displayed in the standalone version. There are so many now it was
+getting confusing.
+
+* Issue 54: Added a new REST API to the Cluster APIs to get the status/state of the entire cluster.
+See the wiki for details.
+
+* Issue 55: Added a way to specify the ACL in the standalone version. Run with "--help" to see
+the how to set the options.
+
 1.2.5 - August 2, 2012
 ======================
 * Various dependency version changes needed for internal Netflix compatibility.
+
+* Pull 50 from user sclasen: basic auth config for exhibitor-standalone
 
 1.2.4 - July 31, 2012
 =====================
