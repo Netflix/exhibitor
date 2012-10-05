@@ -169,7 +169,7 @@ public class UIResource
             for ( BackupConfigSpec c : configs )
             {
                 ObjectNode      n = JsonNodeFactory.instance.objectNode();
-                String          value = parser.getValues().get(c.getKey());
+                String          value = parser.getValue(c.getKey());
 
                 n.put("key", c.getKey());
                 n.put("name", c.getDisplayName());

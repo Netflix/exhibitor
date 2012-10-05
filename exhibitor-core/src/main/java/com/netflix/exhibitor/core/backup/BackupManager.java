@@ -264,7 +264,7 @@ public class BackupManager implements Closeable
     {
         String              backupExtra = exhibitor.getConfigManager().getConfig().getString(StringConfigs.BACKUP_EXTRA);
         EncodedConfigParser encodedConfigParser = new EncodedConfigParser(backupExtra);
-        return encodedConfigParser.getValues();
+        return encodedConfigParser.getSortedMap();
     }
 
     private void doRoll(Map<String, String> config) throws Exception

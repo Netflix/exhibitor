@@ -68,25 +68,35 @@ class MockExhibitorInstance implements Closeable
             private final AtomicLong                modified = new AtomicLong(1);
 
             @Override
+            public void start() throws Exception
+            {
+            }
+
+            @Override
+            public void close() throws IOException
+            {
+            }
+
+            @Override
             public LoadedInstanceConfig loadConfig() throws Exception
             {
                 return new LoadedInstanceConfig(config, modified.get());
             }
 
             @Override
-            public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+            public void writeInstanceHeartbeat() throws Exception
             {
             }
 
             @Override
-            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+            public void clearInstanceHeartbeat() throws Exception
             {
             }
 
             @Override
-            public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+            public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
             {
-                return 0;
+                return false;
             }
 
             @Override

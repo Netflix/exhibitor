@@ -112,15 +112,14 @@ public class AutomaticInstanceManagement implements Activity
             }
             else
             {
-                long        lastHeartbeatForInstance = exhibitor.getConfigManager().getLastHeartbeatForInstance(spec.getHostname());
-                long        elapsedSinceLastHeartbeat = System.currentTimeMillis() - lastHeartbeatForInstance;
-                if ( (lastHeartbeatForInstance <= 0) || (elapsedSinceLastHeartbeat <= exhibitor.getConfigManager().getConfig().getInt(IntConfigs.DEAD_INSTANCE_PERIOD_MS)) )
+                if ( exhibitor.getConfigManager().isHeartbeatAliveForInstance(spec.getHostname(), exhibitor.getConfigManager().getConfig().getInt(IntConfigs.DEAD_INSTANCE_PERIOD_MS)) )
                 {
                     newSpecList.add(spec);
                 }
                 else
                 {
                     removals.add(spec.getHostname());
+
                 }
             }
         }

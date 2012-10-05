@@ -7,7 +7,7 @@ var ACTION_NAMES = [
 
 function startIndex()
 {
-    $.getJSON(URL_NEW_INDEX);
+    $.getJSON(URL_NEW_INDEX + '?ts=' + Date.now());
 }
 
 function initRestoreUI()
@@ -32,6 +32,7 @@ function initRestoreUI()
                 var radio = $('input:radio:checked[name="restore-item-radio"]');
                 $.ajax({
                     type: 'DELETE',
+                    cache: false,
                     url: URL_DELETE_INDEX_BASE + radio.val()
                 });
                 messageDialog('Index', 'Index is marked for deletion. Check the log for details.');
@@ -93,7 +94,7 @@ var currentRestoreItemsContent = null;
 var currentRestoreItemsDataTable = null;
 function updateRestoreItems(selectedRadio)
 {
-    $.getJSON(URL_GET_INDEXES, function(data){
+    $.getJSON(URL_GET_INDEXES + '?ts=' + Date.now(), function(data){
         var itemsTab = data ? $.makeArray(data) : new Array();
 
         var needsCheck = true;
@@ -225,7 +226,7 @@ function buildViewIndexTable(indexName, indexHandle)
             $(this).addClass('row_selected');
 
             var docId = selectedRowId.split('-').pop();
-            $.getJSON(URL_GET_INDEX_BASE + indexName + "/" + docId, applySelectedValue);
+            $.getJSON(URL_GET_INDEX_BASE + indexName + "/" + docId + '?ts=' + Date.now(), applySelectedValue);
             $('#index-query-clear-restore-button').button("option", "disabled", false);
         }
     });
@@ -324,6 +325,7 @@ function filterIndex(indexName, searchRequest, isFromFilter)
     var payload = JSON.stringify(searchRequest);
     $.ajax({
         type: 'POST',
+        cache: false,
         url: URL_CACHE_INDEX_SEARCH,
         data: payload,
         contentType: 'application/json',

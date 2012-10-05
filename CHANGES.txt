@@ -1,4 +1,4 @@
-1.2.6 - xxxxxxxxxxxxxx
+1.3.0 - xxxxxxxxxxxxxx
 ======================
 * When shutting down ZooKeeper, attempt a simple kill first before trying kill -9.
 
@@ -11,7 +11,27 @@ getting confusing.
 See the wiki for details.
 
 * Issue 55: Added a way to specify the ACL in the standalone version. Run with "--help" to see
-the how to set the options.
+how to set the options.
+
+* Issue 57: I think this issue is caused by browser caching. I've added cache defeating query
+parameters to all AJAX URLs.
+
+* Issue 58: Added a ZookeeperConfigProvider. The idea here is to use a second Zookeeper cluster
+as a datastore for Exhibitor's shared config. You can run Exhibitor on the shared config ensemble
+but it will need to be run without shared config. Please see the Github wiki for details.
+
+* The change for Issue 58 involved more CLI options for config. For clarity, I've broken the config
+options into groups - a group for each type. A new *required* CLI option has been added: "configtype".
+It must be either "file", "s3", "zookeeper" or "none". Configtype "none" is a special purpose type
+to be used for running Exhibitor on the ZooKeeper cluster that is storing config for the main ZooKeeper
+ensemble.
+
+* Issue 63: Restart, Stop, Start buttons on the control panels now better reflect the state of the
+"Automatic Instance Restarts" switch. If the switch is On, the button is "Restart". If the switch is
+Off, the button is "Stop" if the instance is running and "Start" if the instance is not running.
+
+* Issue 61: The "Additional Config" section should retain the order that it was entered instead of
+being alphabetized.
 
 1.2.5 - August 2, 2012
 ======================

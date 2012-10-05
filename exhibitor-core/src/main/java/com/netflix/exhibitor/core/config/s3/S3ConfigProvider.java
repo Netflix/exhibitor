@@ -33,6 +33,7 @@ import com.netflix.exhibitor.core.s3.S3Credential;
 import com.netflix.exhibitor.core.s3.S3Utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
@@ -65,6 +66,18 @@ public class S3ConfigProvider implements ConfigProvider
     }
 
     @Override
+    public void start() throws Exception
+    {
+        // NOP
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        s3Client.close();
+    }
+
+    @Override
     public PseudoLock newPseudoLock() throws Exception
     {
         return new S3PseudoLock
@@ -79,7 +92,7 @@ public class S3ConfigProvider implements ConfigProvider
     }
 
     @Override
-    public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+    public void writeInstanceHeartbeat() throws Exception
     {
         Calendar                now = Calendar.getInstance();
         Calendar                tomorrow = Calendar.getInstance();
@@ -89,17 +102,17 @@ public class S3ConfigProvider implements ConfigProvider
         metadata.setContentLength(HEARTBEAT_CONTENT.length());
         metadata.setLastModified(now.getTime());
         metadata.setExpirationTime(tomorrow.getTime());
-        PutObjectRequest        request = new PutObjectRequest(arguments.getBucket(), arguments.getHeartbeatKeyPrefix() + instanceHostname, new ByteArrayInputStream(HEARTBEAT_CONTENT.getBytes()), metadata);
+        PutObjectRequest        request = new PutObjectRequest(arguments.getBucket(), getHeartbeatKey(hostname), new ByteArrayInputStream(HEARTBEAT_CONTENT.getBytes()), metadata);
 
         s3Client.putObject(request);
     }
 
     @Override
-    public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+    public void clearInstanceHeartbeat() throws Exception
     {
         try
         {
-            s3Client.deleteObject(arguments.getBucket(), arguments.getHeartbeatKeyPrefix() + instanceHostname);
+            s3Client.deleteObject(arguments.getBucket(), getHeartbeatKey(hostname));
         }
         catch ( AmazonServiceException ignore )
         {
@@ -107,12 +120,24 @@ public class S3ConfigProvider implements ConfigProvider
         }
     }
 
+    private String getHeartbeatKey(String instanceHostname)
+    {
+        return arguments.getHeartbeatKeyPrefix() + instanceHostname;
+    }
+
     @Override
-    public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+    public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
+    {
+        long    lastHeartbeatForInstance = getLastHeartbeatForInstance(instanceHostname);
+        long    elapsedSinceLastHeartbeat = System.currentTimeMillis() - lastHeartbeatForInstance;
+        return elapsedSinceLastHeartbeat <= deadInstancePeriodMs;
+    }
+
+    private long getLastHeartbeatForInstance(String instanceHostname) throws Exception
     {
         try
         {
-            ObjectMetadata  metadata = s3Client.getObjectMetadata(arguments.getBucket(), arguments.getHeartbeatKeyPrefix() + instanceHostname);
+            ObjectMetadata  metadata = s3Client.getObjectMetadata(arguments.getBucket(), getHeartbeatKey(instanceHostname));
             if ( metadata != null )
             {
                 return metadata.getLastModified().getTime();

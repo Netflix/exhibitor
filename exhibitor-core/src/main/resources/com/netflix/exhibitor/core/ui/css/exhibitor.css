@@ -398,7 +398,7 @@ fieldset
     float: right;
 }
 
-#config-commit-dialog-icon
+.config-commit-dialog-icon
 {
     float: left;
     margin: 0 7px 100px 0;
@@ -540,4 +540,12 @@ fieldset
     float: left;
     padding-right: 15px;
     font-weight: normal;
+}
+
+#standalone-mode-message
+{
+    text-align: center;
+    padding-bottom: 3px;
+    font-weight: bold;
+    font-style: italic;
 }

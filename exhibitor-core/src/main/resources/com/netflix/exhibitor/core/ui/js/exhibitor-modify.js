@@ -10,6 +10,7 @@ function completeModifyDialog(localPath, isUpdate, userName, ticketNumber, reaso
     $.ajax({
         type: method,
         url: URL_EXPLORER_ZNODE_BASE + localPath,
+        cache: false,
         data: data,
         contentType: 'application/json',
         headers: {

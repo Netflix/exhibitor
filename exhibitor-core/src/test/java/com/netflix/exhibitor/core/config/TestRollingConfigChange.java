@@ -29,6 +29,7 @@ import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
@@ -240,25 +241,35 @@ public class TestRollingConfigChange
             private volatile ConfigCollection      config = new PropertyBasedInstanceConfig(new Properties(), new Properties());
 
             @Override
+            public void start() throws Exception
+            {
+            }
+
+            @Override
+            public void close() throws IOException
+            {
+            }
+
+            @Override
             public LoadedInstanceConfig loadConfig() throws Exception
             {
                 return new LoadedInstanceConfig(config, modified.get());
             }
 
             @Override
-            public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+            public void writeInstanceHeartbeat() throws Exception
             {
             }
 
             @Override
-            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+            public void clearInstanceHeartbeat() throws Exception
             {
             }
 
             @Override
-            public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+            public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
             {
-                return 0;
+                return false;
             }
 
             @Override
@@ -356,25 +367,35 @@ public class TestRollingConfigChange
             private volatile ConfigCollection      config = new PropertyBasedInstanceConfig(new Properties(), new Properties());
 
             @Override
+            public void start() throws Exception
+            {
+            }
+
+            @Override
+            public void close() throws IOException
+            {
+            }
+
+            @Override
             public LoadedInstanceConfig loadConfig() throws Exception
             {
                 return new LoadedInstanceConfig(config, modified.get());
             }
 
             @Override
-            public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+            public void writeInstanceHeartbeat() throws Exception
             {
             }
 
             @Override
-            public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+            public void clearInstanceHeartbeat() throws Exception
             {
             }
 
             @Override
-            public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+            public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
             {
-                return 0;
+                return false;
             }
 
             @Override
@@ -438,24 +459,34 @@ public class TestRollingConfigChange
         }
 
         @Override
+        public void start() throws Exception
+        {
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+        }
+
+        @Override
         public LoadedInstanceConfig loadConfig() throws Exception
         {
             return new LoadedInstanceConfig(config, modified.get());
         }
 
         @Override
-        public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+        public void writeInstanceHeartbeat() throws Exception
         {
         }
 
         @Override
-        public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+        public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
         {
-            return 0;
+            return false;
         }
 
         @Override
-        public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+        public void clearInstanceHeartbeat() throws Exception
         {
         }
 

@@ -46,7 +46,7 @@ subprojects {
 
 project(':exhibitor-core') {
     dependencies {
-        compile('org.apache.zookeeper:zookeeper:3.3.3') {
+        compile('org.apache.zookeeper:zookeeper:3.4.4') {
             exclude group: 'com.sun.jmx', module: 'jmxri'
             exclude group: 'com.sun.jdmk', module: 'jmxtools'
             exclude group: 'javax.jms', module: 'jms'
@@ -54,7 +54,8 @@ project(':exhibitor-core') {
             // JLine pulls this in as a compile dependency, they have fixed it in future versions
             exclude group: 'junit', module: 'junit'
         }
-        compile 'com.netflix.curator:curator-framework:1.0.17'
+        compile 'com.netflix.curator:curator-framework:1.2.2'
+        compile 'com.netflix.curator:curator-recipes:1.2.2'
         compile 'com.google.guava:guava:11.0.1'
         compile 'javax.ws.rs:jsr311-api:1.1.1'
         compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
@@ -68,7 +69,7 @@ project(':exhibitor-core') {
         compile 'com.sun.jersey:jersey-bundle:1.1.4'  // should be provided - gradle doesn't support
         compile 'com.sun.xml.bind:jaxb-impl:2.2.4'   // should be provided - gradle doesn't support
 
-        testCompile 'com.netflix.curator:curator-test:1.0.17'
+        testCompile 'com.netflix.curator:curator-test:1.2.2'
         testCompile 'org.mortbay.jetty:jetty:6.1.22'
         testCompile 'org.mockito:mockito-core:1.8.5'
     }

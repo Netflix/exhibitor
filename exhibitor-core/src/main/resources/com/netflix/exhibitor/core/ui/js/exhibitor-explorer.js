@@ -110,23 +110,23 @@ function initExplorer()
         onActivate:function (node)
         {
             $.ajax
-                (
-                    {
-                        url: URL_EXPLORER_NODE_DATA,
-                        data: {"key":node.data.key},
-                        cache: false,
-                        dataType: 'json',
-                        success:function (data){
-                            explorerSelectedPath = node.data.key;
-                            explorerSelectedBytes = data.bytes;
+            (
+                {
+                    url: URL_EXPLORER_NODE_DATA,
+                    data: {"key":node.data.key},
+                    cache: false,
+                    dataType: 'json',
+                    success:function (data){
+                        explorerSelectedPath = node.data.key;
+                        explorerSelectedBytes = data.bytes;
 
-                            $("#path").text(node.data.key);
-                            $("#stat").text(data.stat);
-                            $("#data-bytes").text(data.bytes);
-                            $("#data-str").text(data.str);
-                        }
+                        $("#path").text(node.data.key);
+                        $("#stat").text(data.stat);
+                        $("#data-bytes").text(data.bytes);
+                        $("#data-str").text(data.str);
                     }
-                );
+                }
+            );
         },
 
         selectMode:1,

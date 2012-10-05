@@ -30,6 +30,7 @@ import com.netflix.exhibitor.core.state.KillRunningInstance;
 import com.netflix.exhibitor.core.state.RemoteInstanceRequest;
 import com.netflix.exhibitor.core.state.ServerList;
 import com.netflix.exhibitor.core.state.ServerSpec;
+import com.netflix.exhibitor.core.state.StartInstance;
 import jsr166y.ForkJoinPool;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
@@ -90,19 +91,19 @@ public class ClusterResource
     public String   remoteGetStatus(@Context UriInfo uriInfo, @PathParam("hostname") String hostname) throws Exception
     {
         return makeRemoteRequest
-        (
-            "getStatus",
-            hostname,
-            true,
-            new Callable<String>()
-            {
-                @Override
-                public String call() throws Exception
+            (
+                "getStatus",
+                hostname,
+                true,
+                new Callable<String>()
                 {
-                    return getStatus();
+                    @Override
+                    public String call() throws Exception
+                    {
+                        return getStatus();
+                    }
                 }
-            }
-        );
+            );
     }
 
     @Path("set/{type}/{value}/{hostname}")
@@ -111,21 +112,21 @@ public class ClusterResource
     public String remoteSetControlPanelSetting(@Context UriInfo uriInfo, @PathParam("hostname") String hostname, final @PathParam("type") String typeStr, final @PathParam("value") boolean newValue) throws Exception
     {
         return makeRemoteRequest
-        (
-            "setControlPanelSetting",
-            hostname,
-            true,
-            new Callable<String>()
-            {
-                @Override
-                public String call() throws Exception
+            (
+                "setControlPanelSetting",
+                hostname,
+                true,
+                new Callable<String>()
                 {
-                    return setControlPanelSetting(typeStr, newValue);
-                }
-            },
-            typeStr,
-            newValue
-        );
+                    @Override
+                    public String call() throws Exception
+                    {
+                        return setControlPanelSetting(typeStr, newValue);
+                    }
+                },
+                typeStr,
+                newValue
+            );
     }
 
     @Path("restart/{hostname}")
@@ -144,6 +145,48 @@ public class ClusterResource
                 public String call() throws Exception
                 {
                     return stopStartZooKeeper();
+                }
+            }
+        );
+    }
+
+    @Path("start/{hostname}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public String remoteStartZooKeeper(@Context UriInfo uriInfo, @PathParam("hostname") String hostname) throws Exception
+    {
+        return makeRemoteRequest
+        (
+            "startZooKeeper",
+            hostname,
+            true,
+            new Callable<String>()
+            {
+                @Override
+                public String call() throws Exception
+                {
+                    return startZooKeeper();
+                }
+            }
+        );
+    }
+
+    @Path("stop/{hostname}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public String remoteStopZooKeeper(@Context UriInfo uriInfo, @PathParam("hostname") String hostname) throws Exception
+    {
+        return makeRemoteRequest
+        (
+            "stopZooKeeper",
+            hostname,
+            true,
+            new Callable<String>()
+            {
+                @Override
+                public String call() throws Exception
+                {
+                    return stopZooKeeper();
                 }
             }
         );
@@ -228,6 +271,28 @@ public class ClusterResource
     public String stopStartZooKeeper() throws Exception
     {
         context.getExhibitor().getActivityQueue().add(QueueGroups.MAIN, new KillRunningInstance(context.getExhibitor(), true));
+
+        Result result = new Result("OK", true);
+        return JsonUtil.writeValueAsString(result);
+    }
+
+    @Path("stop")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public String stopZooKeeper() throws Exception
+    {
+        context.getExhibitor().getActivityQueue().add(QueueGroups.MAIN, new KillRunningInstance(context.getExhibitor(), false));
+
+        Result result = new Result("OK", true);
+        return JsonUtil.writeValueAsString(result);
+    }
+
+    @Path("start")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public String startZooKeeper() throws Exception
+    {
+        context.getExhibitor().getActivityQueue().add(QueueGroups.MAIN, new StartInstance(context.getExhibitor()));
 
         Result result = new Result("OK", true);
         return JsonUtil.writeValueAsString(result);

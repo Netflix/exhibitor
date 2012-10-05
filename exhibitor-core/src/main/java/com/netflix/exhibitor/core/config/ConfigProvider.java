@@ -16,8 +16,17 @@
 
 package com.netflix.exhibitor.core.config;
 
-public interface ConfigProvider
+import java.io.Closeable;
+
+public interface ConfigProvider extends Closeable
 {
+    /**
+     * Called to start the provider
+     *
+     * @throws Exception errors
+     */
+    public void start() throws Exception;
+
     /**
      * Load and return the config
      *
@@ -41,29 +50,27 @@ public interface ConfigProvider
      * To track live vs dead instances, a heartbeat is periodically written for instances. The provider
      * should expire heartbeats as needed.
      *
-     * @param instanceHostname the instance's hostname
      * @throws Exception any errors
      */
-    public void         writeInstanceHeartbeat(String instanceHostname) throws Exception;
+    public void         writeInstanceHeartbeat() throws Exception;
 
     /**
-     * Return the time (epoch) of the last heartbeat that was written for the given instance or
-     * 0 if there is no record of the instance.
+     * Return true if the given instance should be considered alive or dead based on the given dead instance period
      *
-     * @param instanceHostname the instance's hostname
-     * @return heartbeat time or 0 if not set
+     * @param instanceHostname hostname of the instance to check
+     * @param deadInstancePeriodMs dead instance period in milliseconds
+     * @return true/false
      * @throws Exception errors
      */
-    public long         getLastHeartbeatForInstance(String instanceHostname) throws Exception;
+    public boolean      isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception;
 
     /**
      * Remove/clear the instance heartbeat. This will be called when the auto-manage instance state
      * has changed.
      *
-     * @param instanceHostname the instance's hostname
      * @throws Exception errors
      */
-    public void clearInstanceHeartbeat(String instanceHostname) throws Exception;
+    public void clearInstanceHeartbeat() throws Exception;
 
     /**
      * Allocate a new pseudo-lock for the given prefix

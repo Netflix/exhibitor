@@ -17,6 +17,7 @@
 package com.netflix.exhibitor.core.rest;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.hash.Hashing;
 import com.netflix.exhibitor.core.backup.BackupConfigSpec;
@@ -79,6 +80,7 @@ public class ConfigResource
         mainNode.put("version", context.getExhibitor().getVersion());
         mainNode.put("running", "imok".equals(response));
         mainNode.put("backupActive", context.getExhibitor().getBackupManager().isActive());
+        mainNode.put("standaloneMode", context.getExhibitor().getConfigManager().isStandaloneMode());
         mainNode.put("extraHeadingText", context.getExhibitor().getExtraHeadingText());
         mainNode.put("nodeMutationsAllowed", context.getExhibitor().nodeMutationsAllowed());
 
@@ -109,9 +111,9 @@ public class ConfigResource
 
         EncodedConfigParser     zooCfgParser = new EncodedConfigParser(config.getString(StringConfigs.ZOO_CFG_EXTRA));
         ObjectNode              zooCfgNode = JsonNodeFactory.instance.objectNode();
-        for ( Map.Entry<String, String> entry : zooCfgParser.getValues().entrySet() )
+        for ( EncodedConfigParser.FieldValue fv : zooCfgParser.getFieldValues() )
         {
-            zooCfgNode.put(entry.getKey(), entry.getValue());
+            zooCfgNode.put(fv.getField(), fv.getValue());
         }
         configNode.put("zooCfgExtra", zooCfgNode);
 
@@ -122,7 +124,7 @@ public class ConfigResource
             List<BackupConfigSpec> configs = context.getExhibitor().getBackupManager().getConfigSpecs();
             for ( BackupConfigSpec c : configs )
             {
-                String value = parser.getValues().get(c.getKey());
+                String value = parser.getValue(c.getKey());
                 backupExtraNode.put(c.getKey(), (value != null) ? value : "");
             }
             configNode.put("backupExtra", backupExtraNode);
@@ -317,26 +319,26 @@ public class ConfigResource
         String                backupExtraValue = "";
         if ( tree.get("backupExtra") != null )
         {
-            Map<String, String>     values = Maps.newHashMap();
+            List<EncodedConfigParser.FieldValue>    values = Lists.newArrayList();
             JsonNode                backupExtra = tree.get("backupExtra");
             Iterator<String> fieldNames = backupExtra.getFieldNames();
             while ( fieldNames.hasNext() )
             {
                 String      name = fieldNames.next();
                 String      value = backupExtra.get(name).getTextValue();
-                values.put(name, value);
+                values.add(new EncodedConfigParser.FieldValue(name, value));
             }
             backupExtraValue = new EncodedConfigParser(values).toEncoded();
         }
 
-        Map<String, String>     zooCfgValues = Maps.newHashMap();
+        List<EncodedConfigParser.FieldValue>    zooCfgValues = Lists.newArrayList();
         JsonNode                zooCfgExtra = tree.get("zooCfgExtra");
         Iterator<String>        fieldNames = zooCfgExtra.getFieldNames();
         while ( fieldNames.hasNext() )
         {
             String      name = fieldNames.next();
             String      value = zooCfgExtra.get(name).getTextValue();
-            zooCfgValues.put(name, value);
+            zooCfgValues.add(new EncodedConfigParser.FieldValue(name, value));
         }
         final String          zooCfgExtraValue = new EncodedConfigParser(zooCfgValues).toEncoded();
 

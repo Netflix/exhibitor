@@ -27,6 +27,7 @@ import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import java.io.File;
+import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -67,6 +68,16 @@ public class TestAutoInstanceManagement
                 }
 
                 @Override
+                public void start() throws Exception
+                {
+                }
+
+                @Override
+                public void close() throws IOException
+                {
+                }
+
+                @Override
                 public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
                 {
                     loadedInstanceConfig = new LoadedInstanceConfig(config, 0);
@@ -74,19 +85,19 @@ public class TestAutoInstanceManagement
                 }
 
                 @Override
-                public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+                public void writeInstanceHeartbeat() throws Exception
                 {
                 }
 
                 @Override
-                public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+                public void clearInstanceHeartbeat() throws Exception
                 {
                 }
 
                 @Override
-                public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+                public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
                 {
-                    return System.currentTimeMillis();
+                    return true;
                 }
 
                 @Override
@@ -192,6 +203,16 @@ public class TestAutoInstanceManagement
             ConfigProvider              configProvider = new ConfigProvider()
             {
                 @Override
+                public void start() throws Exception
+                {
+                }
+
+                @Override
+                public void close() throws IOException
+                {
+                }
+
+                @Override
                 public LoadedInstanceConfig loadConfig() throws Exception
                 {
                     return new LoadedInstanceConfig(config, 0);
@@ -204,19 +225,19 @@ public class TestAutoInstanceManagement
                 }
 
                 @Override
-                public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+                public void writeInstanceHeartbeat() throws Exception
                 {
                 }
 
                 @Override
-                public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+                public void clearInstanceHeartbeat() throws Exception
                 {
                 }
 
                 @Override
-                public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+                public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
                 {
-                    return System.currentTimeMillis();
+                    return true;
                 }
 
                 @Override
@@ -258,6 +279,16 @@ public class TestAutoInstanceManagement
             ConfigProvider              configProvider = new ConfigProvider()
             {
                 @Override
+                public void start() throws Exception
+                {
+                }
+
+                @Override
+                public void close() throws IOException
+                {
+                }
+
+                @Override
                 public LoadedInstanceConfig loadConfig() throws Exception
                 {
                     return new LoadedInstanceConfig(config, 0);
@@ -271,19 +302,19 @@ public class TestAutoInstanceManagement
                 }
 
                 @Override
-                public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+                public void writeInstanceHeartbeat() throws Exception
                 {
                 }
 
                 @Override
-                public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+                public void clearInstanceHeartbeat() throws Exception
                 {
                 }
 
                 @Override
-                public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+                public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
                 {
-                    return instanceHostname.equals("dead") ? 1 : System.currentTimeMillis();    // zero is treated specially to mean no heartbeat yet
+                    return !instanceHostname.equals("dead");
                 }
 
                 @Override

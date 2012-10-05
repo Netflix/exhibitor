@@ -38,6 +38,10 @@
                 <div id="version"></div><br clear="all"/>
             </div>
 
+            <div id="standalone-mode-message" class="ui-helper-hidden">
+                Standalone Mode - Ensemble is Manually Managed
+            </div>
+
             <div class="ui-widget ui-helper-hidden" id="not-connected-alert">
                 <div class="ui-state-error ui-corner-all" style="padding: 0 .7em;">
                     <p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span>
@@ -55,7 +59,7 @@
 
             <div id="tabs-main" class="ui-helper-hidden">
                 <div id="cp-auto-init-container" class="ui-widget ui-corner-all ui-state-highlight" title="When on, as new instances read the shared config they will automatically add themselves to the ensemble via a rolling release. Additionally, old instances will be automatically removed via rolling release.">
-                    <label for="cp-auto-init-instances">Automatically manage instances</label><input type="checkbox" id="cp-auto-init-instances"><br clear="all"/>
+                    <label for="cp-auto-init-instances">Automatically add/remove instances in the server list</label><input type="checkbox" id="cp-auto-init-instances"><br clear="all"/>
                 </div>
 
                 <div id="base-server-item">
@@ -183,8 +187,8 @@
                         <label for="config-election-port">Election Port</label><input type="text" id="config-election-port" class="mask-pint" name="config-election-port" size="8" title="The port that other ZooKeeper instances connect for election to ZooKeeper (usually 3888)"><br clear="all"/>
                     </fieldset>
 
-                    <fieldset>
-                        <legend>Automatic Instance Management</legend>
+                    <fieldset id="fieldset-automatic-instance-management">
+                        <legend>Automatic Server List Add/Remove</legend>
                         <label for="config-dead-instance-ms">Dead Instance Threshold (ms)</label><input type="text" id="config-dead-instance-ms" class="mask-pint" name="config-dead-instance-ms" size="8" title="The number of milliseconds to consider an instance dead and, thus, a candidate for automatic instance cleanup."><br clear="all"/>
                         <label for="config-observer-threshold">Observer Threshold</label><input type="text" id="config-observer-threshold" class="mask-pint" name="config-observer-threshold" size="3" title="Marks which instances are made Observers by automatic instance management. Instances below this number are normal instances. Instances from this number and up are Observers."><br clear="all"/>
                     </fieldset>
@@ -298,12 +302,21 @@
         </div>
 
         <div id="config-commit-dialog" class="ui-helper-hidden">
-            <div id="config-commit-dialog-icon" class="ui-icon ui-icon-alert"></div>
+            <div class="config-commit-dialog-icon ui-icon ui-icon-alert"></div>
             <div>
                 <strong>Warning</strong><br/>
                 The changes you've made require that ZooKeeper instances get reconfigured and restarted. You
                 can do this all at once (which can cause the ensemble to appear to be down for several minutes)
                 or you can do a rolling release of the config.
+            </div>
+        </div>
+
+        <div id="standalone-config-commit-dialog" class="ui-helper-hidden">
+            <div class="config-commit-dialog-icon ui-icon ui-icon-alert"></div>
+            <div>
+                <strong>Warning</strong><br/>
+                The changes you've made require that ZooKeeper instances get reconfigured and restarted. This Exhibitor
+                is running in standalone mode. You will need to manually make these changes to the other ZooKeeper instances.
             </div>
         </div>
 

@@ -33,16 +33,16 @@ public class PropertyBasedInstanceConfig extends ConfigCollectionBase
     private final WrappedInstanceConfig rollingConfig;
 
     @VisibleForTesting
-    static final String ROOT_PROPERTY_PREFIX = "com.netflix.exhibitor.";
+    public static final String ROOT_PROPERTY_PREFIX = "com.netflix.exhibitor.";
 
     @VisibleForTesting
-    static final String ROLLING_PROPERTY_PREFIX = "com.netflix.exhibitor-rolling.";
+    public static final String ROLLING_PROPERTY_PREFIX = "com.netflix.exhibitor-rolling.";
 
     @VisibleForTesting
-    static final String PROPERTY_ROLLING_HOSTNAMES = "com.netflix.exhibitor-rolling-hostnames";
+    public static final String PROPERTY_ROLLING_HOSTNAMES = "com.netflix.exhibitor-rolling-hostnames";
 
     @VisibleForTesting
-    static final String PROPERTY_ROLLING_HOSTNAMES_INDEX = "com.netflix.exhibitor-rolling-hostnames-index";
+    public static final String PROPERTY_ROLLING_HOSTNAMES_INDEX = "com.netflix.exhibitor-rolling-hostnames-index";
 
     /**
      * Used to wrap an existing config
@@ -100,7 +100,7 @@ public class PropertyBasedInstanceConfig extends ConfigCollectionBase
     }
 
     @VisibleForTesting
-    static String toName(Enum e, String prefix)
+    public static String toName(Enum e, String prefix)
     {
         String  s = e.name();
         s = s.replace('_', '-');

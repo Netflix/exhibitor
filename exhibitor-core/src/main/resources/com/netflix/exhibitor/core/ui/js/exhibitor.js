@@ -1,6 +1,6 @@
 var BUILTIN_TAB_QTY = 4;
 var AUTO_REFRESH_PERIOD = 5000;
-var UPDATE_STATE_PERIOD = 10000;
+var UPDATE_STATE_PERIOD = 2500;
 
 var URL_GET_BACKUPS = "../index/get-backups";
 var URL_NEW_INDEX = "../index/new-index";
@@ -13,6 +13,8 @@ var URL_RELEASE_CACHE_INDEX_SEARCH_BASE = "../index/release-cache/";
 
 var URL_CLUSTER_LOG_BASE = "../cluster/log/";
 var URL_CLUSTER_RESTART_BASE = "../cluster/restart/";
+var URL_CLUSTER_START_BASE = "../cluster/start/";
+var URL_CLUSTER_STOP_BASE = "../cluster/stop/";
 var URL_CLUSTER_4LTR_BASE = "../cluster/4ltr/";
 var URL_CLUSTER_SET_CONFIG_BASE = "../cluster/set/";
 var URL_CLUSTER_GET_STATE_BASE = "../cluster/state/";
@@ -35,6 +37,8 @@ var URL_RESTART = "stop";
 
 var doConfigUpdates = true;
 var configChangesBeingSubmitted = false;
+
+var backupTabIndex = 3;
 
 function messageDialog(title, message, noIcon)
 {
@@ -94,11 +98,12 @@ var systemState = {};
 var systemConfig = {};
 var connectedToExhibitor = true;
 var currentVersion = null;
+var backupTabRemoved = false;
 function updateState()
 {
     if ( !hasBackupConfig )
     {
-        $.getJSON(URL_GET_BACKUP_CONFIG, function(data){
+        $.getJSON(URL_GET_BACKUP_CONFIG + '?ts=' + Date.now(), function(data){
             hasBackupConfig = true;
             addBackupExtraConfig(data);
         });
@@ -107,6 +112,7 @@ function updateState()
 
     $.ajax({
         url: URL_GET_STATE,
+        cache: false,
         type: 'GET',
         success: function (data, dummy, jqXHR){
             systemState = data;
@@ -139,8 +145,22 @@ function updateState()
             }
             else
             {
+                if ( !backupTabRemoved )
+                {
+                    backupTabRemoved = true;
+                    $("#tabs").tabs("remove", backupTabIndex);
+                    backupTabIndex = -1;
+                    --BUILTIN_TAB_QTY;
+                }
                 $('#config-backups-fieldset').hide();
                 $('#backups-enabled-control').hide();
+            }
+
+            if ( systemState.standaloneMode )
+            {
+                $('#standalone-mode-message').show();
+                $('#cp-auto-init-container').hide();
+                $('#fieldset-automatic-instance-management').hide();
             }
 
             if ( systemState.nodeMutationsAllowed )
@@ -288,6 +308,7 @@ function changeControlPanelConfig(field, selector)
     $.ajax({
         type: 'POST',
         url: URL_SET_CONTROL_PANEL_CONFIG,
+        cache: false,
         data: payload,
         contentType: 'application/json',
         success:function(data)
@@ -318,6 +339,7 @@ function submitConfigChanges(rolling)
     $.ajax({
         type: 'POST',
         url: rolling ? URL_SET_CONFIG_ROLLING : URL_SET_CONFIG,
+        cache: false,
         data: payload,
         contentType: 'application/json',
         success:function(data){
@@ -439,7 +461,7 @@ function updateConfig()
 function refreshCurrentTab()
 {
     var selected = $("#tabs").tabs("option", "selected");
-    if ( selected == 3 )
+    if ( selected == backupTabIndex )
     {
         var radio = $('input:radio:checked[name="restore-item-radio"]');
         updateRestoreItems(radio.val());
@@ -548,7 +570,14 @@ function checkConfigConfirmation()
 
     if ( hasEnsembleLevelChange )
     {
-        $('#config-commit-dialog').dialog("open");
+        if ( systemState.standaloneMode )
+        {
+            $('#standalone-config-commit-dialog').dialog("open");
+        }
+        else
+        {
+            $('#config-commit-dialog').dialog("open");
+        }
     }
     else
     {
@@ -561,7 +590,7 @@ function checkConfigConfirmation()
 var customTabs = new Array();
 $(function ()
 {
-    $.getJSON(URL_GET_TABS, function (data){
+    $.getJSON(URL_GET_TABS + '?ts=' + Date.now(), function (data){
         var uiTabSpec = $.makeArray(data);
         for ( var i = 0; i < uiTabSpec.length; ++i )
         {
@@ -752,6 +781,25 @@ $(function ()
                     $('#config-commit-dialog').dialog("close");
                     submitConfigChanges(true);
                 });
+            }
+        }
+    );
+
+    $('#standalone-config-commit-dialog').dialog({
+        width: 500,
+        height: 250,
+        modal: true,
+        autoOpen: false,
+        title: "Config Change Warning"
+    });
+    $("#standalone-config-commit-dialog").dialog("option", "buttons", {
+            'Cancel': function (){
+                $(this).dialog("close");
+            },
+
+            'OK': function (){
+                $(this).dialog("close");
+                submitConfigChanges(false);
             }
         }
     );

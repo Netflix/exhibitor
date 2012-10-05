@@ -45,6 +45,7 @@ public class FileSystemConfigProvider implements ConfigProvider
     private final String heartbeatFilePrefix;
     private final Properties defaults;
     private final AutoManageLockArguments autoManageLockArguments;
+    private final String hostname;
     private final AtomicLong lastHeartbeatCleanup = new AtomicLong(0);
 
     private static final String             FILE_CONTENT = "foo";
@@ -53,32 +54,37 @@ public class FileSystemConfigProvider implements ConfigProvider
     private static final int                MAX_AGE_MS = (int)TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
 
     /**
+     *
      * @param propertiesDirectory where to store the properties
      * @param propertyFileName name of the file to store properties in
      * @param heartbeatFilePrefix prefix for heartbeat files
      * @param autoManageLockArguments config arguments for auto managing instances
+     * @param hostname the hostname of this JVM
      * @throws IOException if directory cannot be created
     */
-    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix, AutoManageLockArguments autoManageLockArguments) throws IOException
+    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix, AutoManageLockArguments autoManageLockArguments, String hostname) throws IOException
     {
-        this(propertiesDirectory, propertyFileName, heartbeatFilePrefix, new Properties(), autoManageLockArguments);
+        this(propertiesDirectory, propertyFileName, heartbeatFilePrefix, new Properties(), autoManageLockArguments, hostname);
     }
 
     /**
+     *
      * @param propertiesDirectory where to store the properties
      * @param propertyFileName name of the file to store properties in
      * @param heartbeatFilePrefix prefix for heartbeat files
      * @param defaults default values  @throws IOException if directory cannot be created
      * @param autoManageLockArguments config arguments for auto managing instances
+     * @param hostname the hostname of this JVM
      * @throws IOException if directory cannot be created
      */
-    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix, Properties defaults, AutoManageLockArguments autoManageLockArguments) throws IOException
+    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix, Properties defaults, AutoManageLockArguments autoManageLockArguments, String hostname) throws IOException
     {
         this.propertiesDirectory = propertiesDirectory;
         this.propertyFileName = propertyFileName;
         this.heartbeatFilePrefix = heartbeatFilePrefix;
         this.defaults = defaults;
         this.autoManageLockArguments = autoManageLockArguments;
+        this.hostname = hostname;
 
         if ( propertiesDirectory.exists() && !propertiesDirectory.isDirectory() )
         {
@@ -89,6 +95,18 @@ public class FileSystemConfigProvider implements ConfigProvider
         {
             throw new IOException("Could not create directory: " + propertiesDirectory);
         }
+    }
+
+    @Override
+    public void start() throws Exception
+    {
+        // NOP
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        // NOP
     }
 
     @Override
@@ -157,16 +175,16 @@ public class FileSystemConfigProvider implements ConfigProvider
     }
 
     @Override
-    public void writeInstanceHeartbeat(String instanceHostname) throws Exception
+    public void writeInstanceHeartbeat() throws Exception
     {
-        File file = getHeartbeatFile(instanceHostname);
+        File file = getHeartbeatFile(hostname);
         Files.write(FILE_CONTENT.getBytes(), file);
     }
 
     @Override
-    public void clearInstanceHeartbeat(String instanceHostname) throws Exception
+    public void clearInstanceHeartbeat() throws Exception
     {
-        File    f = getHeartbeatFile(instanceHostname);
+        File    f = getHeartbeatFile(hostname);
         if ( f.exists() )
         {
             //noinspection ResultOfMethodCallIgnored
@@ -181,7 +199,14 @@ public class FileSystemConfigProvider implements ConfigProvider
     }
 
     @Override
-    public long getLastHeartbeatForInstance(String instanceHostname) throws Exception
+    public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
+    {
+        long    lastHeartbeatForInstance = getLastHeartbeatForInstance(instanceHostname);
+        long    elapsedSinceLastHeartbeat = System.currentTimeMillis() - lastHeartbeatForInstance;
+        return elapsedSinceLastHeartbeat <= deadInstancePeriodMs;
+    }
+
+    private long getLastHeartbeatForInstance(String instanceHostname) throws Exception
     {
         long        lastCleanupMs = lastHeartbeatCleanup.get();
         if ( (System.currentTimeMillis() - lastCleanupMs) >= CLEANUP_PERIOD_MS )

@@ -1,5 +1,6 @@
 var currentServersSpec = null;
 var currentHostname = null;
+var currentServersList = null;
 var serverItemsVersion = 0;
 
 var STATE_LATENT = 0;
@@ -58,6 +59,7 @@ function internalBuildServerItems(serversList)
 {
     currentServersSpec = systemConfig.serversSpec;
     currentHostname = systemConfig.hostname;
+    currentServersList = serversList;
 
     var content = "";
     for ( var i = 0; i < serversList.length; ++i )
@@ -103,7 +105,7 @@ function internalBuildServerItems(serversList)
             icons:{
                 primary:"ui-icon-alert"
             }
-        }).click(stopStartDialog(spec.hostname));
+        });
 
         $(domId + '-4ltr-button').button({
             disabled: true,
@@ -128,6 +130,24 @@ function stopStartDialog(hostname)
     return function() {
         okCancelDialog(hostname, "Are you sure you want to restart this server?", function(){
             makeRemoteCall(URL_CLUSTER_RESTART_BASE, hostname);
+        });
+    };
+}
+
+function stopDialog(hostname)
+{
+    return function() {
+        okCancelDialog(hostname, "Are you sure you want to stop this server?", function(){
+            makeRemoteCall(URL_CLUSTER_STOP_BASE, hostname);
+        });
+    };
+}
+
+function startDialog(hostname)
+{
+    return function() {
+        okCancelDialog(hostname, "Are you sure you want to start this server?", function(){
+            makeRemoteCall(URL_CLUSTER_START_BASE, hostname);
         });
     };
 }
@@ -164,7 +184,7 @@ function word4ltrDialog(hostname)
 
 function makeRemoteCall(baseUrl, hostname, callback)
 {
-    $.getJSON(baseUrl + hostname, function(data){
+    $.getJSON(baseUrl + hostname + '?ts=' + Date.now(), function(data){
         if ( data.success )
         {
             if ( callback )
@@ -200,7 +220,22 @@ function updateOneServerState(index, data, hostname)
         $(domId + '-4ltr-button').button("option", "disabled", !isRunning);
         $(domId + '-log-button').button("option", "disabled", false);
 
-        $(domId + '-power-button').button("option", "label", data.response.switches.restarts ? "Restart..." : "Stop...");
+        var spec = currentServersList[index];
+        if ( data.response.switches.restarts )
+        {
+            $(domId + '-power-button').button("option", "label", "Restart...");
+            $(domId + '-power-button').click(stopStartDialog(spec.hostname));
+        }
+        else if ( systemState.running )
+        {
+            $(domId + '-power-button').button("option", "label", "Stop...");
+            $(domId + '-power-button').click(stopDialog(spec.hostname));
+        }
+        else
+        {
+            $(domId + '-power-button').button("option", "label", "Start...");
+            $(domId + '-power-button').click(startDialog(spec.hostname));
+        }
 
         ableLightSwitch(domId + '-instance-restarts-enabled', handleSwitch(hostname, "restarts"));
         ableLightSwitch(domId + '-cleanup-enabled', handleSwitch(hostname, "cleanup"));
@@ -275,6 +310,6 @@ function updateServerState(serversList)
                 }
             };
         };
-        $.getJSON(URL_CLUSTER_GET_STATE_BASE + thisHostname, callback(i, thisHostname));
+        $.getJSON(URL_CLUSTER_GET_STATE_BASE + thisHostname + '?ts=' + Date.now(), callback(i, thisHostname));
     }
 }

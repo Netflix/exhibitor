@@ -57,8 +57,11 @@ class Details
         if ( isValid() )
         {
             EncodedConfigParser     parser = new EncodedConfigParser(exhibitor.getConfigManager().getConfig().getString(StringConfigs.ZOO_CFG_EXTRA));
-            properties.putAll(parser.getValues());
-            properties.put("dataDir", dataDirectory.getPath());
+            for ( EncodedConfigParser.FieldValue fv : parser.getFieldValues() )
+            {
+                properties.setProperty(fv.getField(), fv.getValue());
+            }
+            properties.setProperty("dataDir", dataDirectory.getPath());
         }
     }
 

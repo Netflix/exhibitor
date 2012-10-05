@@ -16,10 +16,10 @@
 
 package com.netflix.exhibitor.core.config;
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.backup.BackupConfigSpec;
 import com.netflix.exhibitor.core.backup.BackupProvider;
-import java.util.Map;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -69,12 +69,12 @@ public class DefaultProperties
      */
     public static InstanceConfig newDefaultInstanceConfig(BackupProvider provider)
     {
-        Map<String, String>             backupDefaultValues = Maps.newHashMap();
+        List<EncodedConfigParser.FieldValue>    backupDefaultValues = Lists.newArrayList();
         if ( provider != null )
         {
             for ( BackupConfigSpec spec : provider.getConfigs() )
             {
-                backupDefaultValues.put(spec.getKey(), spec.getDefaultValue());
+                backupDefaultValues.add(new EncodedConfigParser.FieldValue(spec.getKey(), spec.getDefaultValue()));
             }
         }
         final String                    backupExtraValue = new EncodedConfigParser(backupDefaultValues).toEncoded();

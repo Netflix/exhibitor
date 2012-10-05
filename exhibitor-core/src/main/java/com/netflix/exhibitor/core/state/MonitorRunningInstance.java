@@ -176,9 +176,9 @@ public class MonitorRunningInstance implements Closeable
     private int getDownInstanceRestartMs(InstanceConfig config)
     {
         EncodedConfigParser     parser = new EncodedConfigParser(exhibitor.getConfigManager().getConfig().getString(StringConfigs.ZOO_CFG_EXTRA));
-        int                     tickTime = parseInt(parser.getValues().get("tickTime"));
-        int                     initLimit = parseInt(parser.getValues().get("initLimit"));
-        int                     syncLimit = parseInt(parser.getValues().get("syncLimit"));
+        int                     tickTime = parseInt(parser.getValue("tickTime"));
+        int                     initLimit = parseInt(parser.getValue("initLimit"));
+        int                     syncLimit = parseInt(parser.getValue("syncLimit"));
 
         if ( (tickTime > 0) && ((initLimit > 0) || (syncLimit > 0)) )
         {

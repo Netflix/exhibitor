@@ -20,11 +20,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.activity.Activity;
 import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.activity.QueueGroups;
 import com.netflix.exhibitor.core.activity.RepeatingActivity;
+import com.netflix.exhibitor.core.config.none.NoneConfigProvider;
 import com.netflix.exhibitor.core.state.InstanceState;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
 import com.netflix.exhibitor.core.state.RemoteInstanceRequest;
@@ -81,8 +83,9 @@ public class ConfigManager implements Closeable
         config.set(provider.loadConfig());
     }
 
-    public void   start()
+    public void   start() throws Exception
     {
+        provider.start();
         repeatingActivity.start();
     }
 
@@ -90,6 +93,7 @@ public class ConfigManager implements Closeable
     public void close() throws IOException
     {
         repeatingActivity.close();
+        Closeables.closeQuietly(provider);
     }
 
     public InstanceConfig getConfig()
@@ -119,12 +123,17 @@ public class ConfigManager implements Closeable
 
     public void writeHeartbeat() throws Exception
     {
-        provider.writeInstanceHeartbeat(exhibitor.getThisJVMHostname());
+        provider.writeInstanceHeartbeat();
     }
 
-    public long getLastHeartbeatForInstance(String instance) throws Exception
+    public boolean      isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
     {
-        return provider.getLastHeartbeatForInstance(instance);
+        return provider.isHeartbeatAliveForInstance(instanceHostname, deadInstancePeriodMs);
+    }
+
+    public boolean isStandaloneMode()
+    {
+        return provider instanceof NoneConfigProvider;
     }
 
     public enum CancelMode
@@ -338,7 +347,7 @@ public class ConfigManager implements Closeable
         {
             if ( newConfig.getConfig().getRootConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES) != previousConfig.getConfig().getRootConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES) )
             {
-                provider.clearInstanceHeartbeat(exhibitor.getThisJVMHostname());
+                provider.clearInstanceHeartbeat();
             }
         }
 
