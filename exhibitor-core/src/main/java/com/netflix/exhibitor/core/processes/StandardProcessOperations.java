@@ -64,7 +64,7 @@ public class StandardProcessOperations implements ProcessOperations
             String.format("%s:%s:%s", details.zooKeeperJarPath, details.logPaths, details.configDirectory.getPath()),
             "org.apache.zookeeper.server.PurgeTxnLog",
             details.dataDirectory.getPath(),
-            details.dataDirectory.getPath(),
+            details.logDirectory.getPath(),
             "-n",
             Integer.toString(exhibitor.getConfigManager().getConfig().getInt(IntConfigs.CLEANUP_MAX_FILES))
         );

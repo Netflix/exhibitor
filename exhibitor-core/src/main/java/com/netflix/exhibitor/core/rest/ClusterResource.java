@@ -17,21 +17,20 @@
 package com.netflix.exhibitor.core.rest;
 
 import com.netflix.exhibitor.core.activity.QueueGroups;
+import com.netflix.exhibitor.core.automanage.ClusterStatusTask;
+import com.netflix.exhibitor.core.automanage.RemoteInstanceRequest;
 import com.netflix.exhibitor.core.config.InstanceConfig;
 import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.StringConfigs;
 import com.netflix.exhibitor.core.controlpanel.ControlPanelTypes;
 import com.netflix.exhibitor.core.entities.Result;
 import com.netflix.exhibitor.core.entities.ServerStatus;
-import com.netflix.exhibitor.core.rest.jersey.ClusterStatusTask;
 import com.netflix.exhibitor.core.state.FourLetterWord;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
 import com.netflix.exhibitor.core.state.KillRunningInstance;
-import com.netflix.exhibitor.core.state.RemoteInstanceRequest;
 import com.netflix.exhibitor.core.state.ServerList;
 import com.netflix.exhibitor.core.state.ServerSpec;
 import com.netflix.exhibitor.core.state.StartInstance;
-import jsr166y.ForkJoinPool;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
@@ -55,19 +54,10 @@ import java.util.concurrent.Callable;
 public class ClusterResource
 {
     private final UIContext context;
-    private final ForkJoinPool forkJoinPool;
-
-    private static final RemoteInstanceRequestClientImpl        remoteInstanceRequestClient = new RemoteInstanceRequestClientImpl();
-
-    public static RemoteInstanceRequestClientImpl getRemoteInstanceRequestClient()
-    {
-        return remoteInstanceRequestClient;
-    }
 
     public ClusterResource(@Context ContextResolver<UIContext> resolver)
     {
         context = resolver.getContext(UIContext.class);
-        forkJoinPool = new ForkJoinPool();
     }
 
     @Path("status")
@@ -79,7 +69,7 @@ public class ClusterResource
         ServerList          serverList = new ServerList(config.getString(StringConfigs.SERVERS_SPEC));
 
         ClusterStatusTask   task = new ClusterStatusTask(context.getExhibitor(), serverList.getSpecs());
-        List<ServerStatus>  statuses = forkJoinPool.invoke(task);
+        List<ServerStatus>  statuses = context.getExhibitor().getForkJoinPool().invoke(task);
 
         GenericEntity<List<ServerStatus>> entity = new GenericEntity<List<ServerStatus>>(statuses){};
         return Response.ok(entity).build();
@@ -405,7 +395,7 @@ public class ClusterResource
             try
             {
                 RemoteInstanceRequest           request = new RemoteInstanceRequest(context.getExhibitor(), hostname);
-                RemoteInstanceRequest.Result    result = request.makeRequest(remoteInstanceRequestClient, methodName, values);
+                RemoteInstanceRequest.Result    result = request.makeRequest(context.getExhibitor().getRemoteInstanceRequestClient(), methodName, values);
 
                 remoteResponse = result.remoteResponse;
                 errorMessage = result.errorMessage;

@@ -24,17 +24,19 @@ public class ServerStatus
     private String      hostname;
     private int         code;
     private String      description;
+    private boolean     isLeader;
 
     public ServerStatus()
     {
-        this("", 0, "");
+        this("", 0, "", false);
     }
 
-    public ServerStatus(String hostname, int code, String description)
+    public ServerStatus(String hostname, int code, String description, boolean isLeader)
     {
         this.hostname = hostname;
         this.code = code;
         this.description = description;
+        this.isLeader = isLeader;
     }
 
     public String getHostname()
@@ -65,5 +67,71 @@ public class ServerStatus
     public void setDescription(String description)
     {
         this.description = description;
+    }
+
+    public boolean isLeader()
+    {
+        return isLeader;
+    }
+
+    public void setLeader(boolean leader)
+    {
+        isLeader = leader;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ServerStatus{" +
+            "hostname='" + hostname + '\'' +
+            ", code=" + code +
+            ", description='" + description + '\'' +
+            ", isLeader=" + isLeader +
+            '}';
+    }
+
+    @SuppressWarnings("RedundantIfStatement")
+    @Override
+    public boolean equals(Object o)
+    {
+        if ( this == o )
+        {
+            return true;
+        }
+        if ( o == null || getClass() != o.getClass() )
+        {
+            return false;
+        }
+
+        ServerStatus that = (ServerStatus)o;
+
+        if ( code != that.code )
+        {
+            return false;
+        }
+        if ( isLeader != that.isLeader )
+        {
+            return false;
+        }
+        if ( !description.equals(that.description) )
+        {
+            return false;
+        }
+        if ( !hostname.equals(that.hostname) )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = hostname.hashCode();
+        result = 31 * result + code;
+        result = 31 * result + description.hashCode();
+        result = 31 * result + (isLeader ? 1 : 0);
+        return result;
     }
 }

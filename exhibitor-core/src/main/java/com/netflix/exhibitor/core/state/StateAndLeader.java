@@ -16,20 +16,24 @@
 
 package com.netflix.exhibitor.core.state;
 
-import com.sun.jersey.api.client.WebResource;
-import javax.ws.rs.core.MediaType;
-import java.net.URI;
-
-public interface RemoteInstanceRequestClient
+public class StateAndLeader
 {
-    /**
-     * Return the WebResource (usually cached) for the given URI
-     *
-     * @param remoteUri URI
-     * @param type media type
-     * @param clazz resource class
-     * @return WebResource
-     * @throws Exception errors
-     */
-    public <T> T   getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception;
+    private final InstanceStateTypes        state;
+    private final boolean                   isLeader;
+
+    public StateAndLeader(InstanceStateTypes state, boolean leader)
+    {
+        this.state = state;
+        isLeader = leader;
+    }
+
+    public InstanceStateTypes getState()
+    {
+        return state;
+    }
+
+    public boolean isLeader()
+    {
+        return isLeader;
+    }
 }

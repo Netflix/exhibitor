@@ -16,26 +16,21 @@
 
 package com.netflix.exhibitor.core.config;
 
+import com.netflix.exhibitor.core.activity.ActivityLog;
 import java.util.concurrent.TimeUnit;
 
 public interface PseudoLock
 {
     /**
-     * Acquire the lock, blocking until it is acquired
-     *
-     * @throws Exception errors
-     */
-    public void  lock() throws Exception;
-
-    /**
      * Acquire the lock, blocking at most <code>maxWait</code> until it is acquired
      *
+     * @param log the logger
      * @param maxWait max time to wait
      * @param unit time unit
      * @return true if the lock was acquired
      * @throws Exception errors
      */
-    public boolean lock(long maxWait, TimeUnit unit) throws Exception;
+    public boolean lock(ActivityLog log, long maxWait, TimeUnit unit) throws Exception;
 
     /**
      * Release the lock

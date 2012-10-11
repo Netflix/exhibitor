@@ -30,12 +30,14 @@ import com.netflix.exhibitor.core.config.StringConfigs;
 import com.netflix.exhibitor.core.controlpanel.ControlPanelTypes;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MonitorRunningInstance implements Closeable
 {
     private final Exhibitor                         exhibitor;
     private final AtomicReference<InstanceState>    currentInstanceState = new AtomicReference<InstanceState>();
+    private final AtomicBoolean                     currentIsLeader = new AtomicBoolean(false);
     private final RepeatingActivity                 repeatingActivity;
 
     private static final int    DOWN_RECHECK_FACTOR = 10;
@@ -90,11 +92,19 @@ public class MonitorRunningInstance implements Closeable
         return (state != null) ? state.getState() : InstanceStateTypes.LATENT;
     }
 
+    public boolean              isCurrentlyLeader()
+    {
+        return currentIsLeader.get();
+    }
+
     @VisibleForTesting
     void doWork() throws Exception
     {
         InstanceConfig  config = exhibitor.getConfigManager().getConfig();
-        InstanceState   instanceState = new InstanceState(new ServerList(config.getString(StringConfigs.SERVERS_SPEC)), new Checker(exhibitor).calculateState(), new RestartSignificantConfig(config));
+        StateAndLeader  stateAndLeader = new Checker(exhibitor).calculateState();
+        InstanceState   instanceState = new InstanceState(new ServerList(config.getString(StringConfigs.SERVERS_SPEC)), stateAndLeader.getState(), new RestartSignificantConfig(config));
+
+        currentIsLeader.set(stateAndLeader.isLeader());
 
         exhibitor.getConfigManager().checkRollingConfig(instanceState);
 

@@ -33,6 +33,34 @@ Off, the button is "Stop" if the instance is running and "Start" if the instance
 * Issue 61: The "Additional Config" section should retain the order that it was entered instead of
 being alphabetized.
 
+* Issue 59: Support a separate Transaction Log directory in the config. It can be blank and will
+default to the Snapshot directory.
+
+* Updates to the control panel were not warning if another process updated the config at the same time.
+
+* Automatic instance management checkbox moved to the Config tab.
+
+* Lots of UI/logging tweaks and improvements.
+
+* Major reworking of automatic instance management and some work on rolling config:
+
+    Automatic Instance Management (AIM) no longer uses heartbeats to determine instance state. Instead,
+    a REST call is periodically made to each instance in the cluster. This should be more reliable.
+
+    Instead of making changes one-by-one, AIM now reconfigures the entire cluster. i.e. if an instance
+    is new and it notices there is an instance that's been removed, both changes are made in one shot.
+
+    The previous config value DEAD_INSTANCE_PERIOD_MS has been removed. In its place is
+    AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS. AIM waits until the ensemble state (quorum, members, etc.)
+    has been without change for this period before making any changes. Also, the ensemble must be
+    in Quorum for AIM to make changes.
+
+    Previously, Rolling Config Changes would wait for Quorum before the config change advances to
+    the next instance. However it would only wait up to 4 attempts. If the number of attempts was
+    exceeded it would advance anyway. This has been changed. If Quorum is not achieved within 4
+    attempts the rolling config change is canceled and the change is force applied. The hope
+    is that the ensemble will then settle.
+
 1.2.5 - August 2, 2012
 ======================
 * Various dependency version changes needed for internal Netflix compatibility.

@@ -16,10 +16,8 @@
 
 package com.netflix.exhibitor.core.config.s3;
 
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.io.Closeables;
 import com.netflix.exhibitor.core.config.ConfigCollection;
@@ -31,10 +29,8 @@ import com.netflix.exhibitor.core.s3.S3Client;
 import com.netflix.exhibitor.core.s3.S3ClientFactory;
 import com.netflix.exhibitor.core.s3.S3Credential;
 import com.netflix.exhibitor.core.s3.S3Utils;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
 
@@ -44,8 +40,6 @@ public class S3ConfigProvider implements ConfigProvider
     private final S3Client s3Client;
     private final String hostname;
     private final Properties defaults;
-
-    private static final String         HEARTBEAT_CONTENT = "heartbeat";
 
     public S3ConfigProvider(S3ClientFactory factory, S3Credential credential, S3ConfigArguments arguments, String hostname) throws Exception
     {
@@ -92,66 +86,6 @@ public class S3ConfigProvider implements ConfigProvider
     }
 
     @Override
-    public void writeInstanceHeartbeat() throws Exception
-    {
-        Calendar                now = Calendar.getInstance();
-        Calendar                tomorrow = Calendar.getInstance();
-        tomorrow.add(Calendar.DAY_OF_MONTH, 1);
-
-        ObjectMetadata          metadata = new ObjectMetadata();
-        metadata.setContentLength(HEARTBEAT_CONTENT.length());
-        metadata.setLastModified(now.getTime());
-        metadata.setExpirationTime(tomorrow.getTime());
-        PutObjectRequest        request = new PutObjectRequest(arguments.getBucket(), getHeartbeatKey(hostname), new ByteArrayInputStream(HEARTBEAT_CONTENT.getBytes()), metadata);
-
-        s3Client.putObject(request);
-    }
-
-    @Override
-    public void clearInstanceHeartbeat() throws Exception
-    {
-        try
-        {
-            s3Client.deleteObject(arguments.getBucket(), getHeartbeatKey(hostname));
-        }
-        catch ( AmazonServiceException ignore )
-        {
-            // ignore
-        }
-    }
-
-    private String getHeartbeatKey(String instanceHostname)
-    {
-        return arguments.getHeartbeatKeyPrefix() + instanceHostname;
-    }
-
-    @Override
-    public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
-    {
-        long    lastHeartbeatForInstance = getLastHeartbeatForInstance(instanceHostname);
-        long    elapsedSinceLastHeartbeat = System.currentTimeMillis() - lastHeartbeatForInstance;
-        return elapsedSinceLastHeartbeat <= deadInstancePeriodMs;
-    }
-
-    private long getLastHeartbeatForInstance(String instanceHostname) throws Exception
-    {
-        try
-        {
-            ObjectMetadata  metadata = s3Client.getObjectMetadata(arguments.getBucket(), getHeartbeatKey(instanceHostname));
-            if ( metadata != null )
-            {
-                return metadata.getLastModified().getTime();
-            }
-        }
-        catch ( AmazonServiceException ignore )
-        {
-            // treat this as a missing object
-        }
-
-        return 0;
-    }
-
-    @Override
     public LoadedInstanceConfig loadConfig() throws Exception
     {
         Date        lastModified;
@@ -179,14 +113,14 @@ public class S3ConfigProvider implements ConfigProvider
     }
 
     @Override
-    public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
+    public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
     {
         {
             ObjectMetadata                  metadata = getConfigMetadata();
             if ( metadata != null )
             {
                 Date                            lastModified = metadata.getLastModified();
-                if ( lastModified.getTime() != compareLastModified )
+                if ( lastModified.getTime() != compareVersion )
                 {
                     return null;    // apparently there's no atomic way to do this with S3 so this will have to do
                 }

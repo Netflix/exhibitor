@@ -20,14 +20,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.api.CuratorWatcher;
 import com.netflix.curator.framework.recipes.cache.ChildData;
 import com.netflix.curator.framework.recipes.cache.PathChildrenCache;
-import com.netflix.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import com.netflix.curator.framework.recipes.cache.PathChildrenCacheListener;
 import com.netflix.curator.framework.recipes.locks.InterProcessMutex;
 import com.netflix.curator.utils.ZKPaths;
 import com.netflix.exhibitor.core.config.ConfigCollection;
@@ -35,16 +31,11 @@ import com.netflix.exhibitor.core.config.ConfigProvider;
 import com.netflix.exhibitor.core.config.LoadedInstanceConfig;
 import com.netflix.exhibitor.core.config.PropertyBasedInstanceConfig;
 import com.netflix.exhibitor.core.config.PseudoLock;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.data.Stat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -56,10 +47,7 @@ public class ZookeeperConfigProvider implements ConfigProvider
     private final String hostname;
     private final String configPath;
     private final String lockPath;
-    private final Map<String, Long> removedHeartbeatInstances = Maps.newConcurrentMap();
     private final AtomicReference<State> state = new AtomicReference<State>(State.LATENT);
-
-    private volatile String ephemeralNode;
 
     private enum State
     {
@@ -69,11 +57,8 @@ public class ZookeeperConfigProvider implements ConfigProvider
     }
 
     private static final String     CONFIG_NODE_NAME = "config";
-    private static final String     EPHEMERAL_NODE_NAME = "instance-";
     private static final String     LOCK_PATH = "locks";
     private static final String     CONFIG_PATH = "configs";
-
-    private static final String     SEPARATOR = "|";
 
     /**
      * @param client curator instance for connecting to the config ensemble
@@ -90,16 +75,6 @@ public class ZookeeperConfigProvider implements ConfigProvider
         configPath = ZKPaths.makePath(baseZPath, CONFIG_PATH);
         lockPath = ZKPaths.makePath(baseZPath, LOCK_PATH);
         cache = new PathChildrenCache(client, configPath, true);
-
-        PathChildrenCacheListener listener = new PathChildrenCacheListener()
-        {
-            @Override
-            public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception
-            {
-                handleCacheEvent(event);
-            }
-        };
-        cache.getListenable().addListener(listener);
     }
 
     @Override
@@ -108,8 +83,6 @@ public class ZookeeperConfigProvider implements ConfigProvider
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTED), "Already started");
 
         cache.start();
-
-        makeEphemeralNode();
     }
 
     @Override
@@ -118,99 +91,55 @@ public class ZookeeperConfigProvider implements ConfigProvider
         state.set(State.CLOSED);
 
         Closeables.closeQuietly(cache);
-        try
-        {
-            deleteEphemeralNode();
-        }
-        catch ( Exception e )
-        {
-            throw new IOException(e);
-        }
     }
 
     @Override
     public LoadedInstanceConfig loadConfig() throws Exception
     {
-        long        lastModified = 0;
+        int         version = -1;
         Properties  properties = new Properties();
         ChildData   childData = getConfigNode();
         if ( childData != null )
         {
-            lastModified = childData.getStat().getMtime();
+            version = childData.getStat().getVersion();
             properties.load(new ByteArrayInputStream(childData.getData()));
         }
         PropertyBasedInstanceConfig config = new PropertyBasedInstanceConfig(properties, defaults);
-        return new LoadedInstanceConfig(config, lastModified);
+        return new LoadedInstanceConfig(config, version);
     }
 
     @Override
-    public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
+    public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
     {
         PropertyBasedInstanceConfig     propertyBasedInstanceConfig = new PropertyBasedInstanceConfig(config);
         ByteArrayOutputStream           out = new ByteArrayOutputStream();
         propertyBasedInstanceConfig.getProperties().store(out, "Auto-generated by Exhibitor " + hostname);
 
-        byte[]                          bytes = out.toByteArray();
+        byte[]          bytes = out.toByteArray();
+        int             newVersion;
         try
         {
-            client.create().forPath(ZKPaths.makePath(configPath, CONFIG_NODE_NAME), bytes);
+            Stat        stat = client.setData().withVersion((int)compareVersion).forPath(ZKPaths.makePath(configPath, CONFIG_NODE_NAME), bytes);
+            newVersion = stat.getVersion();
         }
-        catch ( KeeperException.NodeExistsException e )
+        catch ( KeeperException.BadVersionException e )
         {
-            client.setData().forPath(ZKPaths.makePath(configPath, CONFIG_NODE_NAME), bytes);
+            return null;    // another process got in first
         }
-
-        return new LoadedInstanceConfig(propertyBasedInstanceConfig, System.currentTimeMillis());   // technically, I should get the mTime from the Stat. This should be good enough though.
-    }
-
-    @Override
-    public void writeInstanceHeartbeat() throws Exception
-    {
-        // NOP
-    }
-
-    @SuppressWarnings("SimplifiableIfStatement")
-    @Override
-    public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
-    {
-        for ( Map.Entry<String, Long> entry : removedHeartbeatInstances.entrySet() )
+        catch ( KeeperException.NoNodeException e )
         {
-            long        elapsedSinceLastHeartbeat = System.currentTimeMillis() - entry.getValue();
-            if ( elapsedSinceLastHeartbeat > deadInstancePeriodMs )
+            try
             {
-                removedHeartbeatInstances.remove(entry.getKey());
+                client.create().forPath(ZKPaths.makePath(configPath, CONFIG_NODE_NAME), bytes);
+                newVersion = 0;
+            }
+            catch ( KeeperException.NodeExistsException e1 )
+            {
+                return null;    // by implication, another process created the node first
             }
         }
 
-        final String  fixedInstanceHostname = fixHostname(instanceHostname);
-        if
-        (
-            // see if it's in the active cache
-            Iterables.find
-            (
-                cache.getCurrentData(),
-                new Predicate<ChildData>()
-                {
-                    @Override
-                    public boolean apply(ChildData data)
-                    {
-                        return ZKPaths.getNodeFromPath(data.getPath()).contains(SEPARATOR + EPHEMERAL_NODE_NAME + fixedInstanceHostname);
-                    }
-                },
-                null
-            ) != null
-        )
-        {
-            return true;
-        }
-
-        return removedHeartbeatInstances.containsKey(fixedInstanceHostname);    // it's still waiting to be considered dead if it's in removedHeartbeatInstances
-    }
-
-    @Override
-    public void clearInstanceHeartbeat() throws Exception
-    {
-        // NOP
+        return new LoadedInstanceConfig(propertyBasedInstanceConfig, newVersion);
     }
 
     @Override
@@ -220,101 +149,26 @@ public class ZookeeperConfigProvider implements ConfigProvider
         return new ZookeeperPseudoLock(lock);
     }
 
+    @VisibleForTesting
+    PathChildrenCache getPathChildrenCache()
+    {
+        return cache;
+    }
+
     private ChildData getConfigNode()
     {
         return Iterables.find
-        (
-            cache.getCurrentData(),
-            new Predicate<ChildData>()
-            {
-                @Override
-                public boolean apply(ChildData data)
+            (
+                cache.getCurrentData(),
+                new Predicate<ChildData>()
                 {
-                    return ZKPaths.getNodeFromPath(data.getPath()).equals(CONFIG_NODE_NAME);
-                }
-            },
-            null
-        );
-    }
-
-    private String getHostnameFromEphemeralNode(String nodeName) throws UnsupportedEncodingException
-    {
-        String[] parts = nodeName.split("\\" + SEPARATOR);
-        for ( String p : parts )
-        {
-            if ( p.startsWith(EPHEMERAL_NODE_NAME) )
-            {
-                String fixedHostname = p.substring(EPHEMERAL_NODE_NAME.length());
-                return unfixHostname(fixedHostname);
-            }
-        }
-
-        throw new IllegalStateException("Could not find hostname in: " + nodeName);
-    }
-
-    private String unfixHostname(String fixedHostname) throws UnsupportedEncodingException
-    {
-        return URLDecoder.decode(fixedHostname, "UTF-8");
-    }
-
-    private synchronized void makeEphemeralNode() throws Exception
-    {
-        if ( state.get() != State.STARTED )
-        {
-            return;
-        }
-
-        String      fixedHostname = fixHostname(hostname);
-        String      nodeName = SEPARATOR + EPHEMERAL_NODE_NAME + fixedHostname + SEPARATOR;
-        String      path = ZKPaths.makePath(configPath, nodeName);
-
-        deleteEphemeralNode();
-        ephemeralNode = client.create().withProtection().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath(path);
-
-        CuratorWatcher      watcher = new CuratorWatcher()
-        {
-            @Override
-            public void process(WatchedEvent event) throws Exception
-            {
-                makeEphemeralNode();
-            }
-        };
-        client.checkExists().usingWatcher(watcher).forPath(ephemeralNode);
-    }
-
-    private String fixHostname(String instanceHostname) throws UnsupportedEncodingException
-    {
-        return URLEncoder.encode(instanceHostname, "UTF-8");
-    }
-
-    private void deleteEphemeralNode() throws Exception
-    {
-        if ( ephemeralNode != null )
-        {
-            client.delete().guaranteed().forPath(ephemeralNode);
-            ephemeralNode = null;
-        }
-    }
-
-    @VisibleForTesting
-    protected void handleCacheEvent(PathChildrenCacheEvent event) throws UnsupportedEncodingException
-    {
-        if ( isHeartbeatNode(event.getData()) )
-        {
-            String      instanceHostname = getHostnameFromEphemeralNode(event.getData().getPath());
-            if ( (event.getType() == PathChildrenCacheEvent.Type.CHILD_REMOVED) )
-            {
-                removedHeartbeatInstances.put(instanceHostname, System.currentTimeMillis());
-            }
-            else if ( (event.getType() == PathChildrenCacheEvent.Type.CHILD_ADDED) || (event.getType() == PathChildrenCacheEvent.Type.CHILD_UPDATED) )
-            {
-                removedHeartbeatInstances.remove(instanceHostname);
-            }
-        }
-    }
-
-    private boolean isHeartbeatNode(ChildData data)
-    {
-        return (data != null) && ZKPaths.getNodeFromPath(data.getPath()).contains(SEPARATOR + EPHEMERAL_NODE_NAME);
+                    @Override
+                    public boolean apply(ChildData data)
+                    {
+                        return ZKPaths.getNodeFromPath(data.getPath()).equals(CONFIG_NODE_NAME);
+                    }
+                },
+                null
+            );
     }
 }

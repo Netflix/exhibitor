@@ -14,26 +14,23 @@
  *    limitations under the License.
  */
 
-package com.netflix.exhibitor.core.config;
+package com.netflix.exhibitor.core.automanage;
 
-public class LoadedInstanceConfig
+import com.sun.jersey.api.client.WebResource;
+import javax.ws.rs.core.MediaType;
+import java.io.Closeable;
+import java.net.URI;
+
+public interface RemoteInstanceRequestClient extends Closeable
 {
-    private final ConfigCollection      config;
-    private final long                  version;
-
-    public LoadedInstanceConfig(ConfigCollection config, long version)
-    {
-        this.config = config;
-        this.version = version;
-    }
-
-    public ConfigCollection getConfig()
-    {
-        return config;
-    }
-
-    public long getVersion()
-    {
-        return version;
-    }
+    /**
+     * Return the WebResource (usually cached) for the given URI
+     *
+     * @param remoteUri URI
+     * @param type media type
+     * @param clazz resource class
+     * @return WebResource
+     * @throws Exception errors
+     */
+    public <T> T   getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception;
 }

@@ -26,6 +26,18 @@ public enum InstanceStateTypes
 
     private final int code;
 
+    public static InstanceStateTypes    fromCode(int code)
+    {
+        for ( InstanceStateTypes type : values() )
+        {
+            if ( type.getCode() == code )
+            {
+                return type;
+            }
+        }
+        return null;
+    }
+
     public int getCode()
     {
         return code;

@@ -43,9 +43,21 @@ public enum StringConfigs
     },
 
     /**
-     * Where to store ZooKeeper data
+     * Where to store ZooKeeper snapshots
      */
     ZOOKEEPER_DATA_DIRECTORY
+    {
+        @Override
+        public boolean isRestartSignificant()
+        {
+            return true;
+        }
+    },
+
+    /**
+     * Where to store ZooKeeper transaction logs
+     */
+    ZOOKEEPER_LOG_DIRECTORY
     {
         @Override
         public boolean isRestartSignificant()

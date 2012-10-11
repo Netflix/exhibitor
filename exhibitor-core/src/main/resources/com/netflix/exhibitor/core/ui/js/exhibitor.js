@@ -26,7 +26,6 @@ var URL_EXPLORER_ANALYZE = "../explorer/analyze";
 
 var URL_GET_STATE = "../config/get-state";
 var URL_SET_CONFIG = "../config/set";
-var URL_SET_CONTROL_PANEL_CONFIG = "../config/set-control-panel";
 var URL_SET_CONFIG_ROLLING = "../config/set-rolling";
 var URL_ROLLBACK_ROLLING = "../config/rollback-rolling";
 var URL_FORCE_COMMIT_ROLLING = "../config/force-commit-rolling";
@@ -34,6 +33,8 @@ var URL_FORCE_COMMIT_ROLLING = "../config/force-commit-rolling";
 var URL_GET_BACKUP_CONFIG = "backup-config";
 var URL_GET_TABS = "tabs";
 var URL_RESTART = "stop";
+
+var AUTOMATIC_INSTANCE_MANAGEMENT_HELP_TEXT = "When on, as new instances read the shared config they will automatically add themselves to the ensemble via a rolling release. Additionally, old instances will be automatically removed via rolling release.";
 
 var doConfigUpdates = true;
 var configChangesBeingSubmitted = false;
@@ -159,7 +160,6 @@ function updateState()
             if ( systemState.standaloneMode )
             {
                 $('#standalone-mode-message').show();
-                $('#cp-auto-init-container').hide();
                 $('#fieldset-automatic-instance-management').hide();
             }
 
@@ -249,9 +249,10 @@ function buildNewConfig()
 {
     var newConfig = {};
     newConfig.zookeeperInstallDirectory = $('#config-zookeeper-install-dir').val();
-    newConfig.zookeeperDataDirectory = $('#config-zookeeper-data-dir').val();
+    newConfig.zookeeperDataDirectory = $('#config-zookeeper-snapshot-dir').val();
+    newConfig.zookeeperLogDirectory = $('#config-zookeeper-log-dir').val();
     newConfig.logIndexDirectory = $('#config-log-index-dir').val();
-    newConfig.deadInstancePeriodMs = $('#config-dead-instance-ms').val();
+    newConfig.autoManageInstancesSettlingPeriodMs = $('#config-automatic-management-period-ms').val();
     newConfig.observerThreshold = $('#config-observer-threshold').val();
     newConfig.serversSpec = $('#config-servers-spec').val();
     newConfig.javaEnvironment = $('#config-java-env').val();
@@ -264,6 +265,7 @@ function buildNewConfig()
     newConfig.cleanupMaxFiles = $('#config-cleanup-max-files').val();
     newConfig.backupPeriodMs = $('#config-backup-ms').val();
     newConfig.backupMaxStoreMs = $('#config-backup-max-store-ms').val();
+    newConfig.autoManageInstances = $('#cp-auto-init-instances').prop("checked") ? "1" : "0";
 
     var zooCfgTab = $('#config-custom').val().split("\n");
     newConfig.zooCfgExtra = {};
@@ -296,29 +298,9 @@ function turnOffEditableSwitch()
     handleEditableSwitch();
 }
 
-function changeControlPanelConfig(field, selector)
+function hideShowConfigProcessingDialog(showIt)
 {
-    var tab = new Array();
-    var update = {};
-    update.field = field;
-    update.value = $(selector).attr('checked') != undefined;
-    tab.push(update);
-
-    var payload = JSON.stringify(tab);
-    $.ajax({
-        type: 'POST',
-        url: URL_SET_CONTROL_PANEL_CONFIG,
-        cache: false,
-        data: payload,
-        contentType: 'application/json',
-        success:function(data)
-        {
-            if ( !data.succeeded )
-            {
-                messageDialog("Error", data.message);
-            }
-        }
-    });
+    $('#updating-config-dialog').dialog(showIt ? "open" : "close");
 }
 
 function submitConfigChanges(rolling)
@@ -336,6 +318,7 @@ function submitConfigChanges(rolling)
     var payload = JSON.stringify(newConfig);
 
     configChangesBeingSubmitted = true;
+    hideShowConfigProcessingDialog(true);
     $.ajax({
         type: 'POST',
         url: rolling ? URL_SET_CONFIG_ROLLING : URL_SET_CONFIG,
@@ -343,6 +326,7 @@ function submitConfigChanges(rolling)
         data: payload,
         contentType: 'application/json',
         success:function(data){
+            hideShowConfigProcessingDialog(false);
             configChangesBeingSubmitted = false;
             if ( !data.succeeded )
             {
@@ -350,7 +334,9 @@ function submitConfigChanges(rolling)
             }
         },
         error:function(){
+            hideShowConfigProcessingDialog(false);
             configChangesBeingSubmitted = false;
+            messageDialog("There was a communication error. The config change may not have committed.")
         }
     });
     turnOffEditableSwitch();
@@ -368,11 +354,12 @@ function getBackupExtraId(obj)
 
 function ableConfig(enable)
 {
-    ableLightSwitch('#cp-auto-init-instances', null, !enable);  // control panel stuff is opposite
+    ableLightSwitch('#cp-auto-init-instances', null, enable);
 
     $('#config-zookeeper-install-dir').prop('disabled', !enable);
-    $('#config-zookeeper-data-dir').prop('disabled', !enable);
-    $('#config-dead-instance-ms').prop('disabled', !enable);
+    $('#config-zookeeper-snapshot-dir').prop('disabled', !enable);
+    $('#config-zookeeper-log-dir').prop('disabled', !enable);
+    $('#config-automatic-management-period-ms').prop('disabled', !enable);
     $('#config-observer-threshold').prop('disabled', !enable);
     $('#config-log-index-dir').prop('disabled', !enable);
     $('#config-servers-spec').prop('disabled', !enable);
@@ -400,10 +387,6 @@ function ableConfig(enable)
 
 function updateConfig()
 {
-    if ( systemConfig.controlPanel ) {
-        checkLightSwitch('#cp-auto-init-instances', systemConfig.controlPanel.autoManageInstances);
-    }
-
     if ( !doConfigUpdates || configChangesBeingSubmitted ) {
         return;
     }
@@ -414,9 +397,11 @@ function updateConfig()
         configExtra += p + "=" + systemConfig.zooCfgExtra[p] + "\n";
     }
 
+    checkLightSwitch('#cp-auto-init-instances', (systemConfig.autoManageInstances != "0"));
     $('#config-zookeeper-install-dir').val(systemConfig.zookeeperInstallDirectory);
-    $('#config-zookeeper-data-dir').val(systemConfig.zookeeperDataDirectory);
-    $('#config-dead-instance-ms').val(systemConfig.deadInstancePeriodMs);
+    $('#config-zookeeper-snapshot-dir').val(systemConfig.zookeeperDataDirectory);
+    $('#config-zookeeper-log-dir').val(systemConfig.zookeeperLogDirectory);
+    $('#config-automatic-management-period-ms').val(systemConfig.autoManageInstancesSettlingPeriodMs);
     $('#config-observer-threshold').val(systemConfig.observerThreshold);
     $('#config-log-index-dir').val(systemConfig.logIndexDirectory);
     $('#config-servers-spec').val(systemConfig.serversSpec);
@@ -547,6 +532,7 @@ function checkConfigConfirmation()
     var     hasEnsembleLevelChange =
         (newConfig.zookeeperInstallDirectory != systemConfig.zookeeperInstallDirectory)
         || (newConfig.zookeeperDataDirectory != systemConfig.zookeeperDataDirectory)
+        || (newConfig.zookeeperLogDirectory != systemConfig.zookeeperLogDirectory)
         || (newConfig.serversSpec != systemConfig.serversSpec)
         || (newConfig.clientPort != systemConfig.clientPort)
         || (newConfig.connectPort != systemConfig.connectPort)
@@ -804,10 +790,25 @@ $(function ()
         }
     );
 
-    makeLightSwitch('#config-editable', handleEditableSwitch);
-    makeLightSwitch('#cp-auto-init-instances', function(){
-        changeControlPanelConfig('autoManageInstances', '#cp-auto-init-instances');
+    $('#updating-config-progressbar').progressbar({
+        value: 100
     });
+    $('#updating-config-dialog').dialog({
+        width: 300,
+        height: 100,
+        modal: true,
+        autoOpen: false,
+        title: "Config change in progress...",
+        resizable: false
+    });
+
+    $('#cp-auto-init-instances-help').attr("title", AUTOMATIC_INSTANCE_MANAGEMENT_HELP_TEXT);
+    $('#cp-auto-init-instances-help-button').button().click(function(){
+        messageDialog("Automatic Server List Add/Remove", AUTOMATIC_INSTANCE_MANAGEMENT_HELP_TEXT);
+    });
+
+    makeLightSwitch('#config-editable', handleEditableSwitch);
+    makeLightSwitch('#cp-auto-init-instances');
     turnOffEditableSwitch();
 
     initRestoreUI();

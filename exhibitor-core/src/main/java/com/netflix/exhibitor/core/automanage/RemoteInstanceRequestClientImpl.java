@@ -14,20 +14,30 @@
  *    limitations under the License.
  */
 
-package com.netflix.exhibitor.core.rest;
+package com.netflix.exhibitor.core.automanage;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.netflix.exhibitor.core.state.RemoteInstanceRequestClient;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.net.SocketException;
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicInteger;
 
-class RemoteInstanceRequestClientImpl implements RemoteInstanceRequestClient
+public class RemoteInstanceRequestClientImpl implements RemoteInstanceRequestClient
 {
-    private static final Client client = Client.create();
+    private static final AtomicInteger userCount = new AtomicInteger(0);
+    private static final Client client;
+    static
+    {
+        client = Client.create();
+        client.setConnectTimeout(10000);    // TODO make configurable
+        client.setReadTimeout(3000);        // TODO make configurable
+    }
+
     private static final LoadingCache<URI, WebResource> webResources = CacheBuilder.newBuilder()
         .softValues()
         .build
@@ -42,9 +52,35 @@ class RemoteInstanceRequestClientImpl implements RemoteInstanceRequestClient
                 }
             );
 
+    public RemoteInstanceRequestClientImpl()
+    {
+        userCount.incrementAndGet();
+    }
+
     @Override
     public <T> T getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception
     {
-        return webResources.get(remoteUri).accept(type).get(clazz);
+        try
+        {
+            return webResources.get(remoteUri).accept(type).get(clazz);
+        }
+        catch ( Exception e )
+        {
+            if ( e.getCause() instanceof SocketException )
+            {
+                throw (SocketException)e.getCause();
+            }
+
+            throw e;
+        }
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        if ( userCount.decrementAndGet() == 0 )
+        {
+            client.destroy();
+        }
     }
 }

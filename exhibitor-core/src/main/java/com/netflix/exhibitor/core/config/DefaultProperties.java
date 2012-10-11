@@ -144,9 +144,9 @@ public class DefaultProperties
                         return (int)TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
                     }
 
-                    case DEAD_INSTANCE_PERIOD_MS:
+                    case AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS:
                     {
-                        return (int)TimeUnit.MILLISECONDS.convert(15, TimeUnit.MINUTES);
+                        return (int)TimeUnit.MILLISECONDS.convert(3, TimeUnit.MINUTES);
                     }
 
                     case OBSERVER_THRESHOLD:

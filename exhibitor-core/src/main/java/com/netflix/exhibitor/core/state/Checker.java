@@ -37,16 +37,17 @@ public class Checker
         this.hostname = hostname;
     }
 
-    public InstanceStateTypes calculateState() throws Exception
+    public StateAndLeader calculateState() throws Exception
     {
         InstanceConfig          config = exhibitor.getConfigManager().getConfig();
 
         if ( !isSet(config, StringConfigs.ZOOKEEPER_DATA_DIRECTORY) || !isSet(config, StringConfigs.ZOOKEEPER_INSTALL_DIRECTORY) )
         {
-            return InstanceStateTypes.LATENT;
+            return new StateAndLeader(InstanceStateTypes.LATENT, false);
         }
 
         InstanceStateTypes      actualState = InstanceStateTypes.DOWN;
+        boolean                 isLeader = false;
         String                  ruok = new FourLetterWord(FourLetterWord.Word.RUOK, hostname, config, exhibitor.getConnectionTimeOutMs()).getResponse();
         if ( "imok".equals(ruok) )
         {
@@ -65,12 +66,20 @@ public class Checker
                 if ( line.toLowerCase().startsWith("mode") )
                 {
                     actualState = InstanceStateTypes.SERVING;
+                    String[]        parts = line.split(":");
+                    if ( parts.length > 1 )
+                    {
+                        if ( parts[1].trim().equalsIgnoreCase("leader") )
+                        {
+                            isLeader = true;
+                        }
+                    }
                     break;
                 }
             }
         }
 
-        return actualState;
+        return new StateAndLeader(actualState, isLeader);
     }
 
     private boolean isSet(InstanceConfig config, StringConfigs type)

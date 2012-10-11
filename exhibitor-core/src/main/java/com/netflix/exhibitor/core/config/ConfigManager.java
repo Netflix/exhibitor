@@ -29,7 +29,7 @@ import com.netflix.exhibitor.core.activity.RepeatingActivity;
 import com.netflix.exhibitor.core.config.none.NoneConfigProvider;
 import com.netflix.exhibitor.core.state.InstanceState;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
-import com.netflix.exhibitor.core.state.RemoteInstanceRequest;
+import com.netflix.exhibitor.core.automanage.RemoteInstanceRequest;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
@@ -121,16 +121,6 @@ public class ConfigManager implements Closeable
         configListeners.add(listener);
     }
 
-    public void writeHeartbeat() throws Exception
-    {
-        provider.writeInstanceHeartbeat();
-    }
-
-    public boolean      isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
-    {
-        return provider.isHeartbeatAliveForInstance(instanceHostname, deadInstancePeriodMs);
-    }
-
     public boolean isStandaloneMode()
     {
         return provider instanceof NoneConfigProvider;
@@ -178,7 +168,8 @@ public class ConfigManager implements Closeable
                     {
                         if ( waitingForQuorumAttempts.incrementAndGet() >= maxAttempts )
                         {
-                            advanceRollingConfig(localConfig);
+                            exhibitor.getLog().add(ActivityLog.Type.INFO, "Ensemble is not achieving quorum. Now falling back to a force commit of the configuration change.");
+                            cancelRollingConfig(CancelMode.FORCE_COMMIT);
                         }
                         else
                         {
@@ -190,7 +181,7 @@ public class ConfigManager implements Closeable
         }
     }
 
-    public synchronized boolean startRollingConfig(final InstanceConfig newConfig) throws Exception
+    public synchronized boolean startRollingConfig(final InstanceConfig newConfig, String leaderHostname) throws Exception
     {
         ConfigCollection        localConfig = getCollection();
         if ( localConfig.isRolling() )
@@ -199,7 +190,7 @@ public class ConfigManager implements Closeable
         }
 
         InstanceConfig          currentConfig = getCollection().getRootConfig();
-        RollingHostNamesBuilder builder = new RollingHostNamesBuilder(currentConfig, newConfig, exhibitor.getLog());
+        RollingHostNamesBuilder builder = new RollingHostNamesBuilder(currentConfig, newConfig, leaderHostname);
 
         clearAttempts();
 
@@ -311,7 +302,7 @@ public class ConfigManager implements Closeable
             {
                 if ( activeAttempt.getAttemptCount() >= maxAttempts )
                 {
-                    exhibitor.getLog().add(ActivityLog.Type.INFO, "Exhausted attempts to connect to " + remoteInstanceRequest.getHostname());
+                    exhibitor.getLog().add(ActivityLog.Type.INFO, "Exhausted attempts to connect to " + remoteInstanceRequest.getHostname() + " - skipping and moving on to next instance");
                     newCollection = checkNextInstanceState(config, rollingHostNames, rollingHostNamesIndex + 1);  // it must be down. Skip it.
                 }
                 else
@@ -330,7 +321,7 @@ public class ConfigManager implements Closeable
 
     private boolean internalUpdateConfig(ConfigCollection newCollection) throws Exception
     {
-        LoadedInstanceConfig updated = provider.storeConfig(newCollection, config.get().getLastModified());
+        LoadedInstanceConfig updated = provider.storeConfig(newCollection, config.get().getVersion());
         if ( updated != null )
         {
             setNewConfig(updated);
@@ -342,15 +333,7 @@ public class ConfigManager implements Closeable
 
     private void setNewConfig(LoadedInstanceConfig newConfig) throws Exception
     {
-        LoadedInstanceConfig previousConfig = config.getAndSet(newConfig);
-        if ( previousConfig != null )
-        {
-            if ( newConfig.getConfig().getRootConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES) != previousConfig.getConfig().getRootConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES) )
-            {
-                provider.clearInstanceHeartbeat();
-            }
-        }
-
+        config.getAndSet(newConfig);
         notifyListeners();
     }
 
@@ -365,7 +348,7 @@ public class ConfigManager implements Closeable
     private synchronized void doWork() throws Exception
     {
         LoadedInstanceConfig    newConfig = provider.loadConfig();
-        if ( newConfig.getLastModified() != config.get().getLastModified() )
+        if ( newConfig.getVersion() != config.get().getVersion() )
         {
             setNewConfig(newConfig);
         }

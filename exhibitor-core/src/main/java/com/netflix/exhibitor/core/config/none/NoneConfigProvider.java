@@ -17,6 +17,7 @@
 package com.netflix.exhibitor.core.config.none;
 
 import com.google.common.io.Closeables;
+import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.config.ConfigCollection;
 import com.netflix.exhibitor.core.config.ConfigProvider;
 import com.netflix.exhibitor.core.config.LoadedInstanceConfig;
@@ -79,7 +80,7 @@ public class NoneConfigProvider implements ConfigProvider
     }
 
     @Override
-    public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
+    public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
     {
         File                            propertiesFile = new File(directory, FILE_NAME);
         PropertyBasedInstanceConfig     propertyBasedInstanceConfig = new PropertyBasedInstanceConfig(config);
@@ -100,36 +101,12 @@ public class NoneConfigProvider implements ConfigProvider
     }
 
     @Override
-    public void writeInstanceHeartbeat() throws Exception
-    {
-        // NOP
-    }
-
-    @Override
-    public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
-    {
-        return true;
-    }
-
-    @Override
-    public void clearInstanceHeartbeat() throws Exception
-    {
-        // NOP
-    }
-
-    @Override
     public PseudoLock newPseudoLock() throws Exception
     {
         return new PseudoLock()
         {
             @Override
-            public void lock() throws Exception
-            {
-                // NOP
-            }
-
-            @Override
-            public boolean lock(long maxWait, TimeUnit unit) throws Exception
+            public boolean lock(ActivityLog log, long maxWait, TimeUnit unit) throws Exception
             {
                 return true;
             }

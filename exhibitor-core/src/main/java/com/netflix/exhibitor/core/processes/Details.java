@@ -37,6 +37,7 @@ class Details
 {
     final File zooKeeperDirectory;
     final File dataDirectory;
+    final File logDirectory;
     final File configDirectory;
     final String logPaths;
     final String zooKeeperJarPath;
@@ -48,6 +49,9 @@ class Details
 
         this.zooKeeperDirectory = getZooKeeperDirectory(config);
         this.dataDirectory = new File(config.getString(StringConfigs.ZOOKEEPER_DATA_DIRECTORY));
+
+        String      logDirectory = config.getString(StringConfigs.ZOOKEEPER_LOG_DIRECTORY);
+        this.logDirectory = (logDirectory.trim().length() > 0) ? new File(logDirectory) : this.dataDirectory;
 
         configDirectory = new File(zooKeeperDirectory, "conf");
         logPaths = findJar(new File(zooKeeperDirectory, "lib"), "(.*log4j.*)|(.*slf4j.*)");
@@ -62,6 +66,7 @@ class Details
                 properties.setProperty(fv.getField(), fv.getValue());
             }
             properties.setProperty("dataDir", dataDirectory.getPath());
+            properties.setProperty("dataLogDir", this.logDirectory.getPath());
         }
     }
 
@@ -70,6 +75,7 @@ class Details
         return isValidPath(zooKeeperDirectory)
             && isValidPath(dataDirectory)
             && isValidPath(configDirectory)
+            && isValidPath(logDirectory)
             ;
     }
 

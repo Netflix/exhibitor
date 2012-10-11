@@ -58,10 +58,6 @@
 
 
             <div id="tabs-main" class="ui-helper-hidden">
-                <div id="cp-auto-init-container" class="ui-widget ui-corner-all ui-state-highlight" title="When on, as new instances read the shared config they will automatically add themselves to the ensemble via a rolling release. Additionally, old instances will be automatically removed via rolling release.">
-                    <label for="cp-auto-init-instances">Automatically add/remove instances in the server list</label><input type="checkbox" id="cp-auto-init-instances"><br clear="all"/>
-                </div>
-
                 <div id="base-server-item">
                 </div>
             </div>
@@ -169,7 +165,8 @@
                         <legend class="caution-legend">Paths</legend>
                         <label for="config-zookeeper-install-dir">ZooKeeper Install Dir</label><input type="text" id="config-zookeeper-install-dir" name="config-zookeeper-install-dir" size="60" title="The directory where the ZooKeeper server is installed">
                             <button id="config-zookeeper-install-dir-help-button">Read Me</button><br clear="all"/>
-                        <label for="config-zookeeper-data-dir">ZooKeeper Data Dir</label><input type="text" id="config-zookeeper-data-dir" name="config-zookeeper-data-dir" size="60" title="The directory where the ZooKeeper data is stored"><br clear="all"/>
+                        <label for="config-zookeeper-snapshot-dir">ZooKeeper Snapshot Dir</label><input type="text" id="config-zookeeper-snapshot-dir" name="snapshot-zookeeper-snapshot-dir" size="60" title="The directory where the ZooKeeper snapshot data is stored"><br clear="all"/>
+                        <label for="config-zookeeper-log-dir">ZooKeeper Transaction Dir</label><input type="text" id="config-zookeeper-log-dir" name="config-zookeeper-log-dir" size="60" title="The directory where the ZooKeeper transaction log data is stored. Leave blank to use the ZooKeeper Snapshot Dir"><br clear="all"/>
                     </fieldset>
 
                     <fieldset class="caution-fieldset">
@@ -189,7 +186,9 @@
 
                     <fieldset id="fieldset-automatic-instance-management">
                         <legend>Automatic Server List Add/Remove</legend>
-                        <label for="config-dead-instance-ms">Dead Instance Threshold (ms)</label><input type="text" id="config-dead-instance-ms" class="mask-pint" name="config-dead-instance-ms" size="8" title="The number of milliseconds to consider an instance dead and, thus, a candidate for automatic instance cleanup."><br clear="all"/>
+                        <span id="cp-auto-init-instances-help"><input type="checkbox" id="cp-auto-init-instances"></span>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<button id="cp-auto-init-instances-help-button">Read Me</button><br clear="all"/>
+                        <label for="config-automatic-management-period-ms">Settling Period (ms)</label><input type="text" id="config-automatic-management-period-ms" class="mask-pint" name="config-automatic-management-period-ms" size="8" title="Automatic Server List management will wait this long until the ZooKeeper ensemble has settled - i.e. no changes in quorum, etc. - before adding/removing instances."><br clear="all"/>
                         <label for="config-observer-threshold">Observer Threshold</label><input type="text" id="config-observer-threshold" class="mask-pint" name="config-observer-threshold" size="3" title="Marks which instances are made Observers by automatic instance management. Instances below this number are normal instances. Instances from this number and up are Observers."><br clear="all"/>
                     </fieldset>
 
@@ -244,7 +243,7 @@
 
         <div id="message-dialog" class="ui-helper-hidden">
             <p>
-            <span id="message-dialog-icon" class="ui-icon ui-icon-alert" style="float: left; margin:0 7px 50px 0;"></span>
+            <span id="message-dialog-icon" class="ui-icon ui-icon-alert" style="float: left; margin:0 7px 60px 0;"></span>
             <span id="message-dialog-text"></span>
             </p>
         </div>
@@ -403,6 +402,10 @@
             <button id="$FOO$index-query-filter-button">Filter...</button>
             <button id="$FOO$index-query-clear-filter-button">Clear Filter</button>
             <button id="$FOO$index-query-clear-restore-button">Restore...</button>
+        </div>
+
+        <div id="updating-config-dialog" class="ui-helper-hidden">
+            <div id="updating-config-progressbar" class="ui-progressbar-value"></div>
         </div>
     </body>
 </html>

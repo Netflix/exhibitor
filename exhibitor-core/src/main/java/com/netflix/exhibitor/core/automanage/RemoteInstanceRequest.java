@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.netflix.exhibitor.core.state;
+package com.netflix.exhibitor.core.automanage;
 
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.rest.ClusterResource;

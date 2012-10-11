@@ -22,7 +22,7 @@ import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.activity.ActivityQueue;
 import com.netflix.exhibitor.core.state.InstanceState;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
-import com.netflix.exhibitor.core.state.RemoteInstanceRequestClient;
+import com.netflix.exhibitor.core.automanage.RemoteInstanceRequestClient;
 import com.netflix.exhibitor.core.state.RestartSignificantConfig;
 import com.netflix.exhibitor.core.state.ServerList;
 import org.mockito.Mockito;
@@ -32,10 +32,122 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class TestRollingConfigChange
 {
+    @Test
+    public void testFailedQuorum() throws Exception
+    {
+        ServerList          serverList = new ServerList("1:one,2:two,3:three");
+
+        RemoteInstanceRequestClient     mockClient = new RemoteInstanceRequestClient()
+        {
+            @Override
+            public void close() throws IOException
+            {
+            }
+
+            @Override
+            public <T> T getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception
+            {
+                return clazz.cast("foo");
+            }
+        };
+
+        ActivityLog         log = new ActivityLog(100);
+        ActivityQueue       activityQueue = new ActivityQueue();
+        Exhibitor           mockExhibitor = Mockito.mock(Exhibitor.class);
+        Mockito.when(mockExhibitor.getLog()).thenReturn(log);
+        Mockito.when(mockExhibitor.getActivityQueue()).thenReturn(activityQueue);
+        Mockito.when(mockExhibitor.getThisJVMHostname()).thenReturn("one");
+        Mockito.when(mockExhibitor.getRemoteInstanceRequestClient()).thenReturn(mockClient);
+
+        final AtomicLong    modified = new AtomicLong(1);
+        ConfigProvider      provider = new ConfigProvider()
+        {
+            private volatile ConfigCollection      config = new PropertyBasedInstanceConfig(new Properties(), new Properties());
+
+            @Override
+            public void start() throws Exception
+            {
+            }
+
+            @Override
+            public void close() throws IOException
+            {
+            }
+
+            @Override
+            public LoadedInstanceConfig loadConfig() throws Exception
+            {
+                return new LoadedInstanceConfig(config, modified.get());
+            }
+
+            @Override
+            public PseudoLock newPseudoLock() throws Exception
+            {
+                return null;
+            }
+
+            @Override
+            public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
+            {
+                this.config = config;
+                modified.incrementAndGet();
+                return loadConfig();
+            }
+        };
+
+        InstanceState       state = new InstanceState(serverList, InstanceStateTypes.NOT_SERVING, new RestartSignificantConfig(null));
+
+        final AtomicBoolean hasBeenCanceled = new AtomicBoolean(false);
+        ConfigManager       manager = new ConfigManager(mockExhibitor, provider, 10)
+        {
+            @Override
+            public synchronized void cancelRollingConfig(CancelMode mode) throws Exception
+            {
+                super.cancelRollingConfig(mode);
+                hasBeenCanceled.set(true);
+            }
+        };
+        manager.start();
+        try
+        {
+            Properties                      properties = new Properties();
+            properties.setProperty(PropertyBasedInstanceConfig.toName(StringConfigs.SERVERS_SPEC, PropertyBasedInstanceConfig.ROOT_PROPERTY_PREFIX), serverList.toSpecString());
+            PropertyBasedInstanceConfig     config = new PropertyBasedInstanceConfig(properties, DefaultProperties.get(null));
+            manager.startRollingConfig(config.getRootConfig(), null);
+
+            String      hostname = manager.getRollingConfigState().getRollingHostNames().get(0);
+            Assert.assertTrue(manager.isRolling());
+
+            RollingReleaseState     rollingState = new RollingReleaseState(state, manager.getCollection());
+            Assert.assertEquals(rollingState.getCurrentRollingHostname(), hostname);
+            Assert.assertNull(manager.getRollingConfigAdvanceAttempt());
+
+            Mockito.when(mockExhibitor.getThisJVMHostname()).thenReturn(hostname);
+
+            for ( int i = 0; i < (ConfigManager.DEFAULT_MAX_ATTEMPTS - 1); ++i )
+            {
+                long                lastModified = modified.get();
+                manager.checkRollingConfig(state);
+                Assert.assertFalse(modified.get() > lastModified);
+                Assert.assertFalse(hasBeenCanceled.get());
+            }
+
+            manager.checkRollingConfig(state);
+            Assert.assertTrue(hasBeenCanceled.get());
+
+            Assert.assertFalse(manager.isRolling());
+        }
+        finally
+        {
+            Closeables.closeQuietly(manager);
+        }
+    }
+
     @Test
     public void testLongQuorumSuccess() throws Exception
     {
@@ -43,6 +155,11 @@ public class TestRollingConfigChange
 
         RemoteInstanceRequestClient     mockClient = new RemoteInstanceRequestClient()
         {
+            @Override
+            public void close() throws IOException
+            {
+            }
+
             @Override
             public <T> T getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception
             {
@@ -97,6 +214,11 @@ public class TestRollingConfigChange
         RemoteInstanceRequestClient     mockClient = new RemoteInstanceRequestClient()
         {
             @Override
+            public void close() throws IOException
+            {
+            }
+
+            @Override
             public <T> T getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception
             {
                 throw new Exception();
@@ -119,7 +241,7 @@ public class TestRollingConfigChange
             Properties                      properties = new Properties();
             properties.setProperty(PropertyBasedInstanceConfig.toName(StringConfigs.SERVERS_SPEC, PropertyBasedInstanceConfig.ROOT_PROPERTY_PREFIX), serverList.toSpecString());
             PropertyBasedInstanceConfig     config = new PropertyBasedInstanceConfig(properties, DefaultProperties.get(null));
-            manager.startRollingConfig(config.getRootConfig());
+            manager.startRollingConfig(config.getRootConfig(), null);
 
             Assert.assertFalse(manager.isRolling());
         }
@@ -136,6 +258,11 @@ public class TestRollingConfigChange
 
         RemoteInstanceRequestClient     mockClient = new RemoteInstanceRequestClient()
         {
+            @Override
+            public void close() throws IOException
+            {
+            }
+
             @Override
             public <T> T getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception
             {
@@ -167,7 +294,7 @@ public class TestRollingConfigChange
             Properties                      properties = new Properties();
             properties.setProperty(PropertyBasedInstanceConfig.toName(StringConfigs.SERVERS_SPEC, PropertyBasedInstanceConfig.ROOT_PROPERTY_PREFIX), serverList.toSpecString());
             PropertyBasedInstanceConfig     config = new PropertyBasedInstanceConfig(properties, DefaultProperties.get(null));
-            manager.startRollingConfig(config.getRootConfig());
+            manager.startRollingConfig(config.getRootConfig(), null);
 
             for ( String hostname : manager.getRollingConfigState().getRollingHostNames() )
             {
@@ -217,6 +344,11 @@ public class TestRollingConfigChange
         RemoteInstanceRequestClient     mockClient = new RemoteInstanceRequestClient()
         {
             @Override
+            public void close() throws IOException
+            {
+            }
+
+            @Override
             public <T> T getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception
             {
                 if ( remoteUri.getHost().equals("two") )
@@ -257,29 +389,13 @@ public class TestRollingConfigChange
             }
 
             @Override
-            public void writeInstanceHeartbeat() throws Exception
-            {
-            }
-
-            @Override
-            public void clearInstanceHeartbeat() throws Exception
-            {
-            }
-
-            @Override
-            public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
-            {
-                return false;
-            }
-
-            @Override
             public PseudoLock newPseudoLock() throws Exception
             {
                 return null;
             }
 
             @Override
-            public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
+            public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
             {
                 this.config = config;
                 modified.incrementAndGet();
@@ -296,7 +412,7 @@ public class TestRollingConfigChange
             Properties                      properties = new Properties();
             properties.setProperty(PropertyBasedInstanceConfig.toName(StringConfigs.SERVERS_SPEC, PropertyBasedInstanceConfig.ROOT_PROPERTY_PREFIX), serverList.toSpecString());
             PropertyBasedInstanceConfig     config = new PropertyBasedInstanceConfig(properties, DefaultProperties.get(null));
-            manager.startRollingConfig(config.getRootConfig());
+            manager.startRollingConfig(config.getRootConfig(), null);
 
             for ( String hostname : manager.getRollingConfigState().getRollingHostNames() )
             {
@@ -347,6 +463,11 @@ public class TestRollingConfigChange
         RemoteInstanceRequestClient     mockClient = new RemoteInstanceRequestClient()
         {
             @Override
+            public void close() throws IOException
+            {
+            }
+
+            @Override
             public <T> T getWebResource(URI remoteUri, MediaType type, Class<T> clazz) throws Exception
             {
                 return clazz.cast("foo");
@@ -383,29 +504,13 @@ public class TestRollingConfigChange
             }
 
             @Override
-            public void writeInstanceHeartbeat() throws Exception
-            {
-            }
-
-            @Override
-            public void clearInstanceHeartbeat() throws Exception
-            {
-            }
-
-            @Override
-            public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
-            {
-                return false;
-            }
-
-            @Override
             public PseudoLock newPseudoLock() throws Exception
             {
                 return null;
             }
 
             @Override
-            public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
+            public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
             {
                 this.config = config;
                 modified.incrementAndGet();
@@ -422,7 +527,7 @@ public class TestRollingConfigChange
             Properties                      properties = new Properties();
             properties.setProperty(PropertyBasedInstanceConfig.toName(StringConfigs.SERVERS_SPEC, PropertyBasedInstanceConfig.ROOT_PROPERTY_PREFIX), serverList.toSpecString());
             PropertyBasedInstanceConfig     config = new PropertyBasedInstanceConfig(properties, DefaultProperties.get(null));
-            manager.startRollingConfig(config.getRootConfig());
+            manager.startRollingConfig(config.getRootConfig(), null);
 
             for ( String hostname : manager.getRollingConfigState().getRollingHostNames() )
             {
@@ -475,29 +580,13 @@ public class TestRollingConfigChange
         }
 
         @Override
-        public void writeInstanceHeartbeat() throws Exception
-        {
-        }
-
-        @Override
-        public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
-        {
-            return false;
-        }
-
-        @Override
-        public void clearInstanceHeartbeat() throws Exception
-        {
-        }
-
-        @Override
         public PseudoLock newPseudoLock() throws Exception
         {
             return null;
         }
 
         @Override
-        public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
+        public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
         {
             this.config = config;
             modified.incrementAndGet();

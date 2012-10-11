@@ -48,7 +48,6 @@ public class ExhibitorCLI
 
     public static final String FILESYSTEM_CONFIG_DIRECTORY = "fsconfigdir";
     public static final String FILESYSTEM_CONFIG_NAME = "fsconfigname";
-    public static final String FILESYSTEM_CONFIG_PREFIX = "fsconfigprefix";
     public static final String FILESYSTEM_CONFIG_LOCK_PREFIX = "fsconfiglockprefix";
     public static final String S3_CREDENTIALS = "s3credentials";
     public static final String S3_BACKUP = "s3backup";
@@ -81,7 +80,7 @@ public class ExhibitorCLI
     public static final String ACL_PERMISSIONS = "aclperms";
 
     public static final String DEFAULT_FILESYSTEMCONFIG_NAME = "exhibitor.properties";
-    public static final String DEFAULT_FILESYSTEMCONFIG_PREFIX = "exhibitor-";
+    public static final String DEFAULT_PREFIX = "exhibitor-";
     public static final String DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX = "exhibitor-lock-";
     public static final String DEFAULT_ZOOKEEPER_CONFIG_RETRY = "1000:3";
     public static final String DEFAULT_ZOOKEEPER_CONFIG_POLLING = "10000";
@@ -100,12 +99,11 @@ public class ExhibitorCLI
         fileConfigOptions = new Options();
         fileConfigOptions.addOption(null, FILESYSTEM_CONFIG_DIRECTORY, true, "Directory to store Exhibitor properties (cannot be used with s3config). Exhibitor uses file system locks so you can specify a shared location so as to enable complete ensemble management. Default location is " + System.getProperty("user.dir"));
         fileConfigOptions.addOption(null, FILESYSTEM_CONFIG_NAME, true, "The name of the file to store config in. Used in conjunction with " + FILESYSTEM_CONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_NAME);
-        fileConfigOptions.addOption(null, FILESYSTEM_CONFIG_PREFIX, true, "A prefix for various config values such as heartbeats. Used in conjunction with " + FILESYSTEM_CONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_PREFIX);
         fileConfigOptions.addOption(null, FILESYSTEM_CONFIG_LOCK_PREFIX, true, "A prefix for a locking mechanism. Used in conjunction with " + FILESYSTEM_CONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX);
 
         s3ConfigOptions = new Options();
         s3ConfigOptions.addOption(null, S3_CONFIG, true, "The bucket name and key to store the config (s3credentials may be provided as well). Argument is [bucket name]:[key].");
-        s3ConfigOptions.addOption(null, S3_CONFIG_PREFIX, true, "When using AWS S3 shared config files, the prefix to use for values such as heartbeats. Default is " + DEFAULT_FILESYSTEMCONFIG_PREFIX);
+        s3ConfigOptions.addOption(null, S3_CONFIG_PREFIX, true, "When using AWS S3 shared config files, the prefix to use for values such as locks. Default is " + DEFAULT_PREFIX);
 
         zookeeperConfigOptions = new Options();
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING, true, "The initial connection string for ZooKeeper shared config storage. E.g: \"host1:2181,host2:2181...\"");

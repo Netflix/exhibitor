@@ -17,6 +17,7 @@
 package com.netflix.exhibitor.core.config.zookeeper;
 
 import com.netflix.curator.framework.recipes.locks.InterProcessLock;
+import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.config.PseudoLock;
 import java.util.concurrent.TimeUnit;
 
@@ -30,15 +31,14 @@ public class ZookeeperPseudoLock implements PseudoLock
     }
 
     @Override
-    public void lock() throws Exception
+    public boolean lock(ActivityLog log, long maxWait, TimeUnit unit) throws Exception
     {
-        lock.acquire();
-    }
-
-    @Override
-    public boolean lock(long maxWait, TimeUnit unit) throws Exception
-    {
-        return lock.acquire(maxWait, unit);
+        boolean acquire = lock.acquire(maxWait, unit);
+        if ( !acquire )
+        {
+            log.add(ActivityLog.Type.ERROR, String.format("Could not acquire lock within %d ms", unit.toMillis(maxWait)));
+        }
+        return acquire;
     }
 
     @Override

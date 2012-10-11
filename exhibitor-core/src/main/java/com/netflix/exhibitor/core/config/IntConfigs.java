@@ -124,19 +124,13 @@ public enum IntConfigs
         {
             return false;
         }
-
-        @Override
-        public boolean isPartOfControlPanel()
-        {
-            return true;
-        }
     },
 
     /**
-     * Period in ms to consider an instance dead and, thus, a candidate for automatic
-     * instance removal - default is 3 hours
+     * Period in ms to wait for instances to settle (i.e. no change in state) before processing
+     * automatic instance management
      */
-    DEAD_INSTANCE_PERIOD_MS()
+    AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS()
     {
         @Override
         public boolean isRestartSignificant()
@@ -165,14 +159,4 @@ public enum IntConfigs
      * @return true/false
      */
     public abstract boolean     isRestartSignificant();
-
-    /**
-     * Return true if this is on the control panel tab instead of the Config tab
-     *
-     * @return true/false
-     */
-    public boolean isPartOfControlPanel()
-    {
-        return false;
-    }
 }

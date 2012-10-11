@@ -236,7 +236,7 @@ public class ExhibitorMain implements Closeable
         }
         else if ( configType.equals("file") )
         {
-            configProvider = getFileSystemProvider(commandLine, backupProvider, useHostname);
+            configProvider = getFileSystemProvider(commandLine, backupProvider);
         }
         else if ( configType.equals("zookeeper") )
         {
@@ -395,19 +395,18 @@ public class ExhibitorMain implements Closeable
         };
     }
 
-    private static ConfigProvider getFileSystemProvider(CommandLine commandLine, BackupProvider backupProvider, String hostname) throws IOException
+    private static ConfigProvider getFileSystemProvider(CommandLine commandLine, BackupProvider backupProvider) throws IOException
     {
         File directory = commandLine.hasOption(FILESYSTEM_CONFIG_DIRECTORY) ? new File(commandLine.getOptionValue(FILESYSTEM_CONFIG_DIRECTORY)) : new File(System.getProperty("user.dir"));
         String name = commandLine.hasOption(FILESYSTEM_CONFIG_NAME) ? commandLine.getOptionValue(FILESYSTEM_CONFIG_NAME) : DEFAULT_FILESYSTEMCONFIG_NAME;
-        String prefix = commandLine.hasOption(FILESYSTEM_CONFIG_PREFIX) ? commandLine.getOptionValue(FILESYSTEM_CONFIG_PREFIX) : DEFAULT_FILESYSTEMCONFIG_PREFIX;
         String lockPrefix = commandLine.hasOption(FILESYSTEM_CONFIG_LOCK_PREFIX) ? commandLine.getOptionValue(FILESYSTEM_CONFIG_LOCK_PREFIX) : DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX;
-        return new FileSystemConfigProvider(directory, name, prefix, DefaultProperties.get(backupProvider), new AutoManageLockArguments(lockPrefix), hostname);
+        return new FileSystemConfigProvider(directory, name, DefaultProperties.get(backupProvider), new AutoManageLockArguments(lockPrefix));
     }
 
     private static ConfigProvider getS3Provider(ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, String hostname) throws Exception
     {
         ConfigProvider provider;
-        String  prefix = cli.getOptions().hasOption(S3_CONFIG_PREFIX) ? commandLine.getOptionValue(S3_CONFIG_PREFIX) : DEFAULT_FILESYSTEMCONFIG_PREFIX;
+        String  prefix = cli.getOptions().hasOption(S3_CONFIG_PREFIX) ? commandLine.getOptionValue(S3_CONFIG_PREFIX) : DEFAULT_PREFIX;
         provider = new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, getS3Arguments(cli, commandLine.getOptionValue(S3_CONFIG), prefix), hostname);
         return provider;
     }
@@ -432,7 +431,7 @@ public class ExhibitorMain implements Closeable
             cli.printHelp();
             return null;
         }
-        return new S3ConfigArguments(parts[0].trim(), parts[1].trim(), prefix, new S3ConfigAutoManageLockArguments(prefix + "-lock-"));
+        return new S3ConfigArguments(parts[0].trim(), parts[1].trim(), new S3ConfigAutoManageLockArguments(prefix + "-lock-"));
     }
 
     private static CuratorFramework makeCurator(final String connectString, int baseSleepTimeMs, int maxRetries, int pollingMs)

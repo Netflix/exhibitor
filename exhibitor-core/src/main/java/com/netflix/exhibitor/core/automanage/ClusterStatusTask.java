@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.netflix.exhibitor.core.rest.jersey;
+package com.netflix.exhibitor.core.automanage;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.entities.ServerStatus;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
-import com.netflix.exhibitor.core.state.RemoteInstanceRequest;
 import com.netflix.exhibitor.core.state.ServerList;
 import com.netflix.exhibitor.core.state.ServerSpec;
 import jsr166y.RecursiveTask;
@@ -91,7 +90,7 @@ public class ClusterStatusTask extends RecursiveTask<List<ServerStatus>>
         if ( spec.equals(us) )
         {
             InstanceStateTypes state = exhibitor.getMonitorRunningInstance().getCurrentInstanceState();
-            return new ServerStatus(spec.getHostname(), state.getCode(), state.getDescription());
+            return new ServerStatus(spec.getHostname(), state.getCode(), state.getDescription(), exhibitor.getMonitorRunningInstance().isCurrentlyLeader());
         }
 
         try
@@ -103,12 +102,12 @@ public class ClusterStatusTask extends RecursiveTask<List<ServerStatus>>
             JsonNode                        value = mapper.readTree(mapper.getJsonFactory().createJsonParser(result.remoteResponse));
             if ( value.size() == 0 )
             {
-                return new ServerStatus(spec.getHostname(), InstanceStateTypes.DOWN.getCode(), InstanceStateTypes.DOWN.getDescription());
+                return new ServerStatus(spec.getHostname(), InstanceStateTypes.DOWN.getCode(), InstanceStateTypes.DOWN.getDescription(), false);
             }
 
             int                             code = value.get("state").asInt();
             String                          description = value.get("description").asText();
-            return new ServerStatus(spec.getHostname(), code, description);
+            return new ServerStatus(spec.getHostname(), code, description, value.get("isLeader").asBoolean());
         }
         catch ( IOException e )
         {

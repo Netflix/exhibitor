@@ -1,41 +1,27 @@
-// Establish version and status
-ext.releaseVersion = '1.2.5'
-ext.githubProjectName = rootProject.name
+ext.githubProjectName = rootProject.name // Change if github project name is not the same as the root project's name
 
 buildscript {
     repositories { mavenCentral() }
+    apply from: file('gradle/buildscript.gradle'), to: buildscript 
 }
 
 allprojects {
     repositories { mavenCentral() }
 }
 
-//apply from: file('gradle/release.gradle') // Not fully tested
 apply from: file('gradle/convention.gradle')
 apply from: file('gradle/maven.gradle')
 //apply from: file('gradle/check.gradle')
 //apply from: file('gradle/license.gradle') // Waiting for re-release
+apply from: file('gradle/release.gradle')
 
 apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 subprojects {
     apply plugin: 'idea'
-
-    // Closure to configure all the POM with extra info, common to all projects
-    pom {
-        project {
-            url "https://github.com/Netflix/${rootProject.githubProjectName}"
-            scm {
-                connection "scm:git:git@github.com:Netflix/${rootProject.githubProjectName}.git"
-                url "scm:git:git@github.com:Netflix/${rootProject.githubProjectName}.git"
-                developerConnection "scm:git:git@github.com:Netflix/${rootProject.githubProjectName}.git"
-            }
-            issueManagement {
-                system 'github'
-                url "https://github.com/Netflix/${rootProject.githubProjectName}/issues"
-            }
-        }
-    }
+    apply plugin: 'eclipse'
+    apply plugin: 'java'
 
     group = "com.netflix.${githubProjectName}" // TEMPLATE: Set to organization of project
 
@@ -60,13 +46,13 @@ project(':exhibitor-core') {
         compile 'javax.ws.rs:jsr311-api:1.1.1'
         compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
         compile 'org.apache.lucene:lucene-core:3.5.0'
-        compile 'com.sun.jersey:jersey-client:1.11'
+        compile 'com.sun.jersey:jersey-client:1.9'
 
         // if you are using Java 7 you can remove this and switch to the JDK version
         compile 'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
 
         compile 'com.amazonaws:aws-java-sdk:1.3.11'   // should be provided - gradle doesn't support
-        compile 'com.sun.jersey:jersey-bundle:1.1.4'  // should be provided - gradle doesn't support
+        compile 'com.sun.jersey:jersey-bundle:1.9'  // should be provided - gradle doesn't support
         compile 'com.sun.xml.bind:jaxb-impl:2.2.4'   // should be provided - gradle doesn't support
 
         testCompile 'com.netflix.curator:curator-test:1.2.2'
@@ -80,7 +66,7 @@ project(':exhibitor-standalone') {
         compile (project(":exhibitor-core")) {
             exclude group: 'com.sun.jersey', module: 'jersey-client'
         }
-        compile 'com.sun.jersey:jersey-bundle:1.1.4'
+        compile 'com.sun.jersey:jersey-bundle:1.9'
         compile 'com.sun.xml.bind:jaxb-impl:2.2.4'
         compile 'org.mortbay.jetty:jetty:6.1.22'
         compile 'com.google.guava:guava:11.0.1'

@@ -529,19 +529,6 @@ fieldset
     width: 125px;
 }
 
-#cp-auto-init-container
-{
-    margin-bottom: 12px;
-    padding: 5px;
-}
-
-#cp-auto-init-container label
-{
-    float: left;
-    padding-right: 15px;
-    font-weight: normal;
-}
-
 #standalone-mode-message
 {
     text-align: center;

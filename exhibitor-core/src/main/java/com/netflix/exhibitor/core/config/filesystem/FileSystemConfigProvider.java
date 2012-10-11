@@ -17,7 +17,6 @@
 package com.netflix.exhibitor.core.config.filesystem;
 
 import com.google.common.io.Closeables;
-import com.google.common.io.Files;
 import com.netflix.exhibitor.core.config.AutoManageLockArguments;
 import com.netflix.exhibitor.core.config.ConfigCollection;
 import com.netflix.exhibitor.core.config.ConfigProvider;
@@ -30,61 +29,47 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class FileSystemConfigProvider implements ConfigProvider
 {
     private final File propertiesDirectory;
     private final String propertyFileName;
-    private final String heartbeatFilePrefix;
     private final Properties defaults;
     private final AutoManageLockArguments autoManageLockArguments;
-    private final String hostname;
-    private final AtomicLong lastHeartbeatCleanup = new AtomicLong(0);
-
-    private static final String             FILE_CONTENT = "foo";
-
-    private static final int                CLEANUP_PERIOD_MS = (int)TimeUnit.MILLISECONDS.convert(1, TimeUnit.HOURS);
-    private static final int                MAX_AGE_MS = (int)TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
 
     /**
      *
+     *
+     *
      * @param propertiesDirectory where to store the properties
      * @param propertyFileName name of the file to store properties in
-     * @param heartbeatFilePrefix prefix for heartbeat files
      * @param autoManageLockArguments config arguments for auto managing instances
-     * @param hostname the hostname of this JVM
      * @throws IOException if directory cannot be created
     */
-    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix, AutoManageLockArguments autoManageLockArguments, String hostname) throws IOException
+    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, AutoManageLockArguments autoManageLockArguments) throws IOException
     {
-        this(propertiesDirectory, propertyFileName, heartbeatFilePrefix, new Properties(), autoManageLockArguments, hostname);
+        this(propertiesDirectory, propertyFileName, new Properties(), autoManageLockArguments);
     }
 
     /**
      *
+     *
+     *
      * @param propertiesDirectory where to store the properties
      * @param propertyFileName name of the file to store properties in
-     * @param heartbeatFilePrefix prefix for heartbeat files
      * @param defaults default values  @throws IOException if directory cannot be created
      * @param autoManageLockArguments config arguments for auto managing instances
-     * @param hostname the hostname of this JVM
      * @throws IOException if directory cannot be created
      */
-    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, String heartbeatFilePrefix, Properties defaults, AutoManageLockArguments autoManageLockArguments, String hostname) throws IOException
+    public FileSystemConfigProvider(File propertiesDirectory, String propertyFileName, Properties defaults, AutoManageLockArguments autoManageLockArguments) throws IOException
     {
         this.propertiesDirectory = propertiesDirectory;
         this.propertyFileName = propertyFileName;
-        this.heartbeatFilePrefix = heartbeatFilePrefix;
         this.defaults = defaults;
         this.autoManageLockArguments = autoManageLockArguments;
-        this.hostname = hostname;
 
         if ( propertiesDirectory.exists() && !propertiesDirectory.isDirectory() )
         {
@@ -145,9 +130,14 @@ public class FileSystemConfigProvider implements ConfigProvider
     }
 
     @Override
-    public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareLastModified) throws Exception
+    public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
     {
         File                            propertiesFile = new File(propertiesDirectory, propertyFileName);
+        if ( propertiesFile.lastModified() != compareVersion )
+        {
+            return null;
+        }
+
         PropertyBasedInstanceConfig     propertyBasedInstanceConfig = new PropertyBasedInstanceConfig(config);
 
         long                lastModified = 0;
@@ -172,72 +162,5 @@ public class FileSystemConfigProvider implements ConfigProvider
         }
 
         return new LoadedInstanceConfig(propertyBasedInstanceConfig, lastModified);
-    }
-
-    @Override
-    public void writeInstanceHeartbeat() throws Exception
-    {
-        File file = getHeartbeatFile(hostname);
-        Files.write(FILE_CONTENT.getBytes(), file);
-    }
-
-    @Override
-    public void clearInstanceHeartbeat() throws Exception
-    {
-        File    f = getHeartbeatFile(hostname);
-        if ( f.exists() )
-        {
-            //noinspection ResultOfMethodCallIgnored
-            f.delete();
-        }
-    }
-
-    private File getHeartbeatFile(String instanceHostname) throws UnsupportedEncodingException
-    {
-        String      fixedHostname = URLEncoder.encode(instanceHostname, "UTF-8");
-        return new File(propertiesDirectory, heartbeatFilePrefix + fixedHostname);
-    }
-
-    @Override
-    public boolean isHeartbeatAliveForInstance(String instanceHostname, int deadInstancePeriodMs) throws Exception
-    {
-        long    lastHeartbeatForInstance = getLastHeartbeatForInstance(instanceHostname);
-        long    elapsedSinceLastHeartbeat = System.currentTimeMillis() - lastHeartbeatForInstance;
-        return elapsedSinceLastHeartbeat <= deadInstancePeriodMs;
-    }
-
-    private long getLastHeartbeatForInstance(String instanceHostname) throws Exception
-    {
-        long        lastCleanupMs = lastHeartbeatCleanup.get();
-        if ( (System.currentTimeMillis() - lastCleanupMs) >= CLEANUP_PERIOD_MS )
-        {
-            if ( lastHeartbeatCleanup.compareAndSet(lastCleanupMs, System.currentTimeMillis()) )
-            {
-                doCleanup();
-            }
-        }
-
-        File file = getHeartbeatFile(instanceHostname);
-        return file.exists() ? file.lastModified() : 0;
-    }
-
-    private void doCleanup()
-    {
-        File[]      files = propertiesDirectory.listFiles();
-        if ( files != null )
-        {
-            for ( File f : files )
-            {
-                if ( f.getName().startsWith(heartbeatFilePrefix) )
-                {
-                    long        age = System.currentTimeMillis() - f.lastModified();
-                    if ( age > MAX_AGE_MS )
-                    {
-                        //noinspection ResultOfMethodCallIgnored
-                        f.delete();
-                    }
-                }
-            }
-        }
     }
 }

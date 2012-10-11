@@ -1,11 +1,8 @@
 
-ext.performingRelease = project.hasProperty('release') && Boolean.parseBoolean(project.release)
-def versionPostfix = performingRelease?'':'-SNAPSHOT'
-version = "${releaseVersion}${versionPostfix}"
-status = performingRelease?'release':'snapshot'
+// For Artifactory
+rootProject.status = version.contains('-SNAPSHOT')?'snapshot':'release'
 
-subprojects
-{
+subprojects { project ->
     apply plugin: 'java' // Plugin as major conventions
 
     version = rootProject.version
@@ -25,6 +22,10 @@ subprojects
         from javadoc.destinationDir
     }
 
+    // Ensure output is on a new line
+    javadoc.doFirst { println "" }
+
+
     artifacts {
         archives sourcesJar
         archives javadocJar
@@ -40,5 +41,5 @@ task aggregateJavadoc(type: Javadoc) {
 
 // Generate wrapper, which is distributed as part of source to alleviate the need of installing gradle
 task createWrapper(type: Wrapper) {
-    gradleVersion = '1.0-milestone-9'
+    gradleVersion = '1.1'
 }

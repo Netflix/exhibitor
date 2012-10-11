@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.zip.Adler32;
 import java.util.zip.Checksum;
 
@@ -34,6 +35,35 @@ public class ZooKeeperLogParser
 {
     private final BinaryInputArchive logStream;
     private final boolean            validHeader;
+
+    private static final Method             deserializeTxnMethod;
+    private static final boolean            useOldDeserializeMethod;
+    static
+    {
+        // The signature for SerializeUtils.deserializeTxn changed between 3.3.x and 3.4.x
+        // so, use reflection to work with both
+
+        Method          localSeserializeTxnMethod;
+        boolean         localUseOldDeserializeMethod = true;
+        try
+        {
+            localSeserializeTxnMethod = SerializeUtils.class.getMethod("deserializeTxn", InputArchive.class, TxnHeader.class);
+        }
+        catch ( Exception e )
+        {
+            try
+            {
+                localSeserializeTxnMethod = SerializeUtils.class.getMethod("deserializeTxn", byte[].class, TxnHeader.class);
+                localUseOldDeserializeMethod = false;
+            }
+            catch ( NoSuchMethodException e1 )
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        deserializeTxnMethod = localSeserializeTxnMethod;
+        useOldDeserializeMethod = localUseOldDeserializeMethod;
+    }
 
     public ZooKeeperLogParser(InputStream log)
     {
@@ -92,10 +122,11 @@ public class ZooKeeperLogParser
             {
                 throw new IOException("CRC doesn't match " + crcValue + " vs " + crc.getValue());
             }
-            InputArchive iab = BinaryInputArchive.getArchive(new ByteArrayInputStream(bytes));
 
-            TxnHeader   hdr = new TxnHeader();
-            Record      record = SerializeUtils.deserializeTxn(iab, hdr);
+            InputArchive    iab = BinaryInputArchive.getArchive(new ByteArrayInputStream(bytes));
+            TxnHeader       hdr = new TxnHeader();
+
+            Record          record = useOldDeserializeMethod ? (Record)deserializeTxnMethod.invoke(null, iab, hdr) : (Record)deserializeTxnMethod.invoke(null, bytes, hdr);
 
             if ( logStream.readByte("EOR") != 'B' )
             {

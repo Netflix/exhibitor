@@ -26,6 +26,9 @@ import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.activity.ActivityQueue;
 import com.netflix.exhibitor.core.activity.QueueGroups;
 import com.netflix.exhibitor.core.activity.RepeatingActivity;
+import com.netflix.exhibitor.core.automanage.AutomaticInstanceManagement;
+import com.netflix.exhibitor.core.automanage.RemoteInstanceRequestClient;
+import com.netflix.exhibitor.core.automanage.RemoteInstanceRequestClientImpl;
 import com.netflix.exhibitor.core.backup.BackupManager;
 import com.netflix.exhibitor.core.backup.BackupProvider;
 import com.netflix.exhibitor.core.config.ConfigListener;
@@ -38,13 +41,11 @@ import com.netflix.exhibitor.core.index.IndexCache;
 import com.netflix.exhibitor.core.processes.ProcessMonitor;
 import com.netflix.exhibitor.core.processes.ProcessOperations;
 import com.netflix.exhibitor.core.processes.StandardProcessOperations;
-import com.netflix.exhibitor.core.rest.ClusterResource;
 import com.netflix.exhibitor.core.rest.UITab;
-import com.netflix.exhibitor.core.state.AutomaticInstanceManagement;
 import com.netflix.exhibitor.core.state.CleanupManager;
 import com.netflix.exhibitor.core.state.ManifestVersion;
 import com.netflix.exhibitor.core.state.MonitorRunningInstance;
-import com.netflix.exhibitor.core.state.RemoteInstanceRequestClient;
+import jsr166y.ForkJoinPool;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -54,21 +55,23 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Exhibitor implements Closeable
 {
-    private final ActivityLog               log;
-    private final ActivityQueue             activityQueue = new ActivityQueue();
-    private final MonitorRunningInstance    monitorRunningInstance;
-    private final Collection<UITab>         additionalUITabs;
-    private final ProcessOperations         processOperations;
-    private final CleanupManager            cleanupManager;
-    private final AtomicReference<State>    state = new AtomicReference<State>(State.LATENT);
-    private final IndexCache                indexCache;
-    private final ControlPanelValues        controlPanelValues;
-    private final BackupManager             backupManager;
-    private final ConfigManager             configManager;
-    private final ExhibitorArguments        arguments;
-    private final ProcessMonitor            processMonitor;
-    private final RepeatingActivity         autoInstanceManagement;
-    private final ManifestVersion           manifestVersion = new ManifestVersion();
+    private final ActivityLog                   log;
+    private final ActivityQueue                 activityQueue = new ActivityQueue();
+    private final MonitorRunningInstance        monitorRunningInstance;
+    private final Collection<UITab>             additionalUITabs;
+    private final ProcessOperations             processOperations;
+    private final CleanupManager                cleanupManager;
+    private final AtomicReference<State>        state = new AtomicReference<State>(State.LATENT);
+    private final IndexCache                    indexCache;
+    private final ControlPanelValues            controlPanelValues;
+    private final BackupManager                 backupManager;
+    private final ConfigManager                 configManager;
+    private final ExhibitorArguments            arguments;
+    private final ProcessMonitor                processMonitor;
+    private final RepeatingActivity             autoInstanceManagement;
+    private final ManifestVersion               manifestVersion = new ManifestVersion();
+    private final ForkJoinPool                  forkJoinPool = new ForkJoinPool();
+    private final RemoteInstanceRequestClient   remoteInstanceRequestClient = new RemoteInstanceRequestClientImpl();
 
     public static final int        AUTO_INSTANCE_MANAGEMENT_PERIOD_MS = 60000;
 
@@ -202,6 +205,7 @@ public class Exhibitor implements Closeable
         Closeables.closeQuietly(monitorRunningInstance);
         Closeables.closeQuietly(configManager);
         Closeables.closeQuietly(activityQueue);
+        Closeables.closeQuietly(remoteInstanceRequestClient);
         closeLocalConnection();
     }
 
@@ -332,12 +336,17 @@ public class Exhibitor implements Closeable
 
     public RemoteInstanceRequestClient getRemoteInstanceRequestClient()
     {
-        return ClusterResource.getRemoteInstanceRequestClient();
+        return remoteInstanceRequestClient;
     }
 
     public ExhibitorArguments.LogDirection getLogDirection()
     {
         return arguments.logDirection;
+    }
+
+    public ForkJoinPool getForkJoinPool()
+    {
+        return forkJoinPool;
     }
 
     private synchronized void closeLocalConnection()

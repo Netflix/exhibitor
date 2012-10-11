@@ -19,6 +19,7 @@ package com.netflix.exhibitor.core.config;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.Exhibitor;
+import com.netflix.exhibitor.core.activity.ActivityLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.security.SecureRandom;
@@ -78,24 +79,16 @@ public abstract class PseudoLockBase implements PseudoLock
     }
 
     /**
-     * Acquire the lock, blocking until it is acquired
-     *
-     * @throws Exception errors
-     */
-    public synchronized void  lock() throws Exception
-    {
-        lock(0, null);
-    }
-
-    /**
      * Acquire the lock, blocking at most <code>maxWait</code> until it is acquired
      *
+     *
+     * @param log the logger
      * @param maxWait max time to wait
      * @param unit time unit
      * @return true if the lock was acquired
      * @throws Exception errors
      */
-    public synchronized boolean lock(long maxWait, TimeUnit unit) throws Exception
+    public synchronized boolean lock(ActivityLog log, long maxWait, TimeUnit unit) throws Exception
     {
         if ( ownsTheLock )
         {
@@ -127,7 +120,7 @@ public abstract class PseudoLockBase implements PseudoLock
                 thisWaitMs = maxWaitMs - elapsedMs;
                 if ( thisWaitMs <= 0 )
                 {
-                    log.debug(String.format("Could not acquire lock within %d ms, polling: %d ms, key: %s", maxWaitMs, pollingMs, key));
+                    log.add(ActivityLog.Type.ERROR, String.format("Could not acquire lock within %d ms, polling: %d ms, key: %s", maxWaitMs, pollingMs, key));
                     break;
                 }
             }
