@@ -45,7 +45,7 @@ project(':exhibitor-core') {
         compile 'com.google.guava:guava:11.0.1'
         compile 'javax.ws.rs:jsr311-api:1.1.1'
         compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
-        compile 'org.apache.lucene:lucene-core:3.5.0'
+        compile 'org.apache.lucene:lucene-core:3.6.0'
         compile 'com.sun.jersey:jersey-client:1.11'
 
         // if you are using Java 7 you can remove this and switch to the JDK version
