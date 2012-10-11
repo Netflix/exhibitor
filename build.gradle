@@ -46,12 +46,13 @@ project(':exhibitor-core') {
         compile 'javax.ws.rs:jsr311-api:1.1.1'
         compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
         compile 'org.apache.lucene:lucene-core:3.5.0'
-        compile 'com.sun.jersey:jersey-bundle:1.9.1'
+        compile 'com.sun.jersey:jersey-client:1.11'
 
         // if you are using Java 7 you can remove this and switch to the JDK version
         compile 'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
 
         compile 'com.amazonaws:aws-java-sdk:1.3.11'   // should be provided - gradle doesn't support
+        compile 'com.sun.jersey:jersey-bundle:1.9.1'  // should be provided - gradle doesn't support
         compile 'com.sun.xml.bind:jaxb-impl:2.2.4'   // should be provided - gradle doesn't support
 
         testCompile 'com.netflix.curator:curator-test:1.2.3'
@@ -65,7 +66,9 @@ project(':exhibitor-standalone') {
         compile (project(":exhibitor-core")) {
             exclude group: 'com.sun.jersey', module: 'jersey-client'
         }
+        compile 'com.sun.jersey:jersey-bundle:1.9.1'
         compile 'com.sun.xml.bind:jaxb-impl:2.2.4'
+        compile 'javax.servlet:servlet-api:2.5'    // should be provided - gradle doesn't support
         compile 'org.mortbay.jetty:jetty:6.1.22'
         compile 'com.google.guava:guava:11.0.1'
         compile 'commons-cli:commons-cli:1.2'
