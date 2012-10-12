@@ -91,7 +91,7 @@ class ClusterState
         List<ServerStatus>      currentStatuses = statuses.get();
         for ( ServerStatus status : currentStatuses )
         {
-            if ( status.isLeader() )
+            if ( status.getIsLeader() )
             {
                 return status.getHostname();
             }

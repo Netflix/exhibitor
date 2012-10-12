@@ -82,7 +82,7 @@ public class AutomaticInstanceManagement implements Activity
 
         if ( !clusterState.isInQuorum() )
         {
-            exhibitor.getLog().add(ActivityLog.Type.INFO, "Ensemble is not currently quorum. Automatic Instance Management will wait for quorum.");
+            exhibitor.getLog().add(ActivityLog.Type.INFO, "Ensemble is not currently in quorum. Automatic Instance Management will wait for quorum.");
             return true;
         }
 

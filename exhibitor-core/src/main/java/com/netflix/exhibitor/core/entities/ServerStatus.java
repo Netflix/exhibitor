@@ -69,12 +69,12 @@ public class ServerStatus
         this.description = description;
     }
 
-    public boolean isLeader()
+    public boolean getIsLeader()
     {
         return isLeader;
     }
 
-    public void setLeader(boolean leader)
+    public void setIsLeader(boolean leader)
     {
         isLeader = leader;
     }
