@@ -28,14 +28,6 @@ subprojects {
     dependencies {
         testCompile 'org.testng:testng:6.1.1'
     }
-
-    jar {
-        manifest {
-            attributes (
-                'Implementation-Version': project.version
-            )
-        }
-    }
 }
 
 project(':exhibitor-core') {
@@ -66,6 +58,15 @@ project(':exhibitor-core') {
         testCompile 'com.netflix.curator:curator-test:1.2.3'
         testCompile 'org.mortbay.jetty:jetty:6.1.22'
         testCompile 'org.mockito:mockito-core:1.8.5'
+    }
+
+    jar {
+        manifest {
+            attributes (
+                'Implementation-Title': 'exhibitor-core',
+                'Implementation-Version': project.version
+            )
+        }
     }
 }
 

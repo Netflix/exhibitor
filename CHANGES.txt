@@ -1,4 +1,4 @@
-1.3.3 - xxxxxxxxxxxxxx
+1.3.4 - xxxxxxxxxxxxxx
 ======================
 * When shutting down ZooKeeper, attempt a simple kill first before trying kill -9.
 
