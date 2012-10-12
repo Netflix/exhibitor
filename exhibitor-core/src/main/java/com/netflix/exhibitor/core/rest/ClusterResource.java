@@ -28,6 +28,7 @@ import com.netflix.exhibitor.core.entities.ServerStatus;
 import com.netflix.exhibitor.core.state.FourLetterWord;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
 import com.netflix.exhibitor.core.state.KillRunningInstance;
+import com.netflix.exhibitor.core.state.MonitorRunningInstance;
 import com.netflix.exhibitor.core.state.ServerList;
 import com.netflix.exhibitor.core.state.ServerSpec;
 import com.netflix.exhibitor.core.state.StartInstance;
@@ -330,9 +331,11 @@ public class ClusterResource
         }
         mainNode.put("switches", switchesNode);
 
-        InstanceStateTypes      state = context.getExhibitor().getMonitorRunningInstance().getCurrentInstanceState();
+        MonitorRunningInstance  monitorRunningInstance = context.getExhibitor().getMonitorRunningInstance();
+        InstanceStateTypes      state = monitorRunningInstance.getCurrentInstanceState();
         mainNode.put("state", state.getCode());
         mainNode.put("description", state.getDescription());
+        mainNode.put("isLeader", monitorRunningInstance.isCurrentlyLeader());
 
         return JsonUtil.writeValueAsString(mainNode);
     }

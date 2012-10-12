@@ -813,7 +813,7 @@ $(function ()
     });
 
     makeLightSwitch('#config-editable', handleEditableSwitch);
-    makeLightSwitch('#cp-auto-init-instances');
+    makeLightSwitch('#cp-auto-init-instances', null, true);
     turnOffEditableSwitch();
 
     initRestoreUI();

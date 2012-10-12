@@ -69,7 +69,8 @@ public class Checker
                     String[]        parts = line.split(":");
                     if ( parts.length > 1 )
                     {
-                        if ( parts[1].trim().equalsIgnoreCase("leader") )
+                        String mode = parts[1].trim();
+                        if ( mode.equalsIgnoreCase("leader") || mode.equalsIgnoreCase("standalone") )
                         {
                             isLeader = true;
                         }
