@@ -23,20 +23,41 @@ label
     padding: 5px;
 }
 
-.text
+.text, .full-text, .tab-text
 {
     font-family: monospace;
     font-size: 80%;
-    padding: 3px;
-    width: 100%;
-    height: 80%;
     overflow: scroll;
     white-space: pre;
-    border: 1px solid black;
 }
 
-.tab-html
+.text
 {
+    padding: 1px;
+    width: 100%;
+    height: 80%;
+}
+
+.tab-text
+{
+    width: 100%;
+    height: 85%;
+}
+
+#word-4ltr-text, #log-text
+{
+    border-top: 1px solid black;
+    padding-top: 3px;
+}
+
+#log-text
+{
+    margin-top: 3px;
+}
+
+#log-refresh-button
+{
+    float: right;
 }
 
 .tooltip

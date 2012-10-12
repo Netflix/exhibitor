@@ -1,4 +1,4 @@
-1.3.2 - xxxxxxxxxxxxxx
+1.3.3 - xxxxxxxxxxxxxx
 ======================
 * When shutting down ZooKeeper, attempt a simple kill first before trying kill -9.
 
@@ -13,8 +13,10 @@ See the wiki for details.
 * Issue 55: Added a way to specify the ACL in the standalone version. Run with "--help" to see
 how to set the options.
 
-* Issue 57: I think this issue is caused by browser caching. I've added cache defeating query
-parameters to all AJAX URLs.
+* Issue 57: Boy - just when you think you know jQuery and Javascript... I didn't realize that buttons
+need to be destroyed explicitly and that event handlers have to be unbound explicitly. This accounts
+for 99% of the weirdness with the buttons in the UI and the problems with the 4LTR dialog. I've also
+added cache defeating query parameters to all AJAX URLs.
 
 * Issue 58: Added a ZookeeperConfigProvider. The idea here is to use a second Zookeeper cluster
 as a datastore for Exhibitor's shared config. You can run Exhibitor on the shared config ensemble

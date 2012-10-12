@@ -169,6 +169,14 @@ function buildViewIndexTable(indexName, indexHandle)
     {
         viewIndexTableExists = false;
         $('#index-query-results-table').dataTable().fnDestroy(true);
+
+        $('#index-query-filter-button').button("destroy");
+        $('#index-query-clear-filter-button').button("destroy");
+        $('#index-query-clear-restore-button').button("destroy");
+
+        $('#index-query-filter-button').unbind("click");
+        $('#index-query-clear-filter-button').unbind("click");
+        $('#index-query-clear-restore-button').unbind("click");
     }
 
     var template = $('#index-query-table-template').html();

@@ -586,7 +586,7 @@ $(function ()
             tabData.url = uiTabSpec[i].url;
             customTabs[i] = tabData;
 
-            var tabContentClass = uiTabSpec[i].html ? 'tab-html' : 'text';
+            var tabContentClass = uiTabSpec[i].html ? 'tab-html' : 'tab-text';
             var tabContent = '<div id="' + tabData.id + '" class="ui-helper-hidden"><div id="' + tabData.contentId + '" class="' + tabContentClass + '"></div></div>';
             $('#tabs').append(tabContent);
             $('#tabs-list').append('<li><a href="#' + tabData.id + '">' + uiTabSpec[i].name + '</a></li>');
@@ -695,6 +695,11 @@ $(function ()
         title: "Log",
         width: 600,
         height: 400
+    });
+    $("#log-refresh-button").button({
+        icons:{
+            primary: "ui-icon-refresh"
+        }
     });
 
     $('#rolling-config-cancel-dialog').dialog({
