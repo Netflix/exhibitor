@@ -52,7 +52,8 @@ class ClusterState
 
     boolean     isInQuorum()
     {
-        return (getLeaderHostname() != null);
+        List<ServerStatus>      currentStatuses = statuses.get();
+        return (currentStatuses.size() == 0) || (getLeaderHostname() != null);
     }
 
     List<ServerStatus>  getLiveInstances()

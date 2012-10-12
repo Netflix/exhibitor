@@ -165,6 +165,23 @@ public class TestAutoInstanceManagement
     }
 
     @Test
+    public void     testInitialAddition() throws Exception
+    {
+        MockExhibitorInstance       mockExhibitorInstance = new MockExhibitorInstance("new");
+        mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "");
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+
+        List<ServerStatus>          statuses = Lists.newArrayList();
+        Mockito.when(mockExhibitorInstance.getMockForkJoinPool().invoke(Mockito.isA(ClusterStatusTask.class))).thenReturn(statuses);
+
+        AutomaticInstanceManagement management = new AutomaticInstanceManagement(mockExhibitorInstance.getMockExhibitor());
+        management.call();
+
+        Assert.assertEquals(mockExhibitorInstance.getMockExhibitor().getConfigManager().getConfig().getString(StringConfigs.SERVERS_SPEC), "1:new");
+    }
+
+    @Test
     public void     testAddition() throws Exception
     {
         MockExhibitorInstance       mockExhibitorInstance = new MockExhibitorInstance("new");
