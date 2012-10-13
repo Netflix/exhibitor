@@ -96,7 +96,7 @@ public class ClusterStatusTask extends RecursiveTask<List<ServerStatus>>
         try
         {
             RemoteInstanceRequest           request = new RemoteInstanceRequest(exhibitor, spec.getHostname());
-            RemoteInstanceRequest.Result    result = request.makeRequest(exhibitor.getRemoteInstanceRequestClient(), "state");
+            RemoteInstanceRequest.Result    result = request.makeRequest(exhibitor.getRemoteInstanceRequestClient(), "getStatus");
 
             ObjectMapper                    mapper = new ObjectMapper();
             JsonNode                        value = mapper.readTree(mapper.getJsonFactory().createJsonParser(result.remoteResponse));
