@@ -219,6 +219,23 @@ public class ConfigManager implements Closeable
     }
 
     @VisibleForTesting
+    public LoadedInstanceConfig getLoadedInstanceConfig()
+    {
+        return config.get();
+    }
+
+    /**
+     * FOR TESTING ONLY
+     *
+     * @param testConfig override config
+     */
+    @VisibleForTesting
+    public void testingSetLoadedInstanceConfig(LoadedInstanceConfig testConfig)
+    {
+        config.set(testConfig);
+    }
+
+    @VisibleForTesting
     RollingConfigAdvanceAttempt getRollingConfigAdvanceAttempt()
     {
         return rollingConfigAdvanceAttempt.get();

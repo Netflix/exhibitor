@@ -1,5 +1,5 @@
-1.3.4 - xxxxxxxxxxxxxx
-======================
+1.4.0 - October 13, 2012
+========================
 * When shutting down ZooKeeper, attempt a simple kill first before trying kill -9.
 
 * Issue 51: Include log4j in standalone version
@@ -62,6 +62,10 @@ default to the Snapshot directory.
     exceeded it would advance anyway. This has been changed. If Quorum is not achieved within 4
     attempts the rolling config change is canceled and the change is force applied. The hope
     is that the ensemble will then settle.
+
+1.3.0 - n/a
+===========
+* Internal Netflix release
 
 1.2.5 - August 2, 2012
 ======================

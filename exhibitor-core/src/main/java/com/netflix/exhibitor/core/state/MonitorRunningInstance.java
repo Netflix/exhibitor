@@ -111,58 +111,77 @@ public class MonitorRunningInstance implements Closeable
         InstanceState   localCurrentInstanceState = currentInstanceState.get();
         if ( instanceState.equals(localCurrentInstanceState) )
         {
-            if ( (localCurrentInstanceState.getState() == InstanceStateTypes.DOWN) || (localCurrentInstanceState.getState() == InstanceStateTypes.NOT_SERVING) )
-            {
-                if ( !exhibitor.getConfigManager().isRolling() )
-                {
-                    long        elapsedMs = System.currentTimeMillis() - localCurrentInstanceState.getTimestampMs();
-                    int         downInstanceRestartMs = getDownInstanceRestartMs(config);
-                    if ( elapsedMs > downInstanceRestartMs )
-                    {
-                        exhibitor.getLog().add(ActivityLog.Type.INFO, "Restarting down/not-serving ZooKeeper after " + elapsedMs + " ms pause");
-                        restartZooKeeper(localCurrentInstanceState);
-                    }
-                    else
-                    {
-                        exhibitor.getLog().add(ActivityLog.Type.INFO, "ZooKeeper down/not-serving waiting " + elapsedMs + " of " + downInstanceRestartMs + " ms before restarting");
-                    }
-                }
-            }
+            checkForRestart(config, localCurrentInstanceState);
         }
         else
         {
-            boolean         serverListChange = (localCurrentInstanceState != null) && !localCurrentInstanceState.getServerList().equals(instanceState.getServerList());
-            boolean         configChange = (localCurrentInstanceState != null) && !localCurrentInstanceState.getCurrentConfig().equals(instanceState.getCurrentConfig());
-            currentInstanceState.set(instanceState);
+            handleServerListChange(instanceState, localCurrentInstanceState);
+        }
+    }
 
-            exhibitor.getLog().add(ActivityLog.Type.INFO, "State: " + instanceState.getState().getDescription());
+    private void handleServerListChange(InstanceState instanceState, InstanceState localCurrentInstanceState) throws Exception
+    {
+        boolean         serverListChange = (localCurrentInstanceState != null) && !localCurrentInstanceState.getServerList().equals(instanceState.getServerList());
+        boolean         configChange = (localCurrentInstanceState != null) && !localCurrentInstanceState.getCurrentConfig().equals(instanceState.getCurrentConfig());
+        currentInstanceState.set(instanceState);
 
-            if ( serverListChange )
+        exhibitor.getLog().add(ActivityLog.Type.INFO, "State: " + instanceState.getState().getDescription());
+
+        if ( serverListChange )
+        {
+            exhibitor.getLog().add(ActivityLog.Type.INFO, "Server list has changed");
+            restartZooKeeper(localCurrentInstanceState);
+        }
+        else if ( configChange )
+        {
+            exhibitor.getLog().add(ActivityLog.Type.INFO, "ZooKeeper related configuration has changed");
+            restartZooKeeper(localCurrentInstanceState);
+        }
+        else
+        {
+            switch ( instanceState.getState() )
             {
-                exhibitor.getLog().add(ActivityLog.Type.INFO, "Server list has changed");
-                restartZooKeeper(localCurrentInstanceState);
+                case DOWN:
+                {
+                    restartZooKeeper(localCurrentInstanceState);
+                    break;
+                }
+
+                default:
+                {
+                    // nop
+                    break;
+                }
             }
-            else if ( configChange )
+        }
+    }
+
+    private void checkForRestart(InstanceConfig config, InstanceState localCurrentInstanceState) throws Exception
+    {
+        if ( exhibitor.getConfigManager().isRolling() )
+        {
+            return;
+        }
+
+        UsState     state = new UsState(exhibitor);
+        boolean     serverListIsDefined = (state.getServerList().getSpecs().size() > 0);
+        if ( serverListIsDefined && (state.getUs() == null) )
+        {
+            return; // there is a server list and we're not in it. Therefore, there's no point in restarting, it will always fail
+        }
+
+        if ( (localCurrentInstanceState.getState() == InstanceStateTypes.DOWN) || (localCurrentInstanceState.getState() == InstanceStateTypes.NOT_SERVING) )
+        {
+            long        elapsedMs = System.currentTimeMillis() - localCurrentInstanceState.getTimestampMs();
+            int         downInstanceRestartMs = getDownInstanceRestartMs(config);
+            if ( elapsedMs > downInstanceRestartMs )
             {
-                exhibitor.getLog().add(ActivityLog.Type.INFO, "ZooKeeper related configuration has changed");
+                exhibitor.getLog().add(ActivityLog.Type.INFO, "Restarting down/not-serving ZooKeeper after " + elapsedMs + " ms pause");
                 restartZooKeeper(localCurrentInstanceState);
             }
             else
             {
-                switch ( instanceState.getState() )
-                {
-                    case DOWN:
-                    {
-                        restartZooKeeper(localCurrentInstanceState);
-                        break;
-                    }
-
-                    default:
-                    {
-                        // nop
-                        break;
-                    }
-                }
+                exhibitor.getLog().add(ActivityLog.Type.INFO, "ZooKeeper down/not-serving waiting " + elapsedMs + " of " + downInstanceRestartMs + " ms before restarting");
             }
         }
     }

@@ -29,10 +29,12 @@ import com.netflix.exhibitor.core.config.StringConfigs;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class MockConfigProvider implements ConfigProvider
 {
     private volatile ConfigCollection       collection = new PropertyBasedInstanceConfig(new Properties(), new Properties());
+    private final AtomicInteger             version = new AtomicInteger(0);
 
     void setConfig(final StringConfigs type, final String value)
     {
@@ -152,7 +154,8 @@ class MockConfigProvider implements ConfigProvider
     @Override
     public LoadedInstanceConfig loadConfig() throws Exception
     {
-        return new LoadedInstanceConfig(collection, 0)
+        version.incrementAndGet();
+        return new LoadedInstanceConfig(collection, version.get())
         {
             @Override
             public ConfigCollection getConfig()
@@ -165,6 +168,11 @@ class MockConfigProvider implements ConfigProvider
     @Override
     public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
     {
+        if ( compareVersion != version.get() )
+        {
+            return null;
+        }
+
         collection = config;
         return new LoadedInstanceConfig(config, compareVersion)
         {

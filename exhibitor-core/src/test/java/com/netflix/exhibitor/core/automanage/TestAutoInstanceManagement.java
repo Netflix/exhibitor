@@ -18,6 +18,7 @@ package com.netflix.exhibitor.core.automanage;
 
 import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.config.IntConfigs;
+import com.netflix.exhibitor.core.config.LoadedInstanceConfig;
 import com.netflix.exhibitor.core.config.StringConfigs;
 import com.netflix.exhibitor.core.entities.ServerStatus;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
@@ -199,6 +200,29 @@ public class TestAutoInstanceManagement
         management.call();
 
         Assert.assertEquals(mockExhibitorInstance.getMockExhibitor().getConfigManager().getConfig().getString(StringConfigs.SERVERS_SPEC), "1:a,2:b,3:c,4:new");
+    }
+
+    @Test
+    public void     testAdditionWithConfigContention() throws Exception
+    {
+        MockExhibitorInstance       mockExhibitorInstance = new MockExhibitorInstance("new");
+        mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "1:a,2:b,3:c");
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+
+        List<ServerStatus>          statuses = Lists.newArrayList();
+        statuses.add(new ServerStatus("a", InstanceStateTypes.SERVING.getCode(), "", true));
+        statuses.add(new ServerStatus("b", InstanceStateTypes.SERVING.getCode(), "", false));
+        statuses.add(new ServerStatus("c", InstanceStateTypes.SERVING.getCode(), "", false));
+        Mockito.when(mockExhibitorInstance.getMockForkJoinPool().invoke(Mockito.isA(ClusterStatusTask.class))).thenReturn(statuses);
+
+        AutomaticInstanceManagement management = new AutomaticInstanceManagement(mockExhibitorInstance.getMockExhibitor());
+        LoadedInstanceConfig        loadedInstanceConfig = mockExhibitorInstance.getMockExhibitor().getConfigManager().getLoadedInstanceConfig();
+        LoadedInstanceConfig        changedCoadedInstanceConfig = new LoadedInstanceConfig(loadedInstanceConfig.getConfig(), loadedInstanceConfig.getVersion() + 1);
+        mockExhibitorInstance.getMockExhibitor().getConfigManager().testingSetLoadedInstanceConfig(changedCoadedInstanceConfig);
+        management.call();
+
+        Assert.assertEquals(mockExhibitorInstance.getMockExhibitor().getConfigManager().getConfig().getString(StringConfigs.SERVERS_SPEC), "1:a,2:b,3:c");  // instance addition should have failed
     }
 
     @Test

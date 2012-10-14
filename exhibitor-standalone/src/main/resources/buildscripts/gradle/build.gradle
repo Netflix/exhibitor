@@ -1,12 +1,25 @@
-// Executed in context of buildscript
+apply plugin: 'java'
+apply plugin: 'maven'
+group = 'exhibitor'
+version = '1.4.0'
+
 repositories {
+    mavenCentral()
     maven {
-        name 'build-repo'
-        url 'https://github.com/Netflix-Skunkworks/build-repo/raw/master/releases/'
+        url "https://repository.jboss.org/nexus/content/groups/public/"
     }
 }
+
 dependencies {
-    classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.6.0'
-    classpath 'com.mapvine:gradle-cobertura-plugin:0.1'
-    classpath 'gradle-release:gradle-release:1.0-SNAPSHOT'
+    compile 'com.netflix.exhibitor:exhibitor-standalone:1.4.0'
+}
+
+jar {
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    manifest {
+        attributes (
+            'Main-Class': 'com.netflix.exhibitor.application.ExhibitorMain',
+            'Implementation-Version': project.version
+        )
+    }
 }

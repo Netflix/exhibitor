@@ -86,7 +86,16 @@ public class AutomaticInstanceManagement implements Activity
             return true;
         }
 
-        if ( !clusterState.isStable(exhibitor.getConfigManager().getConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS)) )
+        int                 settlingPeriodMs = exhibitor.getConfigManager().getConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS);
+        if ( usState.getUs() == null )
+        {
+            // give preference to adding new instances. i.e. if there is an instance needing to be added,
+            // have it settle faster and also let it handle cleaning old instances.
+            // Do this by halving the settling period when our instance is not in the server list.
+            settlingPeriodMs /= 2;
+        }
+
+        if ( !clusterState.isStable(settlingPeriodMs) )
         {
             exhibitor.getLog().add(ActivityLog.Type.INFO, "Ensemble state is not yet stable. Automatic Instance Management will wait for stability.");
             return true;
