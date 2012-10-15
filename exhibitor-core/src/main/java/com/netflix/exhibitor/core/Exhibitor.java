@@ -281,7 +281,7 @@ public class Exhibitor implements Closeable
                 .connectString("localhost:" + configManager.getConfig().getInt(IntConfigs.CLIENT_PORT))
                 .sessionTimeoutMs(arguments.connectionTimeOutMs * 10)
                 .connectionTimeoutMs(arguments.connectionTimeOutMs)
-                .retryPolicy(new ExponentialBackoffRetry(10, 3));
+                .retryPolicy(new ExponentialBackoffRetry(1000, 3));
 
             if ( arguments.aclProvider != null )
             {

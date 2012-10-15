@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>exhibitor-war</groupId>
+    <artifactId>exhibitor-war</artifactId>
+    <version>1.0</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.netflix.exhibitor</groupId>
+            <artifactId>exhibitor-standalone</artifactId>
+            <version>1.4.1-nf2-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <overlays>
+                        <overlay>
+                            <groupId>com.netflix.exhibitor</groupId>
+                            <artifactId>exhibitor-standalone</artifactId>
+                            <type>jar</type>
+                            <includes>WEB-INF/</includes>
+                        </overlay>
+
+                        <overlay>
+                            <groupId>com.netflix.exhibitor</groupId>
+                            <artifactId>exhibitor-standalone</artifactId>
+                            <type>jar</type>
+                            <includes>com/</includes>
+                            <targetPath>WEB-INF/classes</targetPath>
+                        </overlay>
+
+                        <overlay>
+                            <includes>exhibitor.properties</includes>
+                            <targetPath>WEB-INF/classes</targetPath>
+                        </overlay>
+                    </overlays>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

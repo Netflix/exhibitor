@@ -1,3 +1,8 @@
+1.4.1 - xxxxxxxxxxxxxxxx
+========================
+* The retry policy used internally for connections was configured badly. It could result
+in incorrect retry failures.
+
 1.4.0 - October 13, 2012
 ========================
 * When shutting down ZooKeeper, attempt a simple kill first before trying kill -9.

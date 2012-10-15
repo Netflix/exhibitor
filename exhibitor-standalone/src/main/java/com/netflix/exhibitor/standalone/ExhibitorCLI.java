@@ -14,11 +14,12 @@
  *    limitations under the License.
  */
 
-package com.netflix.exhibitor.application;
+package com.netflix.exhibitor.standalone;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.config.JQueryStyle;
 import com.netflix.exhibitor.core.s3.PropertyBasedS3Credential;
@@ -26,22 +27,32 @@ import com.netflix.exhibitor.core.state.ManifestVersion;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.List;
 
 public class ExhibitorCLI
 {
+    private final Logger    log = LoggerFactory.getLogger(getClass());
+
     private final Options options;
     private final String hostname;
-    private final Options authOptions;
-    private final Options fileConfigOptions;
-    private final Options s3ConfigOptions;
-    private final Options zookeeperConfigOptions;
-    private final Options noneConfigOptions;
-    private final Options backupOptions;
-    private final Options s3Options;
     private final Options generalOptions;
-    private final Options aclOptions;
+    private final List<OptionSection> sections = Lists.newArrayList();
+
+    private static class OptionSection
+    {
+        private final String sectionName;
+        private final Options options;
+
+        private OptionSection(String sectionName, Options options)
+        {
+            this.sectionName = sectionName;
+            this.options = options;
+        }
+    }
 
     public static final String CONFIG_TYPE = "configtype";
     public static final String SHORT_CONFIG_TYPE = "c";
@@ -89,36 +100,36 @@ public class ExhibitorCLI
     {
         hostname = Exhibitor.getHostname();
 
-        authOptions = new Options();
+        Options authOptions = new Options();
         authOptions.addOption(null, BASIC_AUTH_REALM, true, "Basic Auth Realm to Protect the Exhibitor UI");
         authOptions.addOption(null, CONSOLE_USER, true, "Basic Auth Username to Protect the Exhibitor UI");
         authOptions.addOption(null, CONSOLE_PASSWORD, true, "Basic Auth Password to Protect the Exhibitor UI");
         authOptions.addOption(null, CURATOR_USER, true, "Basic Auth Password to Protect the cluster list api");
         authOptions.addOption(null, CURATOR_PASSWORD, true, "Basic Auth Password to Protect cluster list api");
 
-        fileConfigOptions = new Options();
+        Options fileConfigOptions = new Options();
         fileConfigOptions.addOption(null, FILESYSTEM_CONFIG_DIRECTORY, true, "Directory to store Exhibitor properties (cannot be used with s3config). Exhibitor uses file system locks so you can specify a shared location so as to enable complete ensemble management. Default location is " + System.getProperty("user.dir"));
         fileConfigOptions.addOption(null, FILESYSTEM_CONFIG_NAME, true, "The name of the file to store config in. Used in conjunction with " + FILESYSTEM_CONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_NAME);
         fileConfigOptions.addOption(null, FILESYSTEM_CONFIG_LOCK_PREFIX, true, "A prefix for a locking mechanism. Used in conjunction with " + FILESYSTEM_CONFIG_DIRECTORY + ". Default is " + DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX);
 
-        s3ConfigOptions = new Options();
+        Options s3ConfigOptions = new Options();
         s3ConfigOptions.addOption(null, S3_CONFIG, true, "The bucket name and key to store the config (s3credentials may be provided as well). Argument is [bucket name]:[key].");
         s3ConfigOptions.addOption(null, S3_CONFIG_PREFIX, true, "When using AWS S3 shared config files, the prefix to use for values such as locks. Default is " + DEFAULT_PREFIX);
 
-        zookeeperConfigOptions = new Options();
+        Options zookeeperConfigOptions = new Options();
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING, true, "The initial connection string for ZooKeeper shared config storage. E.g: \"host1:2181,host2:2181...\"");
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_BASE_PATH, true, "The base ZPath that Exhibitor should use. E.g: \"/exhibitor/config\"");
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_RETRY, true, "The retry values to use in the form sleep-ms:retry-qty. The default is: " + DEFAULT_ZOOKEEPER_CONFIG_RETRY);
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_POLLING, true, "The period in ms to check for changes in the config ensemble. The default is: " + DEFAULT_ZOOKEEPER_CONFIG_POLLING);
 
-        noneConfigOptions = new Options();
+        Options noneConfigOptions = new Options();
         noneConfigOptions.addOption(null, NONE_CONFIG_DIRECTORY, true, "Directory to store the local configuration file. Config type \"none\" is a special purpose type that should only be used when running a second ZooKeeper ensemble that is used for storing config. DO NOT USE THIS MODE for a normal ZooKeeper ensemble.");
 
-        backupOptions = new Options();
+        Options backupOptions = new Options();
         backupOptions.addOption(null, S3_BACKUP, true, "If true, enables AWS S3 backup of ZooKeeper log files (s3credentials may be provided as well).");
         backupOptions.addOption(null, FILESYSTEMBACKUP, true, "If true, enables file system backup of ZooKeeper log files.");
 
-        s3Options = new Options();
+        Options s3Options = new Options();
         s3Options.addOption(null, S3_CREDENTIALS, true, "Optional credentials to use for s3backup or s3config. Argument is the path to an AWS credential properties file with two properties: " + PropertyBasedS3Credential.PROPERTY_S3_KEY_ID + " and " + PropertyBasedS3Credential.PROPERTY_S3_SECRET_KEY);
 
         generalOptions = new Options();
@@ -133,21 +144,21 @@ public class ExhibitorCLI
         generalOptions.addOption(SHORT_CONFIG_TYPE, CONFIG_TYPE, true, "Defines which configuration type you want to use. Choices are: \"file\", \"s3\", \"zookeeper\" or \"none\". Additional config will be required depending on which type you are using.");
         generalOptions.addOption(null, CONFIGCHECKMS, true, "Period (ms) to check for shared config updates. Default is: 30000");
 
-        aclOptions = new Options();
+        Options aclOptions = new Options();
         aclOptions.addOption(null, ACL_ID, true, "Enable ACL for Exhibitor's internal ZooKeeper connection. This sets the ACL's ID.");
         aclOptions.addOption(null, ACL_SCHEME, true, "Enable ACL for Exhibitor's internal ZooKeeper connection. This sets the ACL's Scheme.");
         aclOptions.addOption(null, ACL_PERMISSIONS, true, "Enable ACL for Exhibitor's internal ZooKeeper connection. This sets the ACL's Permissions - a comma list of possible permissions. If this isn't specified the permission is set to ALL. Values: read, write, create, delete, admin");
 
         options = new Options();
-        addAll(authOptions);
-        addAll(s3ConfigOptions);
-        addAll(fileConfigOptions);
-        addAll(backupOptions);
-        addAll(s3Options);
-        addAll(zookeeperConfigOptions);
-        addAll(noneConfigOptions);
-        addAll(generalOptions);
-        addAll(aclOptions);
+        addAll("S3 Options", s3Options);
+        addAll("Configuration Options for Type \"s3\"", s3ConfigOptions);
+        addAll("Configuration Options for Type \"zookeeper\"", zookeeperConfigOptions);
+        addAll("Configuration Options for Type \"file\"", fileConfigOptions);
+        addAll("Configuration Options for Type \"none\"", noneConfigOptions);
+        addAll("Backup Options", backupOptions);
+        addAll("Authorization Options", authOptions);
+        addAll("ACL Options", aclOptions);
+        addAll(null, generalOptions);
     }
 
     public Options getOptions()
@@ -158,6 +169,18 @@ public class ExhibitorCLI
     public String getHostname()
     {
         return hostname;
+    }
+
+    public void logHelp(String prefix)
+    {
+        ManifestVersion     manifestVersion = new ManifestVersion();
+
+        log.info("Exhibitor properties (version: " + manifestVersion.getVersion() + ")");
+        logOptions(null, prefix, generalOptions);
+        for ( OptionSection section : sections )
+        {
+            logOptions(section.sectionName, prefix, section.options);
+        }
     }
 
     public void printHelp()
@@ -177,15 +200,34 @@ public class ExhibitorCLI
             }
         };
         formatter.printHelp("ExhibitorMain", generalOptions);
-        formatter.printHelp(" ", "\n== S3 Options ==", s3Options, null);
-        formatter.printHelp(" ", "\n== Configuration Options for Type \"s3\" ==", s3ConfigOptions, null);
-        formatter.printHelp(" ", "\n== Configuration Options for Type \"zookeeper\" ==", zookeeperConfigOptions, null);
-        formatter.printHelp(" ", "\n== Configuration Options for Type \"file\" ==", fileConfigOptions, null);
-        formatter.printHelp(" ", "\n== Configuration Options for Type \"none\" ==", noneConfigOptions, null);
-        formatter.printHelp(" ", "\n== Backup Options ==", backupOptions, null);
-        formatter.printHelp(" ", "\n== Authorization Options ==", authOptions, null);
-        formatter.printHelp(" ", "\n== ACL Options ==", aclOptions, null);
-        System.exit(0);
+        for ( OptionSection section : sections )
+        {
+            formatter.printHelp(" ", "\n== " + section.sectionName + " ==", section.options, null);
+        }
+    }
+
+    private void logOptions(String sectionName, String prefix, Options options)
+    {
+        if ( sectionName != null )
+        {
+            log.info("== " + sectionName + " ==");
+        }
+
+        //noinspection unchecked
+        for ( Option option : (Iterable<? extends Option>)options.getOptions() )
+        {
+            if ( option.hasLongOpt() )
+            {
+                if ( option.hasArg() )
+                {
+                    log.info(prefix + option.getLongOpt() + " <arg> - " + option.getDescription());
+                }
+                else
+                {
+                    log.info(prefix + option.getLongOpt() + " - " + option.getDescription());
+                }
+            }
+        }
     }
 
     private static String getStyleOptions()
@@ -205,12 +247,17 @@ public class ExhibitorCLI
         return Joiner.on(", ").join(transformed);
     }
 
-    private void addAll(Options adding)
+    private void addAll(String sectionName, Options adding)
     {
         //noinspection unchecked
         for ( Option o : (Iterable<? extends Option>)adding.getOptions() )
         {
             options.addOption(o);
+        }
+
+        if ( sectionName != null )
+        {
+            sections.add(new OptionSection(sectionName, adding));
         }
     }
 }
