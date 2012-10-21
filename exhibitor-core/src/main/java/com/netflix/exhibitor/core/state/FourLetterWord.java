@@ -45,7 +45,8 @@ public class FourLetterWord
         SRVR,
         WCHS,
         WCHC,
-        WCHP
+        WCHP,
+        MNTR
     }
 
     public FourLetterWord(Word word, InstanceConfig config, int connectionTimeOutMs)

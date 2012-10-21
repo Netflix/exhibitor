@@ -42,9 +42,13 @@ import com.netflix.exhibitor.core.processes.ProcessMonitor;
 import com.netflix.exhibitor.core.processes.ProcessOperations;
 import com.netflix.exhibitor.core.processes.StandardProcessOperations;
 import com.netflix.exhibitor.core.rest.UITab;
+import com.netflix.exhibitor.core.servo.GetMonitorData;
+import com.netflix.exhibitor.core.servo.ZookeeperMonitoredData;
 import com.netflix.exhibitor.core.state.CleanupManager;
 import com.netflix.exhibitor.core.state.ManifestVersion;
 import com.netflix.exhibitor.core.state.MonitorRunningInstance;
+import com.netflix.servo.monitor.CompositeMonitor;
+import com.netflix.servo.monitor.Monitors;
 import jsr166y.ForkJoinPool;
 import java.io.Closeable;
 import java.io.IOException;
@@ -69,6 +73,8 @@ public class Exhibitor implements Closeable
     private final ExhibitorArguments            arguments;
     private final ProcessMonitor                processMonitor;
     private final RepeatingActivity             autoInstanceManagement;
+    private final RepeatingActivity             servoMonitoring;
+    private final CompositeMonitor<?>           servoCompositeMonitor;
     private final ManifestVersion               manifestVersion = new ManifestVersion();
     private final ForkJoinPool                  forkJoinPool = new ForkJoinPool();
     private final RemoteInstanceRequestClient   remoteInstanceRequestClient = new RemoteInstanceRequestClientImpl();
@@ -125,6 +131,10 @@ public class Exhibitor implements Closeable
         processMonitor = new ProcessMonitor(this);
         autoInstanceManagement = new RepeatingActivity(log, activityQueue, QueueGroups.MAIN, new AutomaticInstanceManagement(this), getAutoInstanceManagementPeriod());
 
+        AtomicReference<CompositeMonitor<?>>    theMonitor = new AtomicReference<CompositeMonitor<?>>();
+        servoMonitoring = initServo(this, log, activityQueue, arguments, theMonitor);
+        servoCompositeMonitor = theMonitor.get();
+
         controlPanelValues = new ControlPanelValues();
 
         this.backupManager = new BackupManager(this, backupProvider);
@@ -166,6 +176,10 @@ public class Exhibitor implements Closeable
         cleanupManager.start();
         backupManager.start();
         autoInstanceManagement.start();
+        if ( servoMonitoring != null )
+        {
+            servoMonitoring.start();
+        }
 
         configManager.addConfigListener
         (
@@ -197,6 +211,12 @@ public class Exhibitor implements Closeable
     {
         Preconditions.checkState(state.compareAndSet(State.STARTED, State.STOPPED));
 
+        if ( (arguments.servoRegistration != null) && (servoCompositeMonitor != null) )
+        {
+            arguments.servoRegistration.getMonitorRegistry().unregister(servoCompositeMonitor);
+        }
+
+        Closeables.closeQuietly(servoMonitoring);
         Closeables.closeQuietly(autoInstanceManagement);
         Closeables.closeQuietly(processMonitor);
         Closeables.closeQuietly(indexCache);
@@ -358,5 +378,24 @@ public class Exhibitor implements Closeable
     private static int getAutoInstanceManagementPeriod()
     {
         return AUTO_INSTANCE_MANAGEMENT_PERIOD_MS + (int)(AUTO_INSTANCE_MANAGEMENT_PERIOD_MS * Math.random());  // add some randomness to avoid overlap with other Exhibitors
+    }
+
+    private static RepeatingActivity initServo(Exhibitor exhibitor, ActivityLog log, ActivityQueue activityQueue, ExhibitorArguments arguments, AtomicReference<CompositeMonitor<?>> theMonitor)
+    {
+        theMonitor.set(null);
+
+        RepeatingActivity localServoMonitoring = null;
+        if ( arguments.servoRegistration != null )
+        {
+            ZookeeperMonitoredData  zookeeperMonitoredData = new ZookeeperMonitoredData();
+            CompositeMonitor<?>     compositeMonitor = Monitors.newObjectMonitor(zookeeperMonitoredData);
+
+            GetMonitorData          getMonitorData = new GetMonitorData(exhibitor, zookeeperMonitoredData);
+            localServoMonitoring = new RepeatingActivity(log, activityQueue, QueueGroups.IO, getMonitorData, arguments.servoRegistration.getZookeeperPollMs());
+            arguments.servoRegistration.getMonitorRegistry().register(compositeMonitor);
+
+            theMonitor.set(compositeMonitor);
+        }
+        return localServoMonitoring;
     }
 }

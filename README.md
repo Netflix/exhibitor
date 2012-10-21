@@ -16,7 +16,7 @@ Exhibitor binaries are published to Maven Central. Please see the docs for detai
 
 ## MAILING LIST
 
-There is an Exhibitor mailing list. Subscribe here: https://listserv.netflix.com/mailman/listinfo/exhibitor-users
+There is an Exhibitor mailing list. Join here: http://groups.google.com/group/exhibitor-users
 
 ## AUTHOR
 

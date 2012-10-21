@@ -40,6 +40,8 @@ import com.netflix.exhibitor.core.config.s3.S3ConfigProvider;
 import com.netflix.exhibitor.core.config.zookeeper.ZookeeperConfigProvider;
 import com.netflix.exhibitor.core.s3.PropertyBasedS3Credential;
 import com.netflix.exhibitor.core.s3.S3ClientFactoryImpl;
+import com.netflix.exhibitor.core.servo.ServoRegistration;
+import com.netflix.servo.jmx.JmxMonitorRegistry;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.ParseException;
@@ -169,6 +171,12 @@ public class ExhibitorCreator
             }
         }
 
+        ServoRegistration   servoRegistration = null;
+        if ( "true".equalsIgnoreCase(commandLine.getOptionValue(ExhibitorCLI.SERVO_INTEGRATION, "false")) )
+        {
+            servoRegistration = new ServoRegistration(new JmxMonitorRegistry("exhibitor"), 60000);
+        }
+
         this.builder = ExhibitorArguments.builder()
             .connectionTimeOutMs(timeoutMs)
             .logWindowSizeLines(logWindowSizeLines)
@@ -178,7 +186,9 @@ public class ExhibitorCreator
             .allowNodeMutations(allowNodeMutations)
             .jQueryStyle(jQueryStyle)
             .restPort(httpPort)
-            .aclProvider(aclProvider);
+            .aclProvider(aclProvider)
+            .servoRegistration(servoRegistration)
+        ;
 
         this.securityHandler = handler;
         this.backupProvider = backupProvider;

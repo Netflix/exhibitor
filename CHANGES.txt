@@ -3,6 +3,11 @@
 * The retry policy used internally for connections was configured badly. It could result
 in incorrect retry failures.
 
+* Added support for building Exhibitor as a WAR file. Details
+here: https://github.com/Netflix/exhibitor/wiki/Building-A-WAR-File
+
+* Added support for JMX monitoring via Servo. Doc will be added on the Github wiki.
+
 1.4.0 - October 13, 2012
 ========================
 * When shutting down ZooKeeper, attempt a simple kill first before trying kill -9.

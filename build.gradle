@@ -42,6 +42,7 @@ project(':exhibitor-core') {
         }
         compile 'com.netflix.curator:curator-framework:1.2.3'
         compile 'com.netflix.curator:curator-recipes:1.2.3'
+        compile 'com.netflix.servo:servo-core:0.4.20'
         compile 'com.google.guava:guava:11.0.1'
         compile 'javax.ws.rs:jsr311-api:1.1.1'
         compile 'org.codehaus.jackson:jackson-mapper-asl:1.8.3'

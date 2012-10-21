@@ -89,6 +89,7 @@ public class ExhibitorCLI
     public static final String ACL_SCHEME = "aclscheme";
     public static final String ACL_ID = "aclid";
     public static final String ACL_PERMISSIONS = "aclperms";
+    public static final String SERVO_INTEGRATION = "servo";
 
     public static final String DEFAULT_FILESYSTEMCONFIG_NAME = "exhibitor.properties";
     public static final String DEFAULT_PREFIX = "exhibitor-";
@@ -143,6 +144,7 @@ public class ExhibitorCLI
         generalOptions.addOption(ALT_HELP, HELP, false, "Print this help");
         generalOptions.addOption(SHORT_CONFIG_TYPE, CONFIG_TYPE, true, "Defines which configuration type you want to use. Choices are: \"file\", \"s3\", \"zookeeper\" or \"none\". Additional config will be required depending on which type you are using.");
         generalOptions.addOption(null, CONFIGCHECKMS, true, "Period (ms) to check for shared config updates. Default is: 30000");
+        generalOptions.addOption(null, SERVO_INTEGRATION, true, "true/false (default is false). If enabled, ZooKeeper will be queried once a minute for its state via the 'mntr' four letter word (this requires ZooKeeper 3.4.x+). Servo will be used to publish this data via JMX.");
 
         Options aclOptions = new Options();
         aclOptions.addOption(null, ACL_ID, true, "Enable ACL for Exhibitor's internal ZooKeeper connection. This sets the ACL's ID.");
