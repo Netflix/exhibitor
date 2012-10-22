@@ -1,4 +1,4 @@
-1.4.1 - xxxxxxxxxxxxxxxx
+1.4.1 - October 22, 2012
 ========================
 * The retry policy used internally for connections was configured badly. It could result
 in incorrect retry failures.
@@ -7,6 +7,9 @@ in incorrect retry failures.
 here: https://github.com/Netflix/exhibitor/wiki/Building-A-WAR-File
 
 * Added support for JMX monitoring via Servo. Doc will be added on the Github wiki.
+
+* Issue 58: When using ZooKeeper as a configuration source, the internal Curator connection
+was not being started and thus the connection was failing.
 
 1.4.0 - October 13, 2012
 ========================

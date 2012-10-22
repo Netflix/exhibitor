@@ -57,6 +57,7 @@ import org.mortbay.jetty.security.ConstraintMapping;
 import org.mortbay.jetty.security.Credential;
 import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -70,6 +71,7 @@ public class ExhibitorCreator
     private final BackupProvider backupProvider;
     private final ConfigProvider configProvider;
     private final int httpPort;
+    private final List<Closeable> closeables = Lists.newArrayList();
 
     public ExhibitorCreator(String[] args) throws Exception
     {
@@ -221,6 +223,11 @@ public class ExhibitorCreator
         return backupProvider;
     }
 
+    public List<Closeable> getCloseables()
+    {
+        return closeables;
+    }
+
     private ConfigProvider makeConfigProvider(String configType, ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, BackupProvider backupProvider, String useHostname) throws Exception
     {
         ConfigProvider      configProvider;
@@ -318,6 +325,8 @@ public class ExhibitorCreator
             return null;
         }
 
+        client.start();
+        closeables.add(client);
         return new ZookeeperConfigProvider(client, path, new Properties(), useHostname);
     }
 

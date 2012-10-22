@@ -76,6 +76,11 @@ public class ExhibitorMain implements Closeable
         finally
         {
             exhibitorMain.close();
+
+            for ( Closeable closeable : creator.getCloseables() )
+            {
+                Closeables.closeQuietly(closeable);
+            }
         }
     }
 

@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -42,6 +43,7 @@ public class ExhibitorServletContextListener implements ServletContextListener
     private final Logger        log = LoggerFactory.getLogger(getClass());
 
     private volatile Exhibitor  exhibitor;
+    private volatile ExhibitorCreator exhibitorCreator;
 
     private static final String OUR_PREFIX = "exhibitor-";
     private static final String EXHIBITOR_PROPERTIES = "exhibitor.properties";
@@ -53,7 +55,7 @@ public class ExhibitorServletContextListener implements ServletContextListener
 
         try
         {
-            ExhibitorCreator    exhibitorCreator = new ExhibitorCreator(toArgsArray(argsBuilder));
+            exhibitorCreator = new ExhibitorCreator(toArgsArray(argsBuilder));
 
             exhibitor = new Exhibitor(exhibitorCreator.getConfigProvider(), null, exhibitorCreator.getBackupProvider(), exhibitorCreator.getBuilder().build());
             exhibitor.start();
@@ -86,6 +88,11 @@ public class ExhibitorServletContextListener implements ServletContextListener
         {
             Closeables.closeQuietly(exhibitor);
             exhibitor = null;
+        }
+
+        for ( Closeable closeable : exhibitorCreator.getCloseables() )
+        {
+            Closeables.closeQuietly(closeable);
         }
     }
 
