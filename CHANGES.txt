@@ -1,4 +1,4 @@
-1.4.1 - October 22, 2012
+1.4.2 - October 22, 2012
 ========================
 * The retry policy used internally for connections was configured badly. It could result
 in incorrect retry failures.
