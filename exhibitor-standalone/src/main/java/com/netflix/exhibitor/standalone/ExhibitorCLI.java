@@ -65,6 +65,8 @@ public class ExhibitorCLI
     public static final String S3_CONFIG = "s3config";
     public static final String S3_CONFIG_PREFIX = "s3configprefix";
     public static final String ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING = "zkconfigconnect";
+    public static final String ZOOKEEPER_CONFIG_EXHIBITOR_PORT = "zkconfigexhibitorport";
+    public static final String ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH = "zkconfigexhibitorpath";
     public static final String ZOOKEEPER_CONFIG_BASE_PATH = "zkconfigzpath";
     public static final String ZOOKEEPER_CONFIG_RETRY = "zkconfigretry";
     public static final String ZOOKEEPER_CONFIG_POLLING = "zkconfigpollms";
@@ -96,6 +98,7 @@ public class ExhibitorCLI
     public static final String DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX = "exhibitor-lock-";
     public static final String DEFAULT_ZOOKEEPER_CONFIG_RETRY = "1000:3";
     public static final String DEFAULT_ZOOKEEPER_CONFIG_POLLING = "10000";
+    public static final String DEFAULT_ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH = "/";
 
     public ExhibitorCLI()
     {
@@ -119,6 +122,8 @@ public class ExhibitorCLI
 
         Options zookeeperConfigOptions = new Options();
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING, true, "The initial connection string for ZooKeeper shared config storage. E.g: \"host1:2181,host2:2181...\"");
+        zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_EXHIBITOR_PORT, true, "Used if the ZooKeeper shared config is also running Exhibitor. This is the port that Exhibitor is listening on. IMPORTANT: if this value is not set it implies that Exhibitor is not being used on the ZooKeeper shared config.");
+        zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH, true, "Used if the ZooKeeper shared config is also running Exhibitor. This is the URI path for the REST call. The default is: " + DEFAULT_ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH);
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_BASE_PATH, true, "The base ZPath that Exhibitor should use. E.g: \"/exhibitor/config\"");
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_RETRY, true, "The retry values to use in the form sleep-ms:retry-qty. The default is: " + DEFAULT_ZOOKEEPER_CONFIG_RETRY);
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_POLLING, true, "The period in ms to check for changes in the config ensemble. The default is: " + DEFAULT_ZOOKEEPER_CONFIG_POLLING);

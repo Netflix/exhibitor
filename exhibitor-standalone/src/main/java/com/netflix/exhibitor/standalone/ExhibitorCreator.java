@@ -57,6 +57,8 @@ import org.mortbay.jetty.security.ConstraintMapping;
 import org.mortbay.jetty.security.Credential;
 import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -64,8 +66,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import static com.netflix.exhibitor.standalone.ExhibitorCLI.*;
+
 public class ExhibitorCreator
 {
+    private final Logger log = LoggerFactory.getLogger(getClass());
+
     private final ExhibitorArguments.Builder builder;
     private final SecurityHandler securityHandler;
     private final BackupProvider backupProvider;
@@ -82,7 +88,7 @@ public class ExhibitorCreator
         {
             CommandLineParser parser = new PosixParser();
             commandLine = parser.parse(cli.getOptions(), args);
-            if ( commandLine.hasOption('?') || commandLine.hasOption(ExhibitorCLI.HELP) || (commandLine.getArgList().size() > 0) )
+            if ( commandLine.hasOption('?') || commandLine.hasOption(HELP) || (commandLine.getArgList().size() > 0) )
             {
                 throw new ExhibitorCreatorExit(cli);
             }
@@ -96,36 +102,36 @@ public class ExhibitorCreator
             throw new ExhibitorCreatorExit(cli);
         }
 
-        checkMutuallyExclusive(cli, commandLine, ExhibitorCLI.S3_BACKUP, ExhibitorCLI.FILESYSTEMBACKUP);
+        checkMutuallyExclusive(cli, commandLine, S3_BACKUP, FILESYSTEMBACKUP);
 
         PropertyBasedS3Credential awsCredentials = null;
-        if ( commandLine.hasOption(ExhibitorCLI.S3_CREDENTIALS) )
+        if ( commandLine.hasOption(S3_CREDENTIALS) )
         {
-            awsCredentials = new PropertyBasedS3Credential(new File(commandLine.getOptionValue(ExhibitorCLI.S3_CREDENTIALS)));
+            awsCredentials = new PropertyBasedS3Credential(new File(commandLine.getOptionValue(S3_CREDENTIALS)));
         }
 
         BackupProvider backupProvider = null;
-        if ( "true".equalsIgnoreCase(commandLine.getOptionValue(ExhibitorCLI.S3_BACKUP)) )
+        if ( "true".equalsIgnoreCase(commandLine.getOptionValue(S3_BACKUP)) )
         {
             backupProvider = new S3BackupProvider(new S3ClientFactoryImpl(), awsCredentials);
         }
-        else if ( "true".equalsIgnoreCase(commandLine.getOptionValue(ExhibitorCLI.FILESYSTEMBACKUP)) )
+        else if ( "true".equalsIgnoreCase(commandLine.getOptionValue(FILESYSTEMBACKUP)) )
         {
             backupProvider = new FileSystemBackupProvider();
         }
 
-        int timeoutMs = Integer.parseInt(commandLine.getOptionValue(ExhibitorCLI.TIMEOUT, "30000"));
-        int logWindowSizeLines = Integer.parseInt(commandLine.getOptionValue(ExhibitorCLI.LOGLINES, "1000"));
-        int configCheckMs = Integer.parseInt(commandLine.getOptionValue(ExhibitorCLI.CONFIGCHECKMS, "30000"));
-        String useHostname = commandLine.getOptionValue(ExhibitorCLI.HOSTNAME, cli.getHostname());
-        int httpPort = Integer.parseInt(commandLine.getOptionValue(ExhibitorCLI.HTTP_PORT, "8080"));
-        String extraHeadingText = commandLine.getOptionValue(ExhibitorCLI.EXTRA_HEADING_TEXT, null);
-        boolean allowNodeMutations = "true".equalsIgnoreCase(commandLine.getOptionValue(ExhibitorCLI.NODE_MUTATIONS));
+        int timeoutMs = Integer.parseInt(commandLine.getOptionValue(TIMEOUT, "30000"));
+        int logWindowSizeLines = Integer.parseInt(commandLine.getOptionValue(LOGLINES, "1000"));
+        int configCheckMs = Integer.parseInt(commandLine.getOptionValue(CONFIGCHECKMS, "30000"));
+        String useHostname = commandLine.getOptionValue(HOSTNAME, cli.getHostname());
+        int httpPort = Integer.parseInt(commandLine.getOptionValue(HTTP_PORT, "8080"));
+        String extraHeadingText = commandLine.getOptionValue(EXTRA_HEADING_TEXT, null);
+        boolean allowNodeMutations = "true".equalsIgnoreCase(commandLine.getOptionValue(NODE_MUTATIONS));
 
-        String configType = commandLine.hasOption(ExhibitorCLI.SHORT_CONFIG_TYPE) ? commandLine.getOptionValue(ExhibitorCLI.SHORT_CONFIG_TYPE) : (commandLine.hasOption(ExhibitorCLI.CONFIG_TYPE) ? commandLine.getOptionValue(ExhibitorCLI.CONFIG_TYPE) : null);
+        String configType = commandLine.hasOption(SHORT_CONFIG_TYPE) ? commandLine.getOptionValue(SHORT_CONFIG_TYPE) : (commandLine.hasOption(CONFIG_TYPE) ? commandLine.getOptionValue(CONFIG_TYPE) : null);
         if ( configType == null )
         {
-            throw new MissingConfigurationTypeException("Configuration type (-" + ExhibitorCLI.SHORT_CONFIG_TYPE + " or --" + ExhibitorCLI.CONFIG_TYPE + ") must be specified", cli);
+            throw new MissingConfigurationTypeException("Configuration type (-" + SHORT_CONFIG_TYPE + " or --" + CONFIG_TYPE + ") must be specified", cli);
         }
 
         ConfigProvider configProvider = makeConfigProvider(configType, cli, commandLine, awsCredentials, backupProvider, useHostname);
@@ -142,27 +148,27 @@ public class ExhibitorCreator
         JQueryStyle jQueryStyle;
         try
         {
-            jQueryStyle = JQueryStyle.valueOf(commandLine.getOptionValue(ExhibitorCLI.JQUERY_STYLE, "red").toUpperCase());
+            jQueryStyle = JQueryStyle.valueOf(commandLine.getOptionValue(JQUERY_STYLE, "red").toUpperCase());
         }
         catch ( IllegalArgumentException e )
         {
             throw new ExhibitorCreatorExit(cli);
         }
 
-        String realm = commandLine.getOptionValue(ExhibitorCLI.BASIC_AUTH_REALM);
-        String user = commandLine.getOptionValue(ExhibitorCLI.CONSOLE_USER);
-        String password = commandLine.getOptionValue(ExhibitorCLI.CONSOLE_PASSWORD);
-        String curatorUser = commandLine.getOptionValue(ExhibitorCLI.CURATOR_USER);
-        String curatorPassword = commandLine.getOptionValue(ExhibitorCLI.CURATOR_PASSWORD);
+        String realm = commandLine.getOptionValue(BASIC_AUTH_REALM);
+        String user = commandLine.getOptionValue(CONSOLE_USER);
+        String password = commandLine.getOptionValue(CONSOLE_PASSWORD);
+        String curatorUser = commandLine.getOptionValue(CURATOR_USER);
+        String curatorPassword = commandLine.getOptionValue(CURATOR_PASSWORD);
         SecurityHandler handler = null;
         if ( notNullOrEmpty(realm) && notNullOrEmpty(user) && notNullOrEmpty(password) && notNullOrEmpty(curatorUser) && notNullOrEmpty(curatorPassword) )
         {
             handler = getSecurityHandler(realm, user, password, curatorUser, curatorPassword);
         }
 
-        String      aclId = commandLine.getOptionValue(ExhibitorCLI.ACL_ID);
-        String      aclScheme = commandLine.getOptionValue(ExhibitorCLI.ACL_SCHEME);
-        String      aclPerms = commandLine.getOptionValue(ExhibitorCLI.ACL_PERMISSIONS);
+        String      aclId = commandLine.getOptionValue(ACL_ID);
+        String      aclScheme = commandLine.getOptionValue(ACL_SCHEME);
+        String      aclPerms = commandLine.getOptionValue(ACL_PERMISSIONS);
         ACLProvider aclProvider = null;
         if ( notNullOrEmpty(aclId) || notNullOrEmpty(aclScheme) || notNullOrEmpty(aclPerms) )
         {
@@ -174,7 +180,7 @@ public class ExhibitorCreator
         }
 
         ServoRegistration   servoRegistration = null;
-        if ( "true".equalsIgnoreCase(commandLine.getOptionValue(ExhibitorCLI.SERVO_INTEGRATION, "false")) )
+        if ( "true".equalsIgnoreCase(commandLine.getOptionValue(SERVO_INTEGRATION, "false")) )
         {
             servoRegistration = new ServoRegistration(new JmxMonitorRegistry("exhibitor"), 60000);
         }
@@ -245,36 +251,36 @@ public class ExhibitorCreator
         }
         else if ( configType.equals("none") )
         {
-            System.out.println("Warning: you have intentionally turned off shared configuration. This mode is meant for special purposes only. Please verify that this is your intent.");
+            log.warn("Warning: you have intentionally turned off shared configuration. This mode is meant for special purposes only. Please verify that this is your intent.");
             configProvider = getNoneProvider(commandLine);
         }
         else
         {
             configProvider = null;
-            System.err.println("Unknown configtype: " + configType);
+            log.error("Unknown configtype: " + configType);
         }
         return configProvider;
     }
 
     private ConfigProvider getNoneProvider(CommandLine commandLine)
     {
-        if ( !commandLine.hasOption(ExhibitorCLI.NONE_CONFIG_DIRECTORY) )
+        if ( !commandLine.hasOption(NONE_CONFIG_DIRECTORY) )
         {
-            System.err.println(ExhibitorCLI.NONE_CONFIG_DIRECTORY + " is required when configtype is \"none\"");
+            log.error(NONE_CONFIG_DIRECTORY + " is required when configtype is \"none\"");
             return null;
         }
 
-        return new NoneConfigProvider(commandLine.getOptionValue(ExhibitorCLI.NONE_CONFIG_DIRECTORY));
+        return new NoneConfigProvider(commandLine.getOptionValue(NONE_CONFIG_DIRECTORY));
     }
 
     private ConfigProvider getZookeeperProvider(CommandLine commandLine, String useHostname) throws Exception
     {
-        String      connectString = commandLine.getOptionValue(ExhibitorCLI.ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING);
-        String      path = commandLine.getOptionValue(ExhibitorCLI.ZOOKEEPER_CONFIG_BASE_PATH);
-        String      retrySpec = commandLine.getOptionValue(ExhibitorCLI.ZOOKEEPER_CONFIG_RETRY, ExhibitorCLI.DEFAULT_ZOOKEEPER_CONFIG_RETRY);
+        String      connectString = commandLine.getOptionValue(ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING);
+        String      path = commandLine.getOptionValue(ZOOKEEPER_CONFIG_BASE_PATH);
+        String      retrySpec = commandLine.getOptionValue(ZOOKEEPER_CONFIG_RETRY, DEFAULT_ZOOKEEPER_CONFIG_RETRY);
         if ( (path == null) || (connectString == null) )
         {
-            System.err.println("Both " + ExhibitorCLI.ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING + " and " + ExhibitorCLI.ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING + " are required when the configtype is zookeeper");
+            log.error("Both " + ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING + " and " + ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING + " are required when the configtype is zookeeper");
             return null;
         }
 
@@ -284,14 +290,14 @@ public class ExhibitorCreator
         }
         catch ( IllegalArgumentException e )
         {
-            System.err.println("Invalid " + ExhibitorCLI.ZOOKEEPER_CONFIG_BASE_PATH + ": " + path);
+            log.error("Invalid " + ZOOKEEPER_CONFIG_BASE_PATH + ": " + path);
             return null;
         }
 
         String[]    retryParts = retrySpec.split("\\:");
         if ( retryParts.length != 2 )
         {
-            System.err.println("Bad " + ExhibitorCLI.ZOOKEEPER_CONFIG_RETRY + " value: " + retrySpec);
+            log.error("Bad " + ZOOKEEPER_CONFIG_RETRY + " value: " + retrySpec);
             return null;
         }
 
@@ -304,22 +310,34 @@ public class ExhibitorCreator
         }
         catch ( NumberFormatException e )
         {
-            System.err.println("Bad " + ExhibitorCLI.ZOOKEEPER_CONFIG_RETRY + " value: " + retrySpec);
+            log.error("Bad " + ZOOKEEPER_CONFIG_RETRY + " value: " + retrySpec);
+            return null;
+        }
+
+        int         exhibitorPort;
+        try
+        {
+            exhibitorPort = commandLine.hasOption(ZOOKEEPER_CONFIG_EXHIBITOR_PORT) ? Integer.parseInt(commandLine.getOptionValue(ZOOKEEPER_CONFIG_EXHIBITOR_PORT)) : 0;
+        }
+        catch ( NumberFormatException e )
+        {
+            log.error("Bad " + ZOOKEEPER_CONFIG_EXHIBITOR_PORT + " value: " + commandLine.getOptionValue(ZOOKEEPER_CONFIG_EXHIBITOR_PORT));
             return null;
         }
 
         int         pollingMs;
         try
         {
-            pollingMs = Integer.parseInt(commandLine.getOptionValue(ExhibitorCLI.ZOOKEEPER_CONFIG_POLLING, ExhibitorCLI.DEFAULT_ZOOKEEPER_CONFIG_POLLING));
+            pollingMs = Integer.parseInt(commandLine.getOptionValue(ZOOKEEPER_CONFIG_POLLING, DEFAULT_ZOOKEEPER_CONFIG_POLLING));
         }
         catch ( NumberFormatException e )
         {
-            System.err.println("Bad " + ExhibitorCLI.ZOOKEEPER_CONFIG_POLLING + " value: " + commandLine.getOptionValue(ExhibitorCLI.ZOOKEEPER_CONFIG_POLLING, ExhibitorCLI.DEFAULT_ZOOKEEPER_CONFIG_POLLING));
+            log.error("Bad " + ZOOKEEPER_CONFIG_POLLING + " value: " + commandLine.getOptionValue(ZOOKEEPER_CONFIG_POLLING, DEFAULT_ZOOKEEPER_CONFIG_POLLING));
             return null;
         }
 
-        CuratorFramework client = makeCurator(connectString, baseSleepTimeMs, maxRetries, pollingMs);
+        String              exhibitorRestPath = commandLine.getOptionValue(ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH, DEFAULT_ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH);
+        CuratorFramework    client = makeCurator(connectString, baseSleepTimeMs, maxRetries, exhibitorPort, exhibitorRestPath, pollingMs);
         if ( client == null )
         {
             return null;
@@ -361,7 +379,7 @@ public class ExhibitorCreator
                 }
                 else
                 {
-                    System.err.println("Unknown ACL perm value: " + verb);
+                    log.error("Unknown ACL perm value: " + verb);
                     throw new ExhibitorCreatorExit(cli);
                 }
             }
@@ -399,23 +417,23 @@ public class ExhibitorCreator
 
     private ConfigProvider getFileSystemProvider(CommandLine commandLine, BackupProvider backupProvider) throws IOException
     {
-        File directory = commandLine.hasOption(ExhibitorCLI.FILESYSTEM_CONFIG_DIRECTORY) ? new File(commandLine.getOptionValue(ExhibitorCLI.FILESYSTEM_CONFIG_DIRECTORY)) : new File(System.getProperty("user.dir"));
-        String name = commandLine.hasOption(ExhibitorCLI.FILESYSTEM_CONFIG_NAME) ? commandLine.getOptionValue(ExhibitorCLI.FILESYSTEM_CONFIG_NAME) : ExhibitorCLI.DEFAULT_FILESYSTEMCONFIG_NAME;
-        String lockPrefix = commandLine.hasOption(ExhibitorCLI.FILESYSTEM_CONFIG_LOCK_PREFIX) ? commandLine.getOptionValue(ExhibitorCLI.FILESYSTEM_CONFIG_LOCK_PREFIX) : ExhibitorCLI.DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX;
+        File directory = commandLine.hasOption(FILESYSTEM_CONFIG_DIRECTORY) ? new File(commandLine.getOptionValue(FILESYSTEM_CONFIG_DIRECTORY)) : new File(System.getProperty("user.dir"));
+        String name = commandLine.hasOption(FILESYSTEM_CONFIG_NAME) ? commandLine.getOptionValue(FILESYSTEM_CONFIG_NAME) : DEFAULT_FILESYSTEMCONFIG_NAME;
+        String lockPrefix = commandLine.hasOption(FILESYSTEM_CONFIG_LOCK_PREFIX) ? commandLine.getOptionValue(FILESYSTEM_CONFIG_LOCK_PREFIX) : DEFAULT_FILESYSTEMCONFIG_LOCK_PREFIX;
         return new FileSystemConfigProvider(directory, name, DefaultProperties.get(backupProvider), new AutoManageLockArguments(lockPrefix));
     }
 
     private ConfigProvider getS3Provider(ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, String hostname) throws Exception
     {
-        String  prefix = cli.getOptions().hasOption(ExhibitorCLI.S3_CONFIG_PREFIX) ? commandLine.getOptionValue(ExhibitorCLI.S3_CONFIG_PREFIX) : ExhibitorCLI.DEFAULT_PREFIX;
-        return new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, getS3Arguments(cli, commandLine.getOptionValue(ExhibitorCLI.S3_CONFIG), prefix), hostname);
+        String  prefix = cli.getOptions().hasOption(S3_CONFIG_PREFIX) ? commandLine.getOptionValue(S3_CONFIG_PREFIX) : DEFAULT_PREFIX;
+        return new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, getS3Arguments(cli, commandLine.getOptionValue(S3_CONFIG), prefix), hostname);
     }
 
     private void checkMutuallyExclusive(ExhibitorCLI cli, CommandLine commandLine, String option1, String option2) throws ExhibitorCreatorExit
     {
         if ( commandLine.hasOption(option1) && commandLine.hasOption(option2) )
         {
-            System.err.println(option1 + " and " + option2 + " cannot be used at the same time");
+            log.error(option1 + " and " + option2 + " cannot be used at the same time");
             throw new ExhibitorCreatorExit(cli);
         }
     }
@@ -425,43 +443,34 @@ public class ExhibitorCreator
         String[]        parts = value.split(":");
         if ( parts.length != 2 )
         {
-            System.err.println("Bad s3config argument: " + value);
+            log.error("Bad s3config argument: " + value);
             throw new ExhibitorCreatorExit(cli);
         }
         return new S3ConfigArguments(parts[0].trim(), parts[1].trim(), new S3ConfigAutoManageLockArguments(prefix + "-lock-"));
     }
 
-    private CuratorFramework makeCurator(final String connectString, int baseSleepTimeMs, int maxRetries, int pollingMs)
+    private CuratorFramework makeCurator(final String connectString, int baseSleepTimeMs, int maxRetries, int exhibitorPort, String exhibitorRestPath, int pollingMs)
     {
         List<String>    hostnames = Lists.newArrayList();
-        int             port = 0;
         String[]        parts = connectString.split(",");
         for ( String spec : parts )
         {
             String[]        subParts = spec.split(":");
-            int             thisPort;
             try
             {
-                thisPort = Integer.parseInt(subParts[1]);
                 if ( subParts.length != 2 )
                 {
-                    System.err.println("Bad connection string: " + connectString);
+                    log.error("Bad connection string: " + connectString);
                     return null;
                 }
             }
             catch ( NumberFormatException e )
             {
-                System.err.println("Bad connection string: " + connectString);
+                log.error("Bad connection string: " + connectString);
                 return null;
             }
 
             hostnames.add(subParts[0]);
-            if ( (port != 0) && (port != thisPort) )
-            {
-                System.err.println("The ports in the connection string must all be the same: " + connectString);
-                return null;
-            }
-            port = thisPort;
         }
 
         ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(baseSleepTimeMs, maxRetries);
@@ -473,13 +482,22 @@ public class ExhibitorCreator
                 return connectString;
             }
         };
-        Exhibitors                                  exhibitors = new Exhibitors(hostnames, port, backupConnectionStringProvider);
-        return CuratorFrameworkFactory
+
+        CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory
             .builder()
             .connectString(connectString)
-            .ensembleProvider(new ExhibitorEnsembleProvider(exhibitors, new DefaultExhibitorRestClient(), "/exhibitor/v1/cluster/list", pollingMs, retryPolicy))
-            .retryPolicy(retryPolicy)
-            .build();
+            .retryPolicy(retryPolicy);
+        if ( exhibitorPort > 0 )
+        {
+            Exhibitors                  exhibitors = new Exhibitors(hostnames, exhibitorPort, backupConnectionStringProvider);
+            ExhibitorEnsembleProvider   ensembleProvider = new ExhibitorEnsembleProvider(exhibitors, new DefaultExhibitorRestClient(), exhibitorRestPath + "exhibitor/v1/cluster/list", pollingMs, retryPolicy);
+            builder = builder.ensembleProvider(ensembleProvider);
+        }
+        else
+        {
+            log.warn("Exhibitor on the shared ZooKeeper config ensemble is not being used.");
+        }
+        return builder.build();
     }
 
     private boolean notNullOrEmpty(String arg)
