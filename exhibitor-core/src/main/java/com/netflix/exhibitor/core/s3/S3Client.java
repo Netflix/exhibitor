@@ -21,7 +21,7 @@ import java.io.Closeable;
 
 public interface S3Client extends Closeable
 {
-    public void     changeCredentials(S3Credential credential) throws Exception;
+    public void changeCredentials(S3Credential credential) throws Exception;
 
     public InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest request) throws Exception;
 

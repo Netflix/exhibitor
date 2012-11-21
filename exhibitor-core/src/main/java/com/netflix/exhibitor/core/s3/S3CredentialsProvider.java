@@ -16,28 +16,10 @@
 
 package com.netflix.exhibitor.core.s3;
 
-public interface S3ClientFactory
+
+import com.amazonaws.auth.AWSCredentialsProvider;
+
+public interface S3CredentialsProvider
 {
-    /**
-     * Create a client with the given credentials
-     *
-     *
-     * @param credentials credentials
-     * @return client
-     * @throws Exception errors
-     */
-    public S3Client makeNewClient(S3Credential credentials) throws Exception;
-
-
-    /**
-     * Create a client with the given credentials
-     *
-     * @param credentialsProvider credentials provider
-     * @return client
-     * @throws Exception errors
-     */
-    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider) throws Exception;
-
-
-
+    public AWSCredentialsProvider getAWSCredentialProvider();
 }

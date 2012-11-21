@@ -36,6 +36,7 @@ import com.netflix.exhibitor.core.backup.BackupStream;
 import com.netflix.exhibitor.core.s3.S3Client;
 import com.netflix.exhibitor.core.s3.S3ClientFactory;
 import com.netflix.exhibitor.core.s3.S3Credential;
+import com.netflix.exhibitor.core.s3.S3CredentialsProvider;
 import com.netflix.exhibitor.core.s3.S3Utils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -70,6 +71,11 @@ public class S3BackupProvider implements BackupProvider
     public S3BackupProvider(S3ClientFactory factory, S3Credential credential) throws Exception
     {
         s3Client = factory.makeNewClient(credential);
+    }
+
+    public S3BackupProvider(S3ClientFactory factory, S3CredentialsProvider credentialsProvider) throws Exception
+    {
+        s3Client = factory.makeNewClient(credentialsProvider);
     }
 
     public S3Client getS3Client()

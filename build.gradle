@@ -52,7 +52,7 @@ project(':exhibitor-core') {
         // if you are using Java 7 you can remove this and switch to the JDK version
         compile 'org.codehaus.jsr166-mirror:jsr166y:1.7.0'
 
-        compile 'com.amazonaws:aws-java-sdk:1.3.11'   // should be provided - gradle doesn't support
+        compile 'com.amazonaws:aws-java-sdk:1.3.22'   // should be provided - gradle doesn't support
         compile 'com.sun.jersey:jersey-bundle:1.9.1'  // should be provided - gradle doesn't support
         compile 'com.sun.xml.bind:jaxb-impl:2.2.4'   // should be provided - gradle doesn't support
 

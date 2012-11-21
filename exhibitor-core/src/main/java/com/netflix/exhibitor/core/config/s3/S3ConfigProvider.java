@@ -25,10 +25,8 @@ import com.netflix.exhibitor.core.config.ConfigProvider;
 import com.netflix.exhibitor.core.config.LoadedInstanceConfig;
 import com.netflix.exhibitor.core.config.PropertyBasedInstanceConfig;
 import com.netflix.exhibitor.core.config.PseudoLock;
-import com.netflix.exhibitor.core.s3.S3Client;
-import com.netflix.exhibitor.core.s3.S3ClientFactory;
-import com.netflix.exhibitor.core.s3.S3Credential;
-import com.netflix.exhibitor.core.s3.S3Utils;
+import com.netflix.exhibitor.core.s3.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Date;
@@ -52,6 +50,14 @@ public class S3ConfigProvider implements ConfigProvider
         this.hostname = hostname;
         this.defaults = defaults;
         s3Client = factory.makeNewClient(credential);
+    }
+
+    public S3ConfigProvider(S3ClientFactory factory, S3CredentialsProvider credentialsProvider, S3ConfigArguments arguments, String hostname, Properties defaults) throws Exception
+    {
+        this.arguments = arguments;
+        this.hostname = hostname;
+        this.defaults = defaults;
+        s3Client = factory.makeNewClient(credentialsProvider);
     }
 
     public S3Client getS3Client()

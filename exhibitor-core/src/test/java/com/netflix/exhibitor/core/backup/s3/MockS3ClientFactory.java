@@ -19,6 +19,7 @@ package com.netflix.exhibitor.core.backup.s3;
 import com.netflix.exhibitor.core.s3.S3Client;
 import com.netflix.exhibitor.core.s3.S3ClientFactory;
 import com.netflix.exhibitor.core.s3.S3Credential;
+import com.netflix.exhibitor.core.s3.S3CredentialsProvider;
 
 public class MockS3ClientFactory implements S3ClientFactory
 {
@@ -32,6 +33,11 @@ public class MockS3ClientFactory implements S3ClientFactory
     @Override
     public S3Client makeNewClient(S3Credential credentials) throws Exception
     {
+        return s3Client;
+    }
+
+    @Override
+    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider) throws Exception {
         return s3Client;
     }
 }
