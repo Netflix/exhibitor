@@ -1,7 +1,11 @@
-1.4.3 - xxxxxxxxxxxxxxxx
-========================
+1.4.3 - November 26, 2012
+=========================
 * There was no way to specify Exhibitor port (and REST path) values when using ZooKeeper
 as a config provider.
+
+* Added UI widget to open a view on a given instance.
+
+* Depend on ZooKeeper 3.4.5
 
 1.4.2 - October 22, 2012
 ========================

@@ -348,7 +348,7 @@ fieldset
 {
     float: left;
     width: 2em;
-    padding-top: 1em;
+    padding-top: 1.5em;
 }
 
 .cp-status-message-container
@@ -556,4 +556,10 @@ fieldset
     padding-bottom: 3px;
     font-weight: bold;
     font-style: italic;
+}
+
+.open-window
+{
+    position: absolute;
+    cursor: pointer;
 }

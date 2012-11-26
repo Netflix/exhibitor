@@ -67,6 +67,7 @@ function destroyOldServerItems()
         $(domId + '-power-button').unbind("click");
         $(domId + '-4ltr-button').unbind("click");
         $(domId + '-log-button').unbind("click");
+        $(domId + '-open-window').unbind("click");
     }
 }
 
@@ -115,6 +116,11 @@ function internalBuildServerItems(serversList)
         {
             hostnameContent += '<span class="cp-this-server">(This server)</span>';
             $(domId + '-log-button').hide();
+            $(domId + '-open-window').hide();
+        }
+        else
+        {
+            $(domId + '-open-window').click(openWindowForInstance(spec.hostname));
         }
 
         $(domId + '-server-id').html(serverIdContent);
@@ -189,6 +195,20 @@ function logDialog(hostname)
 
         $('#log-dialog').dialog("option", "title", hostname);
         $('#log-dialog').dialog("open");
+    };
+}
+
+function openWindowForInstance(hostname)
+{
+    return function() {
+        var replceHostname = hostname;
+        if ( location.port )
+        {
+            replceHostname += ':' + location.port;
+        }
+        var thisUrl = location.href;
+        var newUrl = thisUrl.replace(location.host, replceHostname);
+        window.open(newUrl, '_blank');
     };
 }
 
