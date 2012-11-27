@@ -40,8 +40,8 @@ project(':exhibitor-core') {
             // JLine pulls this in as a compile dependency, they have fixed it in future versions
             exclude group: 'junit', module: 'junit'
         }
-        compile 'com.netflix.curator:curator-framework:1.2.3'
-        compile 'com.netflix.curator:curator-recipes:1.2.3'
+        compile 'com.netflix.curator:curator-framework:1.2.5'
+        compile 'com.netflix.curator:curator-recipes:1.2.5'
         compile 'com.netflix.servo:servo-core:0.4.20'
         compile 'com.google.guava:guava:11.0.1'
         compile 'javax.ws.rs:jsr311-api:1.1.1'
@@ -56,7 +56,7 @@ project(':exhibitor-core') {
         compile 'com.sun.jersey:jersey-bundle:1.9.1'  // should be provided - gradle doesn't support
         compile 'com.sun.xml.bind:jaxb-impl:2.2.4'   // should be provided - gradle doesn't support
 
-        testCompile 'com.netflix.curator:curator-test:1.2.3'
+        testCompile 'com.netflix.curator:curator-test:1.2.5'
         testCompile 'org.mortbay.jetty:jetty:6.1.22'
         testCompile 'org.mockito:mockito-core:1.8.5'
     }
