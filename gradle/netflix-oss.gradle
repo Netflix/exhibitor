@@ -7,12 +7,6 @@ rootProject {
             return
         }
         def deps = compileConf.dependencies
-        def awsDep = deps.find { it.group == 'com.amazonaws' && it.name == 'aws-java-sdk' }
-        if (awsDep != null) {
-            def awsVersion = awsDep.version
-            deps.remove(awsDep)
-            project.dependencies.add('compile', "com.amazon:aws-java-sdk:${awsVersion}")
-        }
         def jacksonDep = deps.find { it.group == 'org.codehaus.jackson' && it.name == 'jackson-mapper-asl' }
         if (jacksonDep != null) {
             def jacksonVersion = jacksonDep.version

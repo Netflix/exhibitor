@@ -82,7 +82,7 @@ project(':exhibitor-standalone') {
         compile 'org.mortbay.jetty:jetty:6.1.22'
         compile 'com.google.guava:guava:11.0.1'
         compile 'commons-cli:commons-cli:1.2'
-        compile 'com.amazonaws:aws-java-sdk:1.3.11'
+        compile 'com.amazonaws:aws-java-sdk:1.3.22'
         compile 'org.slf4j:slf4j-log4j12:1.7.0'
     }
 }
