@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'maven'
 group = 'exhibitor'
-version = '1.4.2'
+version = '1.4.4'
 
 repositories {
     mavenCentral()
@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.netflix.exhibitor:exhibitor-standalone:1.4.2'
+    compile 'com.netflix.exhibitor:exhibitor-standalone:1.4.4'
 }
 
 jar {

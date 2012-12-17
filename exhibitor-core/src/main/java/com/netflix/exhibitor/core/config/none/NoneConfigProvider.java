@@ -38,11 +38,18 @@ import java.util.concurrent.TimeUnit;
 public class NoneConfigProvider implements ConfigProvider
 {
     private final File directory;
+    private final Properties defaultProperties;
 
     private static final String     FILE_NAME = "exhibitor.properties";
 
     public NoneConfigProvider(String directory)
     {
+        this(directory, new Properties());
+    }
+
+    public NoneConfigProvider(String directory, Properties defaultProperties)
+    {
+        this.defaultProperties = defaultProperties;
         this.directory = new File(directory);
     }
 
@@ -75,7 +82,7 @@ public class NoneConfigProvider implements ConfigProvider
                 Closeables.closeQuietly(in);
             }
         }
-        PropertyBasedInstanceConfig config = new PropertyBasedInstanceConfig(properties, new Properties());
+        PropertyBasedInstanceConfig config = new PropertyBasedInstanceConfig(properties, defaultProperties);
         return new LoadedInstanceConfig(config, propertiesFile.lastModified());
     }
 

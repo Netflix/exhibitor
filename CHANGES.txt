@@ -1,3 +1,8 @@
+1.4.4 - xxxxxxxxxxxxxxxxx
+=========================
+* Issue 94: The standalone version now has a CLI option to load default ZK/Exhibitor config
+values. Details here (see --defaultconfig): https://github.com/Netflix/exhibitor/wiki/Running-Exhibitor
+
 1.4.3 - November 26, 2012
 =========================
 * There was no way to specify Exhibitor port (and REST path) values when using ZooKeeper

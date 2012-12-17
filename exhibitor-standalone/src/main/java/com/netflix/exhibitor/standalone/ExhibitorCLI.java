@@ -21,7 +21,10 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.Exhibitor;
+import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.JQueryStyle;
+import com.netflix.exhibitor.core.config.PropertyBasedInstanceConfig;
+import com.netflix.exhibitor.core.config.StringConfigs;
 import com.netflix.exhibitor.core.s3.PropertyBasedS3Credential;
 import com.netflix.exhibitor.core.state.ManifestVersion;
 import org.apache.commons.cli.HelpFormatter;
@@ -71,6 +74,7 @@ public class ExhibitorCLI
     public static final String ZOOKEEPER_CONFIG_RETRY = "zkconfigretry";
     public static final String ZOOKEEPER_CONFIG_POLLING = "zkconfigpollms";
     public static final String NONE_CONFIG_DIRECTORY = "noneconfigdir";
+    public static final String INITIAL_CONFIG_FILE = "defaultconfig";
 
     public static final String FILESYSTEMBACKUP = "filesystembackup";
     public static final String TIMEOUT = "timeout";
@@ -150,6 +154,7 @@ public class ExhibitorCLI
         generalOptions.addOption(SHORT_CONFIG_TYPE, CONFIG_TYPE, true, "Defines which configuration type you want to use. Choices are: \"file\", \"s3\", \"zookeeper\" or \"none\". Additional config will be required depending on which type you are using.");
         generalOptions.addOption(null, CONFIGCHECKMS, true, "Period (ms) to check for shared config updates. Default is: 30000");
         generalOptions.addOption(null, SERVO_INTEGRATION, true, "true/false (default is false). If enabled, ZooKeeper will be queried once a minute for its state via the 'mntr' four letter word (this requires ZooKeeper 3.4.x+). Servo will be used to publish this data via JMX.");
+        generalOptions.addOption(null, INITIAL_CONFIG_FILE, true, "full path to a file that contains initial/default values for Exhibitor/ZooKeeper config values. The file is a standard property file. The property names are listed below. The file can specify some or all of the properties.");
 
         Options aclOptions = new Options();
         aclOptions.addOption(null, ACL_ID, true, "Enable ACL for Exhibitor's internal ZooKeeper connection. This sets the ACL's ID.");
@@ -210,6 +215,17 @@ public class ExhibitorCLI
         for ( OptionSection section : sections )
         {
             formatter.printHelp(" ", "\n== " + section.sectionName + " ==", section.options, null);
+        }
+
+        System.out.println();
+        System.out.println("== Default Property Names ==");
+        for ( StringConfigs config : StringConfigs.values() )
+        {
+            System.out.println("\t" + PropertyBasedInstanceConfig.toName(config, ""));
+        }
+        for ( IntConfigs config : IntConfigs.values() )
+        {
+            System.out.println("\t" + PropertyBasedInstanceConfig.toName(config, ""));
         }
     }
 
