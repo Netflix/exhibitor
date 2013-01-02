@@ -1,7 +1,13 @@
-1.4.4 - xxxxxxxxxxxxxxxxx
-=========================
+1.4.4 - January 2, 2013
+=======================
 * Issue 94: The standalone version now has a CLI option to load default ZK/Exhibitor config
 values. Details here (see --defaultconfig): https://github.com/Netflix/exhibitor/wiki/Running-Exhibitor
+
+* Issue 97: There appear to be some bugs in the JDK with the Preferences API which Exhibitor uses
+for Control Panel values, etc. There is now an option to provide an alternate file path to use so
+as to work around this. For the standalone version use "--prefspath".
+
+* Issue 98: IE 8 and below don't support Date.now().
 
 1.4.3 - November 26, 2012
 =========================

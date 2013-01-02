@@ -28,11 +28,6 @@ public class ControlPanelValues
 
     private static final String         BASE_KEY = "com.netflix.exhibitor.control-panel.";
 
-    public ControlPanelValues()
-    {
-        this(Preferences.userRoot());
-    }
-
     public ControlPanelValues(final Preferences preferences)
     {
         this.preferences = preferences;

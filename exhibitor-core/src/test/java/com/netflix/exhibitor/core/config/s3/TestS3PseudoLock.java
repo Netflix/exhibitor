@@ -93,10 +93,6 @@ public class TestS3PseudoLock
                             {
                                 lock.unlock();
                             }
-                            else
-                            {
-                                Assert.fail();
-                            }
                         }
                         return null;
                     }

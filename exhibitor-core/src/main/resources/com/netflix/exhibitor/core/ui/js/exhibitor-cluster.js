@@ -358,6 +358,6 @@ function updateServerState(serversList)
                 }
             };
         };
-        $.getJSON(URL_CLUSTER_GET_STATE_BASE + thisHostname + '?ts=' + Date.now(), callback(i, thisHostname));
+        $.getJSON(URL_CLUSTER_GET_STATE_BASE + thisHostname + '?ts=' + getNow(), callback(i, thisHostname));
     }
 }

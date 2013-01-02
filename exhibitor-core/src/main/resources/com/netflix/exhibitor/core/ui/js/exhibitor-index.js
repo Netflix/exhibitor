@@ -7,7 +7,7 @@ var ACTION_NAMES = [
 
 function startIndex()
 {
-    $.getJSON(URL_NEW_INDEX + '?ts=' + Date.now());
+    $.getJSON(URL_NEW_INDEX + '?ts=' + getNow());
 }
 
 function initRestoreUI()
@@ -94,7 +94,7 @@ var currentRestoreItemsContent = null;
 var currentRestoreItemsDataTable = null;
 function updateRestoreItems(selectedRadio)
 {
-    $.getJSON(URL_GET_INDEXES + '?ts=' + Date.now(), function(data){
+    $.getJSON(URL_GET_INDEXES + '?ts=' + getNow(), function(data){
         var itemsTab = data ? $.makeArray(data) : new Array();
 
         var needsCheck = true;
@@ -234,7 +234,7 @@ function buildViewIndexTable(indexName, indexHandle)
             $(this).addClass('row_selected');
 
             var docId = selectedRowId.split('-').pop();
-            $.getJSON(URL_GET_INDEX_BASE + indexName + "/" + docId + '?ts=' + Date.now(), applySelectedValue);
+            $.getJSON(URL_GET_INDEX_BASE + indexName + "/" + docId + '?ts=' + getNow(), applySelectedValue);
             $('#index-query-clear-restore-button').button("option", "disabled", false);
         }
     });

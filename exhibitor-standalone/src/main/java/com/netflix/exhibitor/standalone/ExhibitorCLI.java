@@ -59,6 +59,7 @@ public class ExhibitorCLI
 
     public static final String CONFIG_TYPE = "configtype";
     public static final String SHORT_CONFIG_TYPE = "c";
+    public static final String PREFERENCES_PATH = "prefspath";
 
     public static final String FILESYSTEM_CONFIG_DIRECTORY = "fsconfigdir";
     public static final String FILESYSTEM_CONFIG_NAME = "fsconfigname";
@@ -154,7 +155,8 @@ public class ExhibitorCLI
         generalOptions.addOption(SHORT_CONFIG_TYPE, CONFIG_TYPE, true, "Defines which configuration type you want to use. Choices are: \"file\", \"s3\", \"zookeeper\" or \"none\". Additional config will be required depending on which type you are using.");
         generalOptions.addOption(null, CONFIGCHECKMS, true, "Period (ms) to check for shared config updates. Default is: 30000");
         generalOptions.addOption(null, SERVO_INTEGRATION, true, "true/false (default is false). If enabled, ZooKeeper will be queried once a minute for its state via the 'mntr' four letter word (this requires ZooKeeper 3.4.x+). Servo will be used to publish this data via JMX.");
-        generalOptions.addOption(null, INITIAL_CONFIG_FILE, true, "full path to a file that contains initial/default values for Exhibitor/ZooKeeper config values. The file is a standard property file. The property names are listed below. The file can specify some or all of the properties.");
+        generalOptions.addOption(null, INITIAL_CONFIG_FILE, true, "Full path to a file that contains initial/default values for Exhibitor/ZooKeeper config values. The file is a standard property file. The property names are listed below. The file can specify some or all of the properties.");
+        generalOptions.addOption(null, PREFERENCES_PATH, true, "Certain values (such as Control Panel values) are stored in a preferences file. By default, Preferences.userRoot() is used. Use this option to specify a different file path.");
 
         Options aclOptions = new Options();
         aclOptions.addOption(null, ACL_ID, true, "Enable ACL for Exhibitor's internal ZooKeeper connection. This sets the ACL's ID.");

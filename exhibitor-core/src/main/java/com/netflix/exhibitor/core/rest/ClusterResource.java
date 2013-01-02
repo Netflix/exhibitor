@@ -307,8 +307,15 @@ public class ClusterResource
         Result      result;
         if ( type != null )
         {
-            context.getExhibitor().getControlPanelValues().set(type, newValue);
-            result = new Result("OK", true);
+            try
+            {
+                context.getExhibitor().getControlPanelValues().set(type, newValue);
+                result = new Result("OK", true);
+            }
+            catch ( Exception e )
+            {
+                result = new Result(e);
+            }
         }
         else
         {

@@ -194,6 +194,8 @@ public class ExhibitorCreator
             servoRegistration = new ServoRegistration(new JmxMonitorRegistry("exhibitor"), 60000);
         }
 
+        String              preferencesPath = commandLine.getOptionValue(PREFERENCES_PATH);
+
         this.builder = ExhibitorArguments.builder()
             .connectionTimeOutMs(timeoutMs)
             .logWindowSizeLines(logWindowSizeLines)
@@ -205,6 +207,7 @@ public class ExhibitorCreator
             .restPort(httpPort)
             .aclProvider(aclProvider)
             .servoRegistration(servoRegistration)
+            .preferencesPath(preferencesPath)
         ;
 
         this.securityHandler = handler;

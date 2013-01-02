@@ -104,7 +104,7 @@ function updateState()
 {
     if ( !hasBackupConfig )
     {
-        $.getJSON(URL_GET_BACKUP_CONFIG + '?ts=' + Date.now(), function(data){
+        $.getJSON(URL_GET_BACKUP_CONFIG + '?ts=' + getNow(), function(data){
             hasBackupConfig = true;
             addBackupExtraConfig(data);
         });
@@ -573,10 +573,18 @@ function checkConfigConfirmation()
     }
 }
 
+function getNow()
+{
+    if (!Date.now) {
+        return new Date().valueOf();
+    }
+    return Date.now();
+}
+
 var customTabs = new Array();
 $(function ()
 {
-    $.getJSON(URL_GET_TABS + '?ts=' + Date.now(), function (data){
+    $.getJSON(URL_GET_TABS + '?ts=' + getNow(), function (data){
         var uiTabSpec = $.makeArray(data);
         for ( var i = 0; i < uiTabSpec.length; ++i )
         {
