@@ -25,15 +25,15 @@ import java.util.concurrent.atomic.AtomicReference;
 public class S3ClientFactoryImpl implements S3ClientFactory
 {
     @Override
-    public S3Client makeNewClient(final S3Credential credentials) throws Exception
+    public S3Client makeNewClient(final S3Credential credentials, final String s3Endpoint) throws Exception
     {
-        return new S3ClientImpl(credentials);
+        return new S3ClientImpl(credentials, s3Endpoint);
     }
 
     @Override
-    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider) throws Exception
+    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider, final String s3Endpoint) throws Exception
     {
-        return new S3ClientImpl(credentialsProvider);
+        return new S3ClientImpl(credentialsProvider, s3Endpoint);
     }
 
 }

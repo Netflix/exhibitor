@@ -68,6 +68,7 @@ public class ExhibitorCLI
     public static final String S3_BACKUP = "s3backup";
     public static final String S3_CONFIG = "s3config";
     public static final String S3_CONFIG_PREFIX = "s3configprefix";
+    public static final String S3_ENDPOINT = "s3endpoint";
     public static final String ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING = "zkconfigconnect";
     public static final String ZOOKEEPER_CONFIG_EXHIBITOR_PORT = "zkconfigexhibitorport";
     public static final String ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH = "zkconfigexhibitorpath";
@@ -124,6 +125,7 @@ public class ExhibitorCLI
         Options s3ConfigOptions = new Options();
         s3ConfigOptions.addOption(null, S3_CONFIG, true, "The bucket name and key to store the config (s3credentials may be provided as well). Argument is [bucket name]:[key].");
         s3ConfigOptions.addOption(null, S3_CONFIG_PREFIX, true, "When using AWS S3 shared config files, the prefix to use for values such as locks. Default is " + DEFAULT_PREFIX);
+        s3ConfigOptions.addOption(null, S3_ENDPOINT, true, "Override if using an endpoint other than US Standard.");
 
         Options zookeeperConfigOptions = new Options();
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING, true, "The initial connection string for ZooKeeper shared config storage. E.g: \"host1:2181,host2:2181...\"");

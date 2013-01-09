@@ -26,7 +26,7 @@ public interface S3ClientFactory
      * @return client
      * @throws Exception errors
      */
-    public S3Client makeNewClient(S3Credential credentials) throws Exception;
+    public S3Client makeNewClient(S3Credential credentials, String s3Endpoint) throws Exception;
 
 
     /**
@@ -36,7 +36,7 @@ public interface S3ClientFactory
      * @return client
      * @throws Exception errors
      */
-    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider) throws Exception;
+    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider, String s3Endpoint) throws Exception;
 
 
 

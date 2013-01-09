@@ -26,22 +26,39 @@ import java.util.concurrent.atomic.AtomicReference;
 public class S3ClientImpl implements S3Client {
 
     private final AtomicReference<RefCountedClient> client = new AtomicReference<RefCountedClient>(null);
+    private final String s3Endpoint;
 
-    public S3ClientImpl(S3Credential credentials)
+    public S3ClientImpl(S3Credential credentials, String endpoint)
     {
+        s3Endpoint = endpoint;
         changeCredentials(credentials);
     }
 
-    public S3ClientImpl(S3CredentialsProvider credentialsProvider)
+    public S3ClientImpl(S3CredentialsProvider credentialsProvider, String endpoint)
     {
-        client.set(new RefCountedClient(new AmazonS3Client(credentialsProvider.getAWSCredentialProvider())));
+        s3Endpoint = endpoint;
+        AmazonS3Client s3Client = new AmazonS3Client(credentialsProvider.getAWSCredentialProvider());
+        if (endpoint != null) {
+            s3Client.setEndpoint(endpoint);
+        }
+        client.set(new RefCountedClient(s3Client));
     }
 
 
     @Override
     public void changeCredentials(S3Credential credential)
     {
-        RefCountedClient   newRefCountedClient = (credential != null) ? new RefCountedClient(new AmazonS3Client(new BasicAWSCredentials(credential.getAccessKeyId(), credential.getSecretAccessKey()))) : new RefCountedClient(new AmazonS3Client());
+        AmazonS3Client s3Client = null;
+        if (credential != null) {
+            s3Client = new AmazonS3Client(new BasicAWSCredentials(credential.getAccessKeyId(), credential.getSecretAccessKey()));
+        } else {
+            s3Client = new AmazonS3Client();
+        }
+        if (s3Endpoint != null) {
+            s3Client.setEndpoint(s3Endpoint);
+        }
+
+        RefCountedClient   newRefCountedClient = new RefCountedClient(s3Client);
         RefCountedClient   oldRefCountedClient = client.getAndSet(newRefCountedClient);
         if ( oldRefCountedClient != null )
         {

@@ -39,25 +39,25 @@ public class S3ConfigProvider implements ConfigProvider
     private final String hostname;
     private final Properties defaults;
 
-    public S3ConfigProvider(S3ClientFactory factory, S3Credential credential, S3ConfigArguments arguments, String hostname) throws Exception
+    public S3ConfigProvider(S3ClientFactory factory, S3Credential credential, S3ConfigArguments arguments, String hostname, String s3Endpoint) throws Exception
     {
-        this(factory, credential, arguments, hostname, new Properties());
+        this(factory, credential, arguments, hostname, new Properties(), s3Endpoint);
     }
 
-    public S3ConfigProvider(S3ClientFactory factory, S3Credential credential, S3ConfigArguments arguments, String hostname, Properties defaults) throws Exception
+    public S3ConfigProvider(S3ClientFactory factory, S3Credential credential, S3ConfigArguments arguments, String hostname, Properties defaults, String s3Endpoint) throws Exception
     {
         this.arguments = arguments;
         this.hostname = hostname;
         this.defaults = defaults;
-        s3Client = factory.makeNewClient(credential);
+        s3Client = factory.makeNewClient(credential, s3Endpoint);
     }
 
-    public S3ConfigProvider(S3ClientFactory factory, S3CredentialsProvider credentialsProvider, S3ConfigArguments arguments, String hostname, Properties defaults) throws Exception
+    public S3ConfigProvider(S3ClientFactory factory, S3CredentialsProvider credentialsProvider, S3ConfigArguments arguments, String hostname, Properties defaults, String s3Endpoint) throws Exception
     {
         this.arguments = arguments;
         this.hostname = hostname;
         this.defaults = defaults;
-        s3Client = factory.makeNewClient(credentialsProvider);
+        s3Client = factory.makeNewClient(credentialsProvider, s3Endpoint);
     }
 
     public S3Client getS3Client()
