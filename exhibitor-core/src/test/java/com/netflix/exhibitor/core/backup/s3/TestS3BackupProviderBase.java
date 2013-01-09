@@ -66,7 +66,7 @@ public abstract class TestS3BackupProviderBase
             MockS3Client        s3Client = new MockS3Client(null, null);
             s3Client.putObject(dummyRequest);
 
-            S3BackupProvider    provider = new S3BackupProvider(new MockS3ClientFactory(s3Client), new PropertyBasedS3Credential(new Properties()));
+            S3BackupProvider    provider = new S3BackupProvider(new MockS3ClientFactory(s3Client), new PropertyBasedS3Credential(new Properties()), null);
             out = new FileOutputStream(tempFile);
             provider.downloadBackup(null, new BackupMetaData("test", 1), out, Maps.<String, String>newHashMap());
             
@@ -105,7 +105,7 @@ public abstract class TestS3BackupProviderBase
         };
 
         MockS3Client            s3Client = new MockS3Client(null, listing);
-        S3BackupProvider        provider = new S3BackupProvider(new MockS3ClientFactory(s3Client), new PropertyBasedS3Credential(new Properties()));
+        S3BackupProvider        provider = new S3BackupProvider(new MockS3ClientFactory(s3Client), new PropertyBasedS3Credential(new Properties()), null);
         List<BackupMetaData>    backups = provider.getAvailableBackups(null, Maps.<String, String>newHashMap());
         List<String>            backupNames = Lists.transform
         (
@@ -125,7 +125,7 @@ public abstract class TestS3BackupProviderBase
     private byte[] getUploadedBytes(File sourceFile) throws Exception
     {
         MockS3Client        s3Client = new MockS3Client();
-        S3BackupProvider    provider = new S3BackupProvider(new MockS3ClientFactory(s3Client), new PropertyBasedS3Credential(new Properties()));
+        S3BackupProvider    provider = new S3BackupProvider(new MockS3ClientFactory(s3Client), new PropertyBasedS3Credential(new Properties()), null);
 
         provider.uploadBackup(null, new BackupMetaData("test", 10), sourceFile, Maps.<String, String>newHashMap());
 

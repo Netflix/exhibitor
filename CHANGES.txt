@@ -1,3 +1,8 @@
+1.4.5 - January 9, 2013
+=======================
+* Issue 103: S3 buckets outside of us-east-1 now require an "endpoint" to be set. For the standalone
+version, use the new CLI --s3region <region>. e.g. "--s3region eu-west-1".
+
 1.4.4 - January 2, 2013
 =======================
 * Issue 94: The standalone version now has a CLI option to load default ZK/Exhibitor config

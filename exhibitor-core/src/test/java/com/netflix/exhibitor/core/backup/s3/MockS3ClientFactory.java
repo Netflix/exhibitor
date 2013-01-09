@@ -31,13 +31,13 @@ public class MockS3ClientFactory implements S3ClientFactory
     }
 
     @Override
-    public S3Client makeNewClient(S3Credential credentials) throws Exception
+    public S3Client makeNewClient(S3Credential credentials, String s3Region) throws Exception
     {
         return s3Client;
     }
 
     @Override
-    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider) throws Exception {
+    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider, String s3Region) throws Exception {
         return s3Client;
     }
 }

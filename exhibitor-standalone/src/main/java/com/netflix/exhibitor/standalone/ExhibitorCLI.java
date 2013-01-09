@@ -68,6 +68,7 @@ public class ExhibitorCLI
     public static final String S3_BACKUP = "s3backup";
     public static final String S3_CONFIG = "s3config";
     public static final String S3_CONFIG_PREFIX = "s3configprefix";
+    public static final String S3_REGION = "s3region";
     public static final String ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING = "zkconfigconnect";
     public static final String ZOOKEEPER_CONFIG_EXHIBITOR_PORT = "zkconfigexhibitorport";
     public static final String ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH = "zkconfigexhibitorpath";
@@ -142,6 +143,7 @@ public class ExhibitorCLI
 
         Options s3Options = new Options();
         s3Options.addOption(null, S3_CREDENTIALS, true, "Optional credentials to use for s3backup or s3config. Argument is the path to an AWS credential properties file with two properties: " + PropertyBasedS3Credential.PROPERTY_S3_KEY_ID + " and " + PropertyBasedS3Credential.PROPERTY_S3_SECRET_KEY);
+        s3Options.addOption(null, S3_REGION, true, "Optional region for S3 calls (e.g. \"eu-west-1\"). Will be used to set the S3 client's endpoint.");
 
         generalOptions = new Options();
         generalOptions.addOption(null, TIMEOUT, true, "Connection timeout (ms) for ZK connections. Default is 30000.");

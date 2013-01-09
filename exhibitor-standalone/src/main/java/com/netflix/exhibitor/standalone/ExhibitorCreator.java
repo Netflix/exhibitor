@@ -113,7 +113,8 @@ public class ExhibitorCreator
 
         checkMutuallyExclusive(cli, commandLine, S3_BACKUP, FILESYSTEMBACKUP);
 
-        PropertyBasedS3Credential awsCredentials = null;
+        String                      s3Region = commandLine.getOptionValue(S3_REGION, null);
+        PropertyBasedS3Credential   awsCredentials = null;
         if ( commandLine.hasOption(S3_CREDENTIALS) )
         {
             awsCredentials = new PropertyBasedS3Credential(new File(commandLine.getOptionValue(S3_CREDENTIALS)));
@@ -122,7 +123,7 @@ public class ExhibitorCreator
         BackupProvider backupProvider = null;
         if ( "true".equalsIgnoreCase(commandLine.getOptionValue(S3_BACKUP)) )
         {
-            backupProvider = new S3BackupProvider(new S3ClientFactoryImpl(), awsCredentials);
+            backupProvider = new S3BackupProvider(new S3ClientFactoryImpl(), awsCredentials, s3Region);
         }
         else if ( "true".equalsIgnoreCase(commandLine.getOptionValue(FILESYSTEMBACKUP)) )
         {
@@ -143,7 +144,7 @@ public class ExhibitorCreator
             throw new MissingConfigurationTypeException("Configuration type (-" + SHORT_CONFIG_TYPE + " or --" + CONFIG_TYPE + ") must be specified", cli);
         }
 
-        ConfigProvider configProvider = makeConfigProvider(configType, cli, commandLine, awsCredentials, backupProvider, useHostname);
+        ConfigProvider configProvider = makeConfigProvider(configType, cli, commandLine, awsCredentials, backupProvider, useHostname, s3Region);
         if ( configProvider == null )
         {
             throw new ExhibitorCreatorExit(cli);
@@ -246,14 +247,14 @@ public class ExhibitorCreator
         return closeables;
     }
 
-    private ConfigProvider makeConfigProvider(String configType, ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, BackupProvider backupProvider, String useHostname) throws Exception
+    private ConfigProvider makeConfigProvider(String configType, ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, BackupProvider backupProvider, String useHostname, String s3Region) throws Exception
     {
         Properties          defaultProperties = makeDefaultProperties(commandLine, backupProvider);
 
         ConfigProvider      configProvider;
         if ( configType.equals("s3") )
         {
-            configProvider = getS3Provider(cli, commandLine, awsCredentials, useHostname, defaultProperties);
+            configProvider = getS3Provider(cli, commandLine, awsCredentials, useHostname, defaultProperties, s3Region);
         }
         else if ( configType.equals("file") )
         {
@@ -481,10 +482,10 @@ public class ExhibitorCreator
         return new FileSystemConfigProvider(directory, name, defaultProperties, new AutoManageLockArguments(lockPrefix));
     }
 
-    private ConfigProvider getS3Provider(ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, String hostname, Properties defaultProperties) throws Exception
+    private ConfigProvider getS3Provider(ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, String hostname, Properties defaultProperties, String s3Region) throws Exception
     {
         String  prefix = cli.getOptions().hasOption(S3_CONFIG_PREFIX) ? commandLine.getOptionValue(S3_CONFIG_PREFIX) : DEFAULT_PREFIX;
-        return new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, getS3Arguments(cli, commandLine.getOptionValue(S3_CONFIG), prefix), hostname, defaultProperties);
+        return new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, getS3Arguments(cli, commandLine.getOptionValue(S3_CONFIG), prefix), hostname, defaultProperties, s3Region);
     }
 
     private void checkMutuallyExclusive(ExhibitorCLI cli, CommandLine commandLine, String option1, String option2) throws ExhibitorCreatorExit

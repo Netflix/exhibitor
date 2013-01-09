@@ -16,24 +16,18 @@
 
 package com.netflix.exhibitor.core.s3;
 
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.*;
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
-
 public class S3ClientFactoryImpl implements S3ClientFactory
 {
     @Override
-    public S3Client makeNewClient(final S3Credential credentials) throws Exception
+    public S3Client makeNewClient(final S3Credential credentials, String s3Region) throws Exception
     {
-        return new S3ClientImpl(credentials);
+        return new S3ClientImpl(credentials, s3Region);
     }
 
     @Override
-    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider) throws Exception
+    public S3Client makeNewClient(S3CredentialsProvider credentialsProvider, String s3Region) throws Exception
     {
-        return new S3ClientImpl(credentialsProvider);
+        return new S3ClientImpl(credentialsProvider, s3Region);
     }
 
 }
