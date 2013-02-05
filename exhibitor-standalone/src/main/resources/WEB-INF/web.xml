@@ -8,6 +8,16 @@
         <listener-class>com.netflix.exhibitor.servlet.ExhibitorServletContextListener</listener-class>
     </listener>
 
+    <filter>
+        <filter-name>default-redirect</filter-name>
+        <filter-class>com.netflix.exhibitor.servlet.ExhibitorServletFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>default-redirect</filter-name>
+        <url-pattern>/</url-pattern>
+    </filter-mapping>
+
     <servlet>
         <servlet-name>Jersey REST Service</servlet-name>
         <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>

@@ -26,6 +26,7 @@ import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.activity.ActivityQueue;
 import com.netflix.exhibitor.core.activity.QueueGroups;
 import com.netflix.exhibitor.core.activity.RepeatingActivity;
+import com.netflix.exhibitor.core.activity.RepeatingActivityImpl;
 import com.netflix.exhibitor.core.automanage.AutomaticInstanceManagement;
 import com.netflix.exhibitor.core.automanage.RemoteInstanceRequestClient;
 import com.netflix.exhibitor.core.automanage.RemoteInstanceRequestClientImpl;
@@ -132,7 +133,7 @@ public class Exhibitor implements Closeable
         cleanupManager = new CleanupManager(this);
         indexCache = new IndexCache(log);
         processMonitor = new ProcessMonitor(this);
-        autoInstanceManagement = new RepeatingActivity(log, activityQueue, QueueGroups.MAIN, new AutomaticInstanceManagement(this), getAutoInstanceManagementPeriod());
+        autoInstanceManagement = new RepeatingActivityImpl(log, activityQueue, QueueGroups.MAIN, new AutomaticInstanceManagement(this), getAutoInstanceManagementPeriod());
 
         AtomicReference<CompositeMonitor<?>>    theMonitor = new AtomicReference<CompositeMonitor<?>>();
         servoMonitoring = initServo(this, log, activityQueue, arguments, theMonitor);
@@ -403,7 +404,7 @@ public class Exhibitor implements Closeable
             CompositeMonitor<?>     compositeMonitor = Monitors.newObjectMonitor(zookeeperMonitoredData);
 
             GetMonitorData          getMonitorData = new GetMonitorData(exhibitor, zookeeperMonitoredData);
-            localServoMonitoring = new RepeatingActivity(log, activityQueue, QueueGroups.IO, getMonitorData, arguments.servoRegistration.getZookeeperPollMs());
+            localServoMonitoring = new RepeatingActivityImpl(log, activityQueue, QueueGroups.IO, getMonitorData, arguments.servoRegistration.getZookeeperPollMs());
             arguments.servoRegistration.getMonitorRegistry().register(compositeMonitor);
 
             theMonitor.set(compositeMonitor);

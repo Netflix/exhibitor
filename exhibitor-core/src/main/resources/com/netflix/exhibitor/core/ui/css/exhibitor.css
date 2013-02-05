@@ -563,3 +563,8 @@ fieldset
     position: absolute;
     cursor: pointer;
 }
+
+#node-data
+{
+    resize: none;
+}

@@ -25,19 +25,15 @@
                             <groupId>com.netflix.exhibitor</groupId>
                             <artifactId>exhibitor-standalone</artifactId>
                             <type>jar</type>
-                            <includes>WEB-INF/</includes>
+                            <includes>
+                                <include>WEB-INF/</include>
+                            </includes>
                         </overlay>
 
                         <overlay>
-                            <groupId>com.netflix.exhibitor</groupId>
-                            <artifactId>exhibitor-standalone</artifactId>
-                            <type>jar</type>
-                            <includes>com/</includes>
-                            <targetPath>WEB-INF/classes</targetPath>
-                        </overlay>
-
-                        <overlay>
-                            <includes>exhibitor.properties</includes>
+                            <includes>
+                                <include>exhibitor.properties</include>
+                            </includes>
                             <targetPath>WEB-INF/classes</targetPath>
                         </overlay>
                     </overlays>

@@ -16,19 +16,25 @@
 
 package com.netflix.exhibitor.core.activity;
 
-import java.io.Closeable;
+import java.io.IOException;
 
-public interface RepeatingActivity extends Closeable
+public class NOPRepeatingActivity implements RepeatingActivity
 {
-    /**
-     * Must be started
-     */
-    public void start();
+    @Override
+    public void start()
+    {
+        // NOP
+    }
 
-    /**
-     * Change the time period between executions
-     *
-     * @param newTimePeriodMs new time period
-     */
-    public void setTimePeriodMs(long newTimePeriodMs);
+    @Override
+    public void setTimePeriodMs(long newTimePeriodMs)
+    {
+        // NOP
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        // NOP
+    }
 }

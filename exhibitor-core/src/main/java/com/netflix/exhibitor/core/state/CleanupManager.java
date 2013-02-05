@@ -19,8 +19,10 @@ package com.netflix.exhibitor.core.state;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.activity.Activity;
 import com.netflix.exhibitor.core.activity.ActivityLog;
+import com.netflix.exhibitor.core.activity.NOPRepeatingActivity;
 import com.netflix.exhibitor.core.activity.QueueGroups;
 import com.netflix.exhibitor.core.activity.RepeatingActivity;
+import com.netflix.exhibitor.core.activity.RepeatingActivityImpl;
 import com.netflix.exhibitor.core.config.ConfigListener;
 import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.controlpanel.ControlPanelTypes;
@@ -61,7 +63,17 @@ public class CleanupManager implements Closeable
             }
         };
 
-        repeatingActivity = new RepeatingActivity(exhibitor.getLog(), exhibitor.getActivityQueue(), QueueGroups.IO, activity, exhibitor.getConfigManager().getConfig().getInt(IntConfigs.CLEANUP_PERIOD_MS));
+        int cleanupPeriodMs = exhibitor.getConfigManager().getConfig().getInt(IntConfigs.CLEANUP_PERIOD_MS);
+        RepeatingActivity localRepeatingActivity;
+        if ( cleanupPeriodMs > 0 )
+        {
+            localRepeatingActivity = new RepeatingActivityImpl(exhibitor.getLog(), exhibitor.getActivityQueue(), QueueGroups.IO, activity, cleanupPeriodMs);
+        }
+        else
+        {
+            localRepeatingActivity = new NOPRepeatingActivity();
+        }
+        repeatingActivity = localRepeatingActivity;
     }
 
     public void start()

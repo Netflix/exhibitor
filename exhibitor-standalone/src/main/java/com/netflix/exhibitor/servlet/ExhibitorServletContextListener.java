@@ -66,6 +66,7 @@ public class ExhibitorServletContextListener implements ServletContextListener
         {
             log.error("Configuration type (" + OUR_PREFIX + ExhibitorCLI.CONFIG_TYPE + ") must be specified");
             exit.getCli().logHelp(OUR_PREFIX);
+            throw new RuntimeException(exit);
         }
         catch ( ExhibitorCreatorExit exit )
         {
@@ -74,10 +75,12 @@ public class ExhibitorServletContextListener implements ServletContextListener
                 log.error(exit.getError());
             }
             exit.getCli().logHelp(OUR_PREFIX);
+            throw new RuntimeException(exit);
         }
         catch ( Exception e )
         {
             log.error("Trying to create Exhibitor", e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -90,9 +93,12 @@ public class ExhibitorServletContextListener implements ServletContextListener
             exhibitor = null;
         }
 
-        for ( Closeable closeable : exhibitorCreator.getCloseables() )
+        if ( exhibitorCreator != null )
         {
-            Closeables.closeQuietly(closeable);
+            for ( Closeable closeable : exhibitorCreator.getCloseables() )
+            {
+                Closeables.closeQuietly(closeable);
+            }
         }
     }
 
@@ -118,7 +124,7 @@ public class ExhibitorServletContextListener implements ServletContextListener
             InputStream stream = resource.openStream();
             try
             {
-                Properties  properties = new Properties();
+                Properties  properties = new Properties(System.getProperties());
                 properties.load(stream);
                 applyProperties(argsBuilder, properties);
             }
@@ -152,6 +158,8 @@ public class ExhibitorServletContextListener implements ServletContextListener
                 String      value = properties.getProperty(name);
                 String      argName = name.substring(OUR_PREFIX.length());
                 argsBuilder.put("-" + argName, value);
+
+                log.info(String.format("Setting property %s=%s", argName, value));
             }
         }
     }

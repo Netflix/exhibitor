@@ -21,6 +21,8 @@ import com.netflix.exhibitor.core.rest.UIContext;
 import com.netflix.exhibitor.core.rest.jersey.JerseySupport;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
@@ -31,6 +33,8 @@ import java.util.Set;
 
 public class ExhibitorResourceConfig extends ResourceConfig
 {
+    @SuppressWarnings("FieldCanBeLocal")
+    private final Logger                    log = LoggerFactory.getLogger(getClass());
     private final DefaultResourceConfig     config;
 
     public ExhibitorResourceConfig(@Context ServletContext context)
@@ -39,10 +43,12 @@ public class ExhibitorResourceConfig extends ResourceConfig
         Exhibitor               exhibitor = (Exhibitor)context.getAttribute(ExhibitorServletContextListener.class.getName());
         if ( exhibitor != null )
         {
+            log.info("Adding Exhibitor Jersey resources");
             localConfig = JerseySupport.newApplicationConfig(new UIContext(exhibitor));
         }
         else
         {
+            log.info("Using DefaultResourceConfig");
             localConfig = new DefaultResourceConfig();
         }
         config = localConfig;

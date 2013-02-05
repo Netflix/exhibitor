@@ -566,7 +566,6 @@ public class ExhibitorCreator
 
     private SecurityHandler getSecurityHandler(String realm, String consoleUser, String consolePassword, String curatorUser, String curatorPassword)
     {
-
         HashUserRealm userRealm = new HashUserRealm(realm);
         userRealm.put(consoleUser, Credential.getCredential(consolePassword));
         userRealm.addUserToRole(consoleUser,"console");
