@@ -15,6 +15,11 @@ main page. Also, System properties can now be set in addition to the properties 
 
 * Issue 115: Fixed an incorrect error message when configtype is zookeeper.
 
+* Authentication/Security/Authorization has been totally reworked. See details here
+https://github.com/Netflix/exhibitor/wiki/Authentication-Setup and here
+https://github.com/Netflix/exhibitor/wiki/Remote-Client-Authorization. NOTE: --basicauthrealm,
+--consoleuser, --curatoruser, --consolepassword and --curatorpassword are now deprecated.
+
 1.4.5 - January 9, 2013
 =======================
 * Issue 103: S3 buckets outside of us-east-1 now require an "endpoint" to be set. For the standalone
