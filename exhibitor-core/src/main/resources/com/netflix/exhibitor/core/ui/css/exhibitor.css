@@ -568,3 +568,24 @@ fieldset
 {
     resize: none;
 }
+
+.optional
+{
+    font-style: italic;
+    padding-left: 5px;
+}
+
+#config-latent-message
+{
+    position: absolute;
+    border: 1px solid #a9a9a9;
+    font-style: italic;
+    font-weight: bold;
+    padding: 5px;
+    margin-left: -325px;
+    width: 250px;
+    height: 4em;
+    top: 175px;
+    left: 100%;
+    line-height: 125%;
+}

@@ -18,6 +18,7 @@ package com.netflix.exhibitor.core.automanage;
 
 import com.google.common.io.Closeables;
 import com.netflix.curator.test.InstanceSpec;
+import com.netflix.exhibitor.core.RemoteConnectionConfiguration;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import javax.ws.rs.core.MediaType;
@@ -32,7 +33,7 @@ public class TestRemoteInstanceRequestClient
     @Test
     public void     testMissingServer() throws URISyntaxException
     {
-        RemoteInstanceRequestClientImpl         client = new RemoteInstanceRequestClientImpl();
+        RemoteInstanceRequestClientImpl         client = new RemoteInstanceRequestClientImpl(new RemoteConnectionConfiguration());
         try
         {
             // a non-existent port should generate an exception
@@ -62,7 +63,7 @@ public class TestRemoteInstanceRequestClient
         ServerSocket                    server = new ServerSocket(port, 0);
         try
         {
-            client = new RemoteInstanceRequestClientImpl();
+            client = new RemoteInstanceRequestClientImpl(new RemoteConnectionConfiguration());
             client.getWebResource(new URI("http://localhost:" + port), MediaType.WILDCARD_TYPE, Object.class);
         }
         catch ( Exception e )

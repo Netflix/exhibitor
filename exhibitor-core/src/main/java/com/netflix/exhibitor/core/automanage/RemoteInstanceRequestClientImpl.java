@@ -19,26 +19,19 @@ package com.netflix.exhibitor.core.automanage;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.netflix.exhibitor.core.RemoteConnectionConfiguration;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.filter.ClientFilter;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class RemoteInstanceRequestClientImpl implements RemoteInstanceRequestClient
 {
-    private static final AtomicInteger userCount = new AtomicInteger(0);
-    private static final Client client;
-    static
-    {
-        client = Client.create();
-        client.setConnectTimeout(10000);    // TODO make configurable
-        client.setReadTimeout(3000);        // TODO make configurable
-    }
-
-    private static final LoadingCache<URI, WebResource> webResources = CacheBuilder.newBuilder()
+    private final Client client;
+    private final LoadingCache<URI, WebResource> webResources = CacheBuilder.newBuilder()
         .softValues()
         .build
             (
@@ -52,9 +45,15 @@ public class RemoteInstanceRequestClientImpl implements RemoteInstanceRequestCli
                 }
             );
 
-    public RemoteInstanceRequestClientImpl()
+    public RemoteInstanceRequestClientImpl(RemoteConnectionConfiguration configuration)
     {
-        userCount.incrementAndGet();
+        client = Client.create();
+        client.setConnectTimeout(configuration.getConnectionTimeoutMs());
+        client.setReadTimeout(configuration.getReadTimeoutMs());
+        for ( ClientFilter filter : configuration.getFilters() )
+        {
+            client.addFilter(filter);
+        }
     }
 
     @Override
@@ -78,9 +77,6 @@ public class RemoteInstanceRequestClientImpl implements RemoteInstanceRequestCli
     @Override
     public void close() throws IOException
     {
-        if ( userCount.decrementAndGet() == 0 )
-        {
-            client.destroy();
-        }
+        client.destroy();
     }
 }

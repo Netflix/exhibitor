@@ -89,15 +89,20 @@ public class ExhibitorCLI
     public static final String EXTRA_HEADING_TEXT = "headingtext";
     public static final String NODE_MUTATIONS = "nodemodification";
     public static final String JQUERY_STYLE = "jquerystyle";
+    public static final String ACL_SCHEME = "aclscheme";
+    public static final String ACL_ID = "aclid";
+    public static final String ACL_PERMISSIONS = "aclperms";
+    public static final String SERVO_INTEGRATION = "servo";
+
+    public static final String SECURITY_FILE = "security";
+    public static final String REALM = "realm";
+    public static final String REMOTE_CLIENT_AUTHORIZATION = "remoteauth";
+
     public static final String BASIC_AUTH_REALM = "basicauthrealm";
     public static final String CONSOLE_USER = "consoleuser";
     public static final String CURATOR_USER = "curatoruser";
     public static final String CONSOLE_PASSWORD = "consolepassword";
     public static final String CURATOR_PASSWORD = "curatorpassword";
-    public static final String ACL_SCHEME = "aclscheme";
-    public static final String ACL_ID = "aclid";
-    public static final String ACL_PERMISSIONS = "aclperms";
-    public static final String SERVO_INTEGRATION = "servo";
 
     public static final String DEFAULT_FILESYSTEMCONFIG_NAME = "exhibitor.properties";
     public static final String DEFAULT_PREFIX = "exhibitor-";
@@ -110,12 +115,17 @@ public class ExhibitorCLI
     {
         hostname = Exhibitor.getHostname();
 
+        Options deprecatedAuthOptions = new Options();
+        deprecatedAuthOptions.addOption(null, BASIC_AUTH_REALM, true, "Basic Auth Realm to Protect the Exhibitor UI (DEPRECATED - use --" + SECURITY_FILE + "/--" + REALM + " instead)");
+        deprecatedAuthOptions.addOption(null, CONSOLE_USER, true, "Basic Auth Username to Protect the Exhibitor UI (DEPRECATED - use --" + SECURITY_FILE + "/--" + REALM + " instead)");
+        deprecatedAuthOptions.addOption(null, CONSOLE_PASSWORD, true, "Basic Auth Password to Protect the Exhibitor UI (DEPRECATED - use --" + SECURITY_FILE + "/--" + REALM + " instead)");
+        deprecatedAuthOptions.addOption(null, CURATOR_USER, true, "Basic Auth Password to Protect the cluster list api (DEPRECATED - use --" + SECURITY_FILE + "/--" + REALM + " instead)");
+        deprecatedAuthOptions.addOption(null, CURATOR_PASSWORD, true, "Basic Auth Password to Protect cluster list api (DEPRECATED - use --" + SECURITY_FILE + "/--" + REALM + " instead)");
+
         Options authOptions = new Options();
-        authOptions.addOption(null, BASIC_AUTH_REALM, true, "Basic Auth Realm to Protect the Exhibitor UI");
-        authOptions.addOption(null, CONSOLE_USER, true, "Basic Auth Username to Protect the Exhibitor UI");
-        authOptions.addOption(null, CONSOLE_PASSWORD, true, "Basic Auth Password to Protect the Exhibitor UI");
-        authOptions.addOption(null, CURATOR_USER, true, "Basic Auth Password to Protect the cluster list api");
-        authOptions.addOption(null, CURATOR_PASSWORD, true, "Basic Auth Password to Protect cluster list api");
+        authOptions.addOption(null, SECURITY_FILE, true, "Path to a web.xml file with security information (all other tags are ignored). See http://docs.oracle.com/javaee/6/tutorial/doc/gkbaa.html.");
+        authOptions.addOption(null, REALM, true, "Specifies the realm as [realm name]:[path/url]. The path/url must point to a realm properties file as described here (see HashUserRealm): http://docs.codehaus.org/display/JETTY/Realms");
+        authOptions.addOption(null, REMOTE_CLIENT_AUTHORIZATION, true, "Exhibitor uses the Jersey Client to remotely connect to each Exhibitor instance in the ensemble. If you have security enabled for Exhibitor you also need to specify authorization for the remote client. The argument for " + REMOTE_CLIENT_AUTHORIZATION + " is: <type>:<realm-user>. \"type\" must be either \"basic\" or \"digest\". \"realm-user\" is the user to use from the realm file.");
 
         Options fileConfigOptions = new Options();
         fileConfigOptions.addOption(null, FILESYSTEM_CONFIG_DIRECTORY, true, "Directory to store Exhibitor properties (cannot be used with s3config). Exhibitor uses file system locks so you can specify a shared location so as to enable complete ensemble management. Default location is " + System.getProperty("user.dir"));
@@ -173,6 +183,7 @@ public class ExhibitorCLI
         addAll("Configuration Options for Type \"none\"", noneConfigOptions);
         addAll("Backup Options", backupOptions);
         addAll("Authorization Options", authOptions);
+        addAll("Deprecated Authorization Options", deprecatedAuthOptions);
         addAll("ACL Options", aclOptions);
         addAll(null, generalOptions);
     }

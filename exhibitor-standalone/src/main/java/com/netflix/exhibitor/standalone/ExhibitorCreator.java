@@ -16,6 +16,7 @@
 
 package com.netflix.exhibitor.standalone;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
@@ -87,6 +88,9 @@ public class ExhibitorCreator
     private final ConfigProvider configProvider;
     private final int httpPort;
     private final List<Closeable> closeables = Lists.newArrayList();
+    private final String securityFile;
+    private final String realmSpec;
+    private final String remoteAuthSpec;
 
     public ExhibitorCreator(String[] args) throws Exception
     {
@@ -165,6 +169,10 @@ public class ExhibitorCreator
             throw new ExhibitorCreatorExit(cli);
         }
 
+        securityFile = commandLine.getOptionValue(SECURITY_FILE);
+        realmSpec = commandLine.getOptionValue(REALM);
+        remoteAuthSpec = commandLine.getOptionValue(REMOTE_CLIENT_AUTHORIZATION);
+
         String realm = commandLine.getOptionValue(BASIC_AUTH_REALM);
         String user = commandLine.getOptionValue(CONSOLE_USER);
         String password = commandLine.getOptionValue(CONSOLE_PASSWORD);
@@ -173,7 +181,8 @@ public class ExhibitorCreator
         SecurityHandler handler = null;
         if ( notNullOrEmpty(realm) && notNullOrEmpty(user) && notNullOrEmpty(password) && notNullOrEmpty(curatorUser) && notNullOrEmpty(curatorPassword) )
         {
-            handler = getSecurityHandler(realm, user, password, curatorUser, curatorPassword);
+            log.warn(Joiner.on(", ").join(BASIC_AUTH_REALM, CONSOLE_USER, CONSOLE_PASSWORD, CURATOR_USER, CURATOR_PASSWORD) + " - have been deprecated. Use TBD instead");
+            handler = makeSecurityHandler(realm, user, password, curatorUser, curatorPassword);
         }
 
         String      aclId = commandLine.getOptionValue(ACL_ID);
@@ -245,6 +254,21 @@ public class ExhibitorCreator
     public List<Closeable> getCloseables()
     {
         return closeables;
+    }
+
+    public String getSecurityFile()
+    {
+        return securityFile;
+    }
+
+    public String getRealmSpec()
+    {
+        return realmSpec;
+    }
+
+    public String getRemoteAuthSpec()
+    {
+        return remoteAuthSpec;
     }
 
     private ConfigProvider makeConfigProvider(String configType, ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, BackupProvider backupProvider, String useHostname, String s3Region) throws Exception
@@ -339,7 +363,7 @@ public class ExhibitorCreator
         String      retrySpec = commandLine.getOptionValue(ZOOKEEPER_CONFIG_RETRY, DEFAULT_ZOOKEEPER_CONFIG_RETRY);
         if ( (path == null) || (connectString == null) )
         {
-            log.error("Both " + ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING + " and " + ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING + " are required when the configtype is zookeeper");
+            log.error("Both " + ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING + " and " + ZOOKEEPER_CONFIG_BASE_PATH + " are required when the configtype is zookeeper");
             return null;
         }
 
@@ -564,7 +588,7 @@ public class ExhibitorCreator
         return arg != null && (! "".equals(arg));
     }
 
-    private SecurityHandler getSecurityHandler(String realm, String consoleUser, String consolePassword, String curatorUser, String curatorPassword)
+    private SecurityHandler makeSecurityHandler(String realm, String consoleUser, String consolePassword, String curatorUser, String curatorPassword)
     {
         HashUserRealm userRealm = new HashUserRealm(realm);
         userRealm.put(consoleUser, Credential.getCredential(consolePassword));

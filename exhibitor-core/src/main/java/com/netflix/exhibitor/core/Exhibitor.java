@@ -81,7 +81,7 @@ public class Exhibitor implements Closeable
     private final CompositeMonitor<?>           servoCompositeMonitor;
     private final ManifestVersion               manifestVersion = new ManifestVersion();
     private final ForkJoinPool                  forkJoinPool = new ForkJoinPool();
-    private final RemoteInstanceRequestClient   remoteInstanceRequestClient = new RemoteInstanceRequestClientImpl();
+    private final RemoteInstanceRequestClient   remoteInstanceRequestClient;
 
     public static final int        AUTO_INSTANCE_MANAGEMENT_PERIOD_MS = 60000;
 
@@ -134,6 +134,8 @@ public class Exhibitor implements Closeable
         indexCache = new IndexCache(log);
         processMonitor = new ProcessMonitor(this);
         autoInstanceManagement = new RepeatingActivityImpl(log, activityQueue, QueueGroups.MAIN, new AutomaticInstanceManagement(this), getAutoInstanceManagementPeriod());
+
+        remoteInstanceRequestClient = new RemoteInstanceRequestClientImpl(arguments.remoteConnectionConfiguration);
 
         AtomicReference<CompositeMonitor<?>>    theMonitor = new AtomicReference<CompositeMonitor<?>>();
         servoMonitoring = initServo(this, log, activityQueue, arguments, theMonitor);

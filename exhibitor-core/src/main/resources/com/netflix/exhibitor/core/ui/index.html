@@ -166,7 +166,13 @@
                         <label for="config-zookeeper-install-dir">ZooKeeper Install Dir</label><input type="text" id="config-zookeeper-install-dir" name="config-zookeeper-install-dir" size="60" title="The directory where the ZooKeeper server is installed">
                             <button id="config-zookeeper-install-dir-help-button">Read Me</button><br clear="all"/>
                         <label for="config-zookeeper-snapshot-dir">ZooKeeper Snapshot Dir</label><input type="text" id="config-zookeeper-snapshot-dir" name="snapshot-zookeeper-snapshot-dir" size="60" title="The directory where the ZooKeeper snapshot data is stored"><br clear="all"/>
-                        <label for="config-zookeeper-log-dir">ZooKeeper Transaction Dir</label><input type="text" id="config-zookeeper-log-dir" name="config-zookeeper-log-dir" size="60" title="The directory where the ZooKeeper transaction log data is stored. Leave blank to use the ZooKeeper Snapshot Dir"><br clear="all"/>
+                        <label for="config-zookeeper-log-dir">ZooKeeper Transaction Dir</label><input type="text" id="config-zookeeper-log-dir" name="config-zookeeper-log-dir" size="60" title="The directory where the ZooKeeper transaction log data is stored. Leave blank to use the ZooKeeper Snapshot Dir"><span class="optional">optional</span>
+
+                        <div id="config-latent-message">
+                            NOTE: Until this section is populated Exhibitor will stay in a "latent" state.
+                        </div>
+
+                        <br clear="all"/>
                     </fieldset>
 
                     <fieldset class="caution-fieldset">
