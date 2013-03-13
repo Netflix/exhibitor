@@ -1,3 +1,7 @@
+1.4.7 - March 13, 2013
+======================
+* Issue 120: Fixed possible NPE during indexing.
+
 1.4.6 - February 18, 2013
 =========================
 * Issue 106: Disable Chrome textarea resizing in the modify node dialog.

@@ -140,6 +140,10 @@ public class IndexBuilder implements Closeable
 
     private void addData(Document document, byte[] data)
     {
+        if ( data == null )
+        {
+            data = new byte[0];
+        }
         document.add(new Field(FieldNames.DATA, data));
     }
 
