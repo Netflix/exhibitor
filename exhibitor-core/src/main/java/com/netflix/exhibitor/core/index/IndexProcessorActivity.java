@@ -39,16 +39,26 @@ public class IndexProcessorActivity implements Activity
     @Override
     public Boolean call() throws Exception
     {
-        try
+        String path = exhibitor.getConfigManager().getConfig().getString(StringConfigs.LOG_INDEX_DIRECTORY);
+
+        if ( path == null )
         {
-            File            indexDirectory = new File(exhibitor.getConfigManager().getConfig().getString(StringConfigs.LOG_INDEX_DIRECTORY), "exhibitor-" + System.currentTimeMillis());
-            IndexProcessor  processor = new IndexProcessor(exhibitor);
-            processor.process(indexDirectory);
+            exhibitor.getLog().add(ActivityLog.Type.ERROR, "No index directory set in config");
         }
-        catch ( Exception e )
+        else
         {
-            exhibitor.getLog().add(ActivityLog.Type.ERROR, "Building Index", e);
+            try
+            {
+                File            indexDirectory = new File(path, "exhibitor-" + System.currentTimeMillis());
+                IndexProcessor  processor = new IndexProcessor(exhibitor);
+                processor.process(indexDirectory);
+            }
+            catch ( Exception e )
+            {
+                exhibitor.getLog().add(ActivityLog.Type.ERROR, "Building Index", e);
+            }
         }
+
         return null;
     }
 }
