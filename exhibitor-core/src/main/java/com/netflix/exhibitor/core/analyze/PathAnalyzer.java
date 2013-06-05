@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.netflix.curator.utils.ZKPaths;
+import org.apache.curator.utils.ZKPaths;
 import com.netflix.exhibitor.core.Exhibitor;
 import org.apache.zookeeper.KeeperException;
 import java.util.Collections;

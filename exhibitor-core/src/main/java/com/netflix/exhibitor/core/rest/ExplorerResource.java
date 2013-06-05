@@ -20,7 +20,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
-import com.netflix.curator.utils.ZKPaths;
+import org.apache.curator.utils.ZKPaths;
 import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.analyze.Analysis;
 import com.netflix.exhibitor.core.analyze.PathAnalyzer;

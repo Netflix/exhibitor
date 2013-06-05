@@ -17,7 +17,7 @@
 package com.netflix.exhibitor.core.analyze;
 
 import com.google.common.collect.Maps;
-import com.netflix.curator.utils.ZKPaths;
+import org.apache.curator.utils.ZKPaths;
 import com.netflix.exhibitor.core.Exhibitor;
 import org.apache.zookeeper.data.Stat;
 import java.util.Iterator;

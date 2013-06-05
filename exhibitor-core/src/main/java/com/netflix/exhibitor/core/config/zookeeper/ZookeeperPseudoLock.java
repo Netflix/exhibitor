@@ -16,7 +16,7 @@
 
 package com.netflix.exhibitor.core.config.zookeeper;
 
-import com.netflix.curator.framework.recipes.locks.InterProcessLock;
+import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.config.PseudoLock;
 import java.util.concurrent.TimeUnit;

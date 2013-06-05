@@ -1,12 +1,17 @@
 ext.githubProjectName = rootProject.name // Change if github project name is not the same as the root project's name
 
 buildscript {
-    repositories { mavenCentral() }
+    repositories {
+        mavenLocal()
+        mavenCentral() // maven { url 'http://jcenter.bintray.com' }
+    }
     apply from: file('gradle/buildscript.gradle'), to: buildscript 
 }
 
 allprojects {
-    repositories { mavenCentral() }
+    repositories { 
+        mavenCentral() // maven { url: 'http://jcenter.bintray.com' }
+    }
 }
 
 apply from: file('gradle/convention.gradle')
@@ -40,8 +45,8 @@ project(':exhibitor-core') {
             // JLine pulls this in as a compile dependency, they have fixed it in future versions
             exclude group: 'junit', module: 'junit'
         }
-        compile 'com.netflix.curator:curator-framework:1.3.2'
-        compile 'com.netflix.curator:curator-recipes:1.3.2'
+        compile 'org.apache.curator:curator-framework:2.0.1-incubating'
+        compile 'org.apache.curator:curator-recipes:2.0.1-incubating'
         compile 'com.netflix.servo:servo-core:0.4.20'
         compile 'com.google.guava:guava:11.0.1'
         compile 'javax.ws.rs:jsr311-api:1.1.1'
@@ -56,7 +61,7 @@ project(':exhibitor-core') {
         compile 'com.sun.jersey:jersey-bundle:1.9.1'  // should be provided - gradle doesn't support
         compile 'com.sun.xml.bind:jaxb-impl:2.2.4'   // should be provided - gradle doesn't support
 
-        testCompile 'com.netflix.curator:curator-test:1.3.2'
+        testCompile 'org.apache.curator:curator-test:2.0.1-incubating'
         testCompile 'org.mortbay.jetty:jetty:6.1.22'
         testCompile 'org.mockito:mockito-core:1.8.5'
     }

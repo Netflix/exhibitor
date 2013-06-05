@@ -1,45 +1,100 @@
-
-// For Artifactory
-rootProject.status = version.contains('-SNAPSHOT')?'snapshot':'release'
+// GRADLE-2087 workaround, perform after java plugin
+status = project.hasProperty('preferredStatus')?project.preferredStatus:(version.contains('SNAPSHOT')?'snapshot':'release')
 
 subprojects { project ->
     apply plugin: 'java' // Plugin as major conventions
 
-    version = rootProject.version
-
     sourceCompatibility = 1.6
 
-    // GRADLE-2087 workaround, perform after java plugin
+    // Restore status after Java plugin
     status = rootProject.status
 
     task sourcesJar(type: Jar, dependsOn:classes) {
-        classifier = 'sources'
         from sourceSets.main.allSource
+        classifier 'sources'
+        extension 'jar'
     }
 
     task javadocJar(type: Jar, dependsOn:javadoc) {
-        classifier = 'javadoc'
         from javadoc.destinationDir
+        classifier 'javadoc'
+        extension 'jar'
     }
 
-    // Ensure output is on a new line
-    javadoc.doFirst { println "" }
+    configurations.add('sources')
+    configurations.add('javadoc')
+    configurations.archives {
+        extendsFrom configurations.sources
+        extendsFrom configurations.javadoc
+    }
 
+    // When outputing to an Ivy repo, we want to use the proper type field
+    gradle.taskGraph.whenReady {
+        def isNotMaven = !it.hasTask(project.uploadMavenCentral)
+        if (isNotMaven) {
+            def artifacts = project.configurations.sources.artifacts
+            def sourceArtifact = artifacts.iterator().next()
+            sourceArtifact.type = 'sources'
+        }
+    }
 
     artifacts {
-        archives sourcesJar
-        archives javadocJar
+        sources(sourcesJar) {
+            // Weird Gradle quirk where type will be used for the extension, but only for sources
+            type 'jar'
+        }
+        javadoc(javadocJar) {
+            type 'javadoc'
+        }
+    }
+
+    configurations {
+        provided {
+            description = 'much like compile, but indicates you expect the JDK or a container to provide it. It is only available on the compilation classpath, and is not transitive.'
+            transitive = true
+            visible = true
+        }
+    }
+
+    project.sourceSets {
+        main.compileClasspath += project.configurations.provided
+        main.runtimeClasspath -= project.configurations.provided
+        test.compileClasspath += project.configurations.provided
+        test.runtimeClasspath += project.configurations.provided
     }
 }
 
-task aggregateJavadoc(type: Javadoc) {
-    description = 'Aggregate all subproject docs into a single docs directory'
-    source subprojects.collect {project -> project.sourceSets.main.allJava }
-    classpath = files(subprojects.collect {project -> project.sourceSets.main.compileClasspath})
-    destinationDir = new File(projectDir, 'doc')
+apply plugin: 'github-pages' // Used to create publishGhPages task
+
+def docTasks = [:]
+[Javadoc,ScalaDoc,Groovydoc].each{ Class docClass ->
+    def allSources = allprojects.tasks*.withType(docClass).flatten()*.source 
+    if (allSources) {
+        def shortName = docClass.simpleName.toLowerCase()
+        def docTask = task "aggregate${shortName.capitalize()}"(type: docClass, description: "Aggregate subproject ${shortName}s") {
+            source = allSources
+            doFirst {
+                def classpaths = allprojects.findAll { it.plugins.hasPlugin(JavaPlugin) }.collect { it.sourceSets.main.compileClasspath }
+                classpath = files(classpaths)
+            }
+        }
+        docTasks[shortName] = docTask
+        processGhPages.dependsOn(docTask)
+    }
+}
+
+githubPages {
+    repoUri = "git@github.com:quidryan/${rootProject.githubProjectName}.git"
+    pages {
+        docTasks.each { shortName, docTask ->
+            from(docTask.outputs.files) {
+                into "docs/${shortName}"
+            }
+        }
+    }
 }
 
 // Generate wrapper, which is distributed as part of source to alleviate the need of installing gradle
 task createWrapper(type: Wrapper) {
-    gradleVersion = '1.1'
+    gradleVersion = '1.5'
 }

@@ -19,7 +19,7 @@ package com.netflix.exhibitor.core.state;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.activity.Activity;
 import com.netflix.exhibitor.core.activity.ActivityLog;
-import com.netflix.exhibitor.core.activity.NOPRepeatingActivity;
+import com.netflix.exhibitor.core.activity.OnOffRepeatingActivity;
 import com.netflix.exhibitor.core.activity.QueueGroups;
 import com.netflix.exhibitor.core.activity.RepeatingActivity;
 import com.netflix.exhibitor.core.activity.RepeatingActivityImpl;
@@ -37,7 +37,7 @@ public class CleanupManager implements Closeable
     public CleanupManager(final Exhibitor exhibitor)
     {
         this.exhibitor = exhibitor;
-        Activity activity = new Activity()
+        final Activity activity = new Activity()
         {
             @Override
             public void completed(boolean wasSuccessful)
@@ -62,18 +62,18 @@ public class CleanupManager implements Closeable
                 return true;
             }
         };
-
-        int cleanupPeriodMs = exhibitor.getConfigManager().getConfig().getInt(IntConfigs.CLEANUP_PERIOD_MS);
-        RepeatingActivity localRepeatingActivity;
-        if ( cleanupPeriodMs > 0 )
-        {
-            localRepeatingActivity = new RepeatingActivityImpl(exhibitor.getLog(), exhibitor.getActivityQueue(), QueueGroups.IO, activity, cleanupPeriodMs);
-        }
-        else
-        {
-            localRepeatingActivity = new NOPRepeatingActivity();
-        }
-        repeatingActivity = localRepeatingActivity;
+        repeatingActivity = new OnOffRepeatingActivity
+        (
+            new OnOffRepeatingActivity.Factory()
+            {
+                @Override
+                public RepeatingActivity newRepeatingActivity(long timePeriodMs)
+                {
+                    return new RepeatingActivityImpl(exhibitor.getLog(), exhibitor.getActivityQueue(), QueueGroups.IO, activity, exhibitor.getConfigManager().getConfig().getInt(IntConfigs.CLEANUP_PERIOD_MS));
+                }
+            },
+            exhibitor.getConfigManager().getConfig().getInt(IntConfigs.CLEANUP_PERIOD_MS)
+        );
     }
 
     public void start()

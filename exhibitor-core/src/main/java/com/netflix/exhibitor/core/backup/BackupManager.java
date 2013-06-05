@@ -22,7 +22,7 @@ import com.google.common.io.Closeables;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.activity.Activity;
 import com.netflix.exhibitor.core.activity.ActivityLog;
-import com.netflix.exhibitor.core.activity.NOPRepeatingActivity;
+import com.netflix.exhibitor.core.activity.OnOffRepeatingActivity;
 import com.netflix.exhibitor.core.activity.QueueGroups;
 import com.netflix.exhibitor.core.activity.RepeatingActivity;
 import com.netflix.exhibitor.core.activity.RepeatingActivityImpl;
@@ -56,14 +56,12 @@ public class BackupManager implements Closeable
      * @param exhibitor main instance
      * @param backupProvider provider
      */
-    public BackupManager(Exhibitor exhibitor, BackupProvider backupProvider)
+    public BackupManager(final Exhibitor exhibitor, BackupProvider backupProvider)
     {
-        InstanceConfig config = exhibitor.getConfigManager().getConfig();
-
         this.exhibitor = exhibitor;
         this.backupProvider = Optional.fromNullable(backupProvider);
 
-        Activity activity = new Activity()
+        final Activity activity = new Activity()
         {
             @Override
             public void completed(boolean wasSuccessful)
@@ -78,17 +76,24 @@ public class BackupManager implements Closeable
             }
         };
 
-        int backupPeriodMs = config.getInt(IntConfigs.BACKUP_PERIOD_MS);
-        RepeatingActivity localRepeatingActivity;
-        if ( backupPeriodMs > 0 )
-        {
-            localRepeatingActivity = new RepeatingActivityImpl(exhibitor.getLog(), exhibitor.getActivityQueue(), QueueGroups.IO, activity, backupPeriodMs);
-        }
-        else
-        {
-            localRepeatingActivity = new NOPRepeatingActivity();
-        }
-        repeatingActivity = localRepeatingActivity;
+        repeatingActivity = new OnOffRepeatingActivity
+        (
+            new OnOffRepeatingActivity.Factory()
+            {
+                @Override
+                public RepeatingActivity newRepeatingActivity(long timePeriodMs)
+                {
+                    return new RepeatingActivityImpl(exhibitor.getLog(), exhibitor.getActivityQueue(), QueueGroups.IO, activity, getBackupPeriodMs());
+                }
+            },
+            getBackupPeriodMs()
+        );
+    }
+
+    private int getBackupPeriodMs()
+    {
+        InstanceConfig config = exhibitor.getConfigManager().getConfig();
+        return config.getInt(IntConfigs.BACKUP_PERIOD_MS);
     }
 
     /**

@@ -101,6 +101,10 @@ function toBinary(str)
     for ( var i = 0; i < str.length; ++i )
     {
         var code = str.charCodeAt(i);
+        if ( code < 16 )
+        {
+            converted += "0";
+        }
         converted += code.toString(16) + " ";
     }
     return converted;

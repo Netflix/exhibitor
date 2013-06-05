@@ -1,3 +1,18 @@
+1.4.8 - June 5, 2013
+====================
+* Pull 126: Check for configured index directory
+
+* Move to Apache Curator
+
+* Issue 122: Using the Modify Dialog in the Explorer to add data that
+contained CR/LF would cause data corruption.
+
+* Changing cleanup and/or backup from 0 to a real number wasn't working. The tasks would
+stay dormant
+
+* Issue 124: Backups weren't working when the snapshot and transaction directories were
+separated. Exhibitor was using the wrong directory.
+
 1.4.7 - March 13, 2013
 ======================
 * Issue 120: Fixed possible NPE during indexing.
