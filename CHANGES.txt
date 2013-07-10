@@ -5,6 +5,9 @@
 * Issue 129: data mutation is FALSE by default. This is un-intuitive. I'm changing it
 TRUE by default. Also, it was being applied to Backup/Restore which doesn't make sense.
 
+* Issue 131: directory arguments were reversed for the Cleanup task. Only caused problems
+when log/snapshot directories are different.
+
 1.4.8 - June 5, 2013
 ====================
 * Pull 126: Check for configured index directory
