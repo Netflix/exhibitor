@@ -44,7 +44,7 @@ public class IndexProcessor
     {
         if ( !directory.exists() && !directory.mkdirs() )
         {
-            throw new IOException("Could not make directory: " + directory);
+            throw new IOException("Index Build: could not make directory: " + directory);
         }
 
         Exception           exception = null;
@@ -123,6 +123,7 @@ public class IndexProcessor
 
     private void addBackups(IndexBuilder builder) throws Exception
     {
+        exhibitor.getLog().add(ActivityLog.Type.ERROR, "Index Build: Getting available backups");
         List<BackupMetaData> availableBackups = Lists.newArrayList(exhibitor.getBackupManager().getAvailableBackups());
         Collections.sort
         (
@@ -137,11 +138,12 @@ public class IndexProcessor
                 }
             }
         );
+        exhibitor.getLog().add(ActivityLog.Type.ERROR, "Index Build: there are " + availableBackups.size() + " available backups");
 
         int     index = 0;
         for ( BackupMetaData metaData : availableBackups )
         {
-            exhibitor.getLog().add(ActivityLog.Type.INFO, String.format("Indexing backup log %d of %d", ++index, availableBackups.size()));
+            exhibitor.getLog().add(ActivityLog.Type.INFO, String.format("Index Build: indexing backup log %d of %d", ++index, availableBackups.size()));
 
             BackupStream backupStream = exhibitor.getBackupManager().getBackupStream(metaData);
             if ( backupStream != null )
@@ -171,14 +173,14 @@ public class IndexProcessor
                 }
                 if ( !f.delete() )
                 {
-                    exhibitor.getLog().add(ActivityLog.Type.ERROR, "Could not delete: " + f);
+                    exhibitor.getLog().add(ActivityLog.Type.ERROR, "Index Build: could not delete: " + f);
                 }
             }
         }
 
         if ( !directory.delete() )
         {
-            exhibitor.getLog().add(ActivityLog.Type.ERROR, "Could not delete: " + directory);
+            exhibitor.getLog().add(ActivityLog.Type.ERROR, "Index Build: could not delete: " + directory);
         }
     }
 }

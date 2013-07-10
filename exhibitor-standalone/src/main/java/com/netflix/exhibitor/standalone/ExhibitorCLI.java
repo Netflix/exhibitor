@@ -161,7 +161,7 @@ public class ExhibitorCLI
         generalOptions.addOption(null, HOSTNAME, true, "Hostname to use for this JVM. Default is: " + hostname);
         generalOptions.addOption(null, HTTP_PORT, true, "Port for the HTTP Server. Default is: 8080");
         generalOptions.addOption(null, EXTRA_HEADING_TEXT, true, "Extra text to display in UI header");
-        generalOptions.addOption(null, NODE_MUTATIONS, true, "If true, the Explorer UI will allow nodes to be modified (use with caution).");
+        generalOptions.addOption(null, NODE_MUTATIONS, true, "If true, the Explorer UI will allow nodes to be modified (use with caution). Default is true.");
         generalOptions.addOption(null, JQUERY_STYLE, true, "Styling used for the JQuery-based UI. Currently available options: " + getStyleOptions());
         generalOptions.addOption(ALT_HELP, HELP, false, "Print this help");
         generalOptions.addOption(SHORT_CONFIG_TYPE, CONFIG_TYPE, true, "Defines which configuration type you want to use. Choices are: \"file\", \"s3\", \"zookeeper\" or \"none\". Additional config will be required depending on which type you are using.");

@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.netflix.exhibitor.core.Exhibitor;
+import com.netflix.exhibitor.core.activity.ActivityLog;
 import com.netflix.exhibitor.core.backup.BackupConfigSpec;
 import com.netflix.exhibitor.core.backup.BackupMetaData;
 import com.netflix.exhibitor.core.backup.BackupProvider;
@@ -44,6 +45,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -200,11 +203,13 @@ public class S3BackupProvider implements BackupProvider
             {
                 if ( e.getErrorType() == AmazonServiceException.ErrorType.Client )
                 {
+                    exhibitor.getLog().add(ActivityLog.Type.ERROR, "Amazon client error: " + ActivityLog.getExceptionMessage(e));
                     return null;
                 }
 
                 if ( !retryPolicy.allowRetry(retryCount++, System.currentTimeMillis() - startMs, RetryLoop.getDefaultRetrySleeper()) )
                 {
+                    exhibitor.getLog().add(ActivityLog.Type.ERROR, "Retries exhausted: " + ActivityLog.getExceptionMessage(e));
                     return null;
                 }
             }

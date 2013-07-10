@@ -166,12 +166,10 @@ function updateState()
             if ( systemState.nodeMutationsAllowed )
             {
                 $('#explorer-buttons').show();
-                $('#index-query-clear-restore-button').show();
             }
             else
             {
                 $('#explorer-buttons').hide();
-                $('#index-query-clear-restore-button').hide();
             }
 
             $.unblockUI();

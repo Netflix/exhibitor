@@ -140,7 +140,7 @@ public class ExhibitorCreator
         String useHostname = commandLine.getOptionValue(HOSTNAME, cli.getHostname());
         int httpPort = Integer.parseInt(commandLine.getOptionValue(HTTP_PORT, "8080"));
         String extraHeadingText = commandLine.getOptionValue(EXTRA_HEADING_TEXT, null);
-        boolean allowNodeMutations = "true".equalsIgnoreCase(commandLine.getOptionValue(NODE_MUTATIONS));
+        boolean allowNodeMutations = "true".equalsIgnoreCase(commandLine.getOptionValue(NODE_MUTATIONS, "true"));
 
         String configType = commandLine.hasOption(SHORT_CONFIG_TYPE) ? commandLine.getOptionValue(SHORT_CONFIG_TYPE) : (commandLine.hasOption(CONFIG_TYPE) ? commandLine.getOptionValue(CONFIG_TYPE) : null);
         if ( configType == null )

@@ -1,3 +1,10 @@
+1.4.9 - July 10, 2013
+=====================
+* Added more/better logging during indexing
+
+* Issue 129: data mutation is FALSE by default. This is un-intuitive. I'm changing it
+TRUE by default. Also, it was being applied to Backup/Restore which doesn't make sense.
+
 1.4.8 - June 5, 2013
 ====================
 * Pull 126: Check for configured index directory

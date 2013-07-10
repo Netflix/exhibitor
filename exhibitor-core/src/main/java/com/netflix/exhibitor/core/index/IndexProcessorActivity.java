@@ -47,6 +47,7 @@ public class IndexProcessorActivity implements Activity
         }
         else
         {
+            exhibitor.getLog().add(ActivityLog.Type.INFO, "Starting index build");
             try
             {
                 File            indexDirectory = new File(path, "exhibitor-" + System.currentTimeMillis());
