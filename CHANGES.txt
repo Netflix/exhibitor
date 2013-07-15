@@ -1,3 +1,8 @@
+1.4.10 - July 15, 2013
+======================
+* Issue 138 - SetData transactions were never written into Lucene index and, thus,
+were never shown in restore.
+
 1.4.9 - July 10, 2013
 =====================
 * Added more/better logging during indexing

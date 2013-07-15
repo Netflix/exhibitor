@@ -135,6 +135,7 @@ public class IndexBuilder implements Closeable
             addPath(document, setDataTxn.getPath());
             addData(document, setDataTxn.getData());
             document.add(versionField);
+            writer.addDocument(document);
         }
     }
 
