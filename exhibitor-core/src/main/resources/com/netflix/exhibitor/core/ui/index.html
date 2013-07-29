@@ -194,8 +194,13 @@
                         <legend>Automatic Server List Add/Remove</legend>
                         <span id="cp-auto-init-instances-help"><input type="checkbox" id="cp-auto-init-instances"></span>
                             &nbsp;&nbsp;&nbsp;&nbsp;<button id="cp-auto-init-instances-help-button">Read Me</button><br clear="all"/>
+                        <label for="config-fixed-ensemble-size">Fixed Ensemble Size</label><input type="text" id="config-fixed-ensemble-size" class="mask-pint" name="config-automatic-management-period-ms" size="3" title="If non-zero, automatic instance management will attempt to keep the ensemble at this fixed size."><br clear="all"/>
                         <label for="config-automatic-management-period-ms">Settling Period (ms)</label><input type="text" id="config-automatic-management-period-ms" class="mask-pint" name="config-automatic-management-period-ms" size="8" title="Automatic Server List management will wait this long until the ZooKeeper ensemble has settled - i.e. no changes in quorum, etc. - before adding/removing instances."><br clear="all"/>
-                        <label for="config-observer-threshold">Observer Threshold</label><input type="text" id="config-observer-threshold" class="mask-pint" name="config-observer-threshold" size="3" title="Marks which instances are made Observers by automatic instance management. Instances below this number are normal instances. Instances from this number and up are Observers."><br clear="all"/>
+                        <label for="config-observer-threshold">Observer Threshold</label><input type="text" id="config-observer-threshold" class="mask-pint" name="config-observer-threshold" size="3" title="If not 0, marks which instances are made Observers by automatic instance management. Instances below this number are normal instances. Instances from this number and up are Observers."><br clear="all"/>
+                        <label for="config-apply-all-at-once">Apply All At Once</label><select id="config-apply-all-at-once" class="mask-pint" name="config-apply-all-at-once" size="1" title="If set to 'yes', automatic instance management will apply changes all at once instead of via rolling config change. Experience has shown that rolling config changes can lead to runtime problems with the ZooKeeper ensemble.">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select><br clear="all"/>
                     </fieldset>
 
                     <fieldset>

@@ -1,3 +1,18 @@
+1.5.0 - July 29, 2013
+=====================
+* Switching to correct semantic versioning.
+
+* Issue 143: Bundle mimetypes.default to work around Java 7 bug (it's missing)
+
+* New feature: In production, I've determined that rolling config changes
+can make the ZK ensemble unstable (see: http://zookeeper-user.578899.n2.nabble.com/Rolling-config-change-considered-harmful-td7578761.html).
+This new feature (on the config page) allows automatic instance management to use either rolling
+config change or all at once.
+
+* New feature: instead of sizing the ensemble up and down depending on instances coming and going,
+you can now set a fixed ensemble size (on the config page). Exhibitor will try to maintain that 
+ensemble size.
+
 1.4.10 - July 15, 2013
 ======================
 * Issue 138 - SetData transactions were never written into Lucene index and, thus,

@@ -26,6 +26,9 @@ import com.netflix.exhibitor.core.entities.UITabSpec;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import javax.activation.FileTypeMap;
 import javax.activation.MimetypesFileTypeMap;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -38,6 +41,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ContextResolver;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -50,12 +54,52 @@ public class UIResource
     private final UIContext context;
     private final List<UITab> tabs;
 
+    private static final Logger log = LoggerFactory.getLogger(UIResource.class);
+    private static final FileTypeMap fileTypeMap;
+    static
+    {
+        MimetypesFileTypeMap localFileTypeMap = null;
+        URL url = Resources.getResource("mimetypes.default");
+        if ( url != null )
+        {
+            InputStream stream = null;
+            try
+            {
+                stream = url.openStream();
+                localFileTypeMap = new MimetypesFileTypeMap(stream);
+            }
+            catch ( IOException e )
+            {
+                log.error("Error loading mimetypes.default", e);
+            }
+            finally
+            {
+                try
+                {
+                    if ( stream != null )
+                    {
+                        stream.close();
+                    }
+                }
+                catch ( IOException e )
+                {
+                    // ignore
+                }
+            }
+        }
+        else
+        {
+            log.error("Could not find mimetypes.default");
+        }
+        fileTypeMap = (localFileTypeMap != null) ? localFileTypeMap : MimetypesFileTypeMap.getDefaultFileTypeMap();
+    }
+
     private static final String     jQueryUiPrefix = "css/jquery/";
 
     private static final String     TEXT_UI_TAB_BASE_URL = "tab/";
     private static final String     HTML_UI_TAB_BASE_URL = "tab-html/";
 
-    public UIResource(@Context ContextResolver<UIContext> resolver)
+    public UIResource(@Context ContextResolver< UIContext > resolver)
     {
         context = resolver.getContext(UIContext.class);
         tabs = buildTabs();
@@ -96,7 +140,7 @@ public class UIResource
         }
         else
         {
-            contentType = MimetypesFileTypeMap.getDefaultFileTypeMap().getContentType(resourceFile);
+            contentType = fileTypeMap.getContentType(resourceFile);
         }
         Object entity;
         if ( contentType.startsWith("text/") )

@@ -154,6 +154,11 @@ public class DefaultProperties
                         return 999;
                     }
 
+                    case AUTO_MANAGE_INSTANCES_APPLY_ALL_AT_ONCE:
+                    {
+                        return 1;
+                    }
+
                 }
                 return 0;
             }

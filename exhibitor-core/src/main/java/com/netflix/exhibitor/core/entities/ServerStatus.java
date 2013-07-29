@@ -16,6 +16,7 @@
 
 package com.netflix.exhibitor.core.entities;
 
+import com.netflix.exhibitor.core.state.InstanceStateTypes;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
@@ -57,6 +58,11 @@ public class ServerStatus
     public void setCode(int code)
     {
         this.code = code;
+    }
+
+    public InstanceStateTypes getInstanceStateType()
+    {
+        return InstanceStateTypes.fromCode(code);
     }
 
     public String getDescription()

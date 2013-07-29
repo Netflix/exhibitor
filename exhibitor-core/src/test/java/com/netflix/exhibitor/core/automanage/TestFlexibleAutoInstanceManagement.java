@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TestAutoInstanceManagement
+public class TestFlexibleAutoInstanceManagement
 {
     @Test
     public void     testUnstable() throws Exception
@@ -36,6 +36,7 @@ public class TestAutoInstanceManagement
         MockExhibitorInstance       mockExhibitorInstance = new MockExhibitorInstance("new");
         mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "1:a,2:b,3:c");
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 100000);
 
         List<ServerStatus>          statuses = Lists.newArrayList();
@@ -64,6 +65,7 @@ public class TestAutoInstanceManagement
         statuses.add(new ServerStatus("c", InstanceStateTypes.SERVING.getCode(), "", false));
         Mockito.when(mockExhibitorInstance.getMockForkJoinPool().invoke(Mockito.isA(ClusterStatusTask.class))).thenReturn(statuses);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
 
         management.call();
 
@@ -75,6 +77,7 @@ public class TestAutoInstanceManagement
         statuses.add(new ServerStatus("c", InstanceStateTypes.SERVING.getCode(), "", false));
         Mockito.when(mockExhibitorInstance.getMockForkJoinPool().invoke(Mockito.isA(ClusterStatusTask.class))).thenReturn(statuses);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 2000);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
 
         management.call();
 
@@ -94,6 +97,7 @@ public class TestAutoInstanceManagement
         mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "1:a,2:b,3:c");
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
 
         List<ServerStatus>          statuses = Lists.newArrayList();
         statuses.add(new ServerStatus("a", InstanceStateTypes.DOWN.getCode(), "", true));
@@ -123,6 +127,7 @@ public class TestAutoInstanceManagement
         mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "1:a,2:b,3:c");
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
 
         List<ServerStatus>          statuses = Lists.newArrayList();
         statuses.add(new ServerStatus("a", InstanceStateTypes.SERVING.getCode(), "", true));
@@ -152,6 +157,7 @@ public class TestAutoInstanceManagement
         mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "1:a,2:b,3:c");
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
 
         List<ServerStatus>          statuses = Lists.newArrayList();
         statuses.add(new ServerStatus("a", InstanceStateTypes.SERVING.getCode(), "", true));
@@ -172,6 +178,7 @@ public class TestAutoInstanceManagement
         mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "");
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
 
         List<ServerStatus>          statuses = Lists.newArrayList();
         Mockito.when(mockExhibitorInstance.getMockForkJoinPool().invoke(Mockito.isA(ClusterStatusTask.class))).thenReturn(statuses);
@@ -189,6 +196,7 @@ public class TestAutoInstanceManagement
         mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "1:a,2:b,3:c");
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
 
         List<ServerStatus>          statuses = Lists.newArrayList();
         statuses.add(new ServerStatus("a", InstanceStateTypes.SERVING.getCode(), "", true));
@@ -209,6 +217,7 @@ public class TestAutoInstanceManagement
         mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "1:a,2:b,3:c");
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
 
         List<ServerStatus>          statuses = Lists.newArrayList();
         statuses.add(new ServerStatus("a", InstanceStateTypes.SERVING.getCode(), "", true));
@@ -232,6 +241,7 @@ public class TestAutoInstanceManagement
         mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "1:a,2:b,3:c");
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
         mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
 
         List<ServerStatus>          statuses = Lists.newArrayList();
         statuses.add(new ServerStatus("a", InstanceStateTypes.SERVING.getCode(), "", true));
@@ -243,5 +253,27 @@ public class TestAutoInstanceManagement
         management.call();
 
         Assert.assertEquals(mockExhibitorInstance.getMockExhibitor().getConfigManager().getConfig().getString(StringConfigs.SERVERS_SPEC), "1:a,2:b,4:new");
+    }
+
+    @Test
+    public void     testBecomesObserver() throws Exception
+    {
+        MockExhibitorInstance       mockExhibitorInstance = new MockExhibitorInstance("new");
+        mockExhibitorInstance.getMockConfigProvider().setConfig(StringConfigs.SERVERS_SPEC, "1:a,2:b,3:c");
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES, 1);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE, 0);
+        mockExhibitorInstance.getMockConfigProvider().setConfig(IntConfigs.OBSERVER_THRESHOLD, 3);
+
+        List<ServerStatus>          statuses = Lists.newArrayList();
+        statuses.add(new ServerStatus("a", InstanceStateTypes.SERVING.getCode(), "", true));
+        statuses.add(new ServerStatus("b", InstanceStateTypes.SERVING.getCode(), "", false));
+        statuses.add(new ServerStatus("c", InstanceStateTypes.SERVING.getCode(), "", false));
+        Mockito.when(mockExhibitorInstance.getMockForkJoinPool().invoke(Mockito.isA(ClusterStatusTask.class))).thenReturn(statuses);
+
+        AutomaticInstanceManagement management = new AutomaticInstanceManagement(mockExhibitorInstance.getMockExhibitor());
+        management.call();
+
+        Assert.assertEquals(mockExhibitorInstance.getMockExhibitor().getConfigManager().getConfig().getString(StringConfigs.SERVERS_SPEC), "1:a,2:b,3:c,O:4:new");
     }
 }

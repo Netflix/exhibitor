@@ -17,26 +17,37 @@
 package com.netflix.exhibitor.core.automanage;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.entities.ServerStatus;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
+import com.netflix.exhibitor.core.state.ServerList;
+import com.netflix.exhibitor.core.state.ServerSpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 class ClusterState
 {
-    private final AtomicReference<List<ServerStatus>>   statuses = new AtomicReference<List<ServerStatus>>();
-    private final AtomicLong                            updateTimeMs = new AtomicLong();
+    private final Logger log = LoggerFactory.getLogger(getClass());
+
+    private final AtomicReference<List<ServerStatus>> statuses = new AtomicReference<List<ServerStatus>>();
+    private final AtomicReference<ServerList> configuredServerList = new AtomicReference<ServerList>();
+    private final AtomicLong updateTimeMs = new AtomicLong();
 
     ClusterState()
     {
         clear();
     }
 
-    void        update(List<ServerStatus> newStatuses)
+    void update(ServerList configuredServerList, List<ServerStatus> newStatuses)
     {
-        List<ServerStatus>      currentStatuses = statuses.get();
+        this.configuredServerList.set(configuredServerList);
+
+        List<ServerStatus> currentStatuses = statuses.get();
         if ( !currentStatuses.equals(newStatuses) )
         {
             statuses.set(ImmutableList.copyOf(newStatuses));
@@ -44,25 +55,51 @@ class ClusterState
         }
     }
 
-    boolean     isStable(long stabilityPeriodMs)
+    boolean isStable(long stabilityPeriodMs)
     {
-        long        elapsed = System.currentTimeMillis() - updateTimeMs.get();
+        long elapsed = System.currentTimeMillis() - updateTimeMs.get();
         return elapsed >= stabilityPeriodMs;
     }
 
-    boolean     isInQuorum()
+    boolean isInQuorum()
     {
-        List<ServerStatus>      currentStatuses = statuses.get();
+        List<ServerStatus> currentStatuses = statuses.get();
         return (currentStatuses.size() == 0) || (getLeaderHostname() != null);
     }
 
-    List<ServerStatus>  getLiveInstances()
+    ServerList getConfiguredServerList()
     {
-        List<ServerStatus>      live = Lists.newArrayList();
-        List<ServerStatus>      currentStatuses = statuses.get();
+        return configuredServerList.get();
+    }
+
+    Map<ServerSpec, InstanceStateTypes> buildStatusMap()
+    {
+        ServerList serverList = configuredServerList.get();
+
+        ImmutableMap.Builder<ServerSpec, InstanceStateTypes> builder = ImmutableMap.builder();
+        List<ServerStatus> currentStatuses = statuses.get();
         for ( ServerStatus status : currentStatuses )
         {
-            InstanceStateTypes  type = InstanceStateTypes.fromCode(status.getCode());
+            ServerSpec spec = serverList.getSpec(status.getHostname());
+            if ( spec != null )
+            {
+                builder.put(spec, status.getInstanceStateType());
+            }
+            else
+            {
+                log.error("No configured spec found for hostname: " + status.getHostname());
+            }
+        }
+        return builder.build();
+    }
+
+    List<ServerStatus> getLiveInstances()
+    {
+        List<ServerStatus> live = Lists.newArrayList();
+        List<ServerStatus> currentStatuses = statuses.get();
+        for ( ServerStatus status : currentStatuses )
+        {
+            InstanceStateTypes type = InstanceStateTypes.fromCode(status.getCode());
             if ( type != InstanceStateTypes.DOWN )
             {
                 live.add(status);
@@ -72,12 +109,12 @@ class ClusterState
         return live;
     }
 
-    boolean     hasDeadInstances()
+    boolean hasDeadInstances()
     {
-        List<ServerStatus>      currentStatuses = statuses.get();
+        List<ServerStatus> currentStatuses = statuses.get();
         for ( ServerStatus status : currentStatuses )
         {
-            InstanceStateTypes  type = InstanceStateTypes.fromCode(status.getCode());
+            InstanceStateTypes type = InstanceStateTypes.fromCode(status.getCode());
             if ( type == InstanceStateTypes.DOWN )
             {
                 return true;
@@ -86,9 +123,9 @@ class ClusterState
         return false;
     }
 
-    String      getLeaderHostname()
+    String getLeaderHostname()
     {
-        List<ServerStatus>      currentStatuses = statuses.get();
+        List<ServerStatus> currentStatuses = statuses.get();
         for ( ServerStatus status : currentStatuses )
         {
             if ( status.getIsLeader() )
@@ -99,9 +136,10 @@ class ClusterState
         return null;
     }
 
-    void        clear()
+    void clear()
     {
         statuses.set(Lists.<ServerStatus>newArrayList());
         updateTimeMs.set(System.currentTimeMillis());
+        configuredServerList.set(new ServerList(Lists.<ServerSpec>newArrayList()));
     }
 }

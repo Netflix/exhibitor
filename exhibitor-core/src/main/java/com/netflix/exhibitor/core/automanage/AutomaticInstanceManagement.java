@@ -17,8 +17,6 @@
 package com.netflix.exhibitor.core.automanage;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.activity.Activity;
 import com.netflix.exhibitor.core.activity.ActivityLog;
@@ -29,11 +27,7 @@ import com.netflix.exhibitor.core.config.StringConfigs;
 import com.netflix.exhibitor.core.entities.ServerStatus;
 import com.netflix.exhibitor.core.state.InstanceStateTypes;
 import com.netflix.exhibitor.core.state.ServerList;
-import com.netflix.exhibitor.core.state.ServerSpec;
-import com.netflix.exhibitor.core.state.ServerType;
-import com.netflix.exhibitor.core.state.UsState;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class AutomaticInstanceManagement implements Activity
@@ -69,32 +63,24 @@ public class AutomaticInstanceManagement implements Activity
             return true;    // this instance hasn't warmed up yet
         }
 
-        ServerList          serverList = new ServerList(exhibitor.getConfigManager().getConfig().getString(StringConfigs.SERVERS_SPEC));
-        List<ServerStatus>  statuses = getStatuses(serverList);
+        ServerList serverList = new ServerList(exhibitor.getConfigManager().getConfig().getString(StringConfigs.SERVERS_SPEC));
+        List<ServerStatus> statuses = getStatuses(serverList);
+        clusterState.update(serverList, statuses);
 
-        clusterState.update(statuses);
+        EnsembleBuilder ensembleBuilder = (exhibitor.getConfigManager().getConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE) > 0) ? new FixedEnsembleBuilder(exhibitor, clusterState) : new FlexibleEnsembleBuilder(exhibitor, clusterState);
 
-        UsState             usState = new UsState(exhibitor);
-        if ( (usState.getUs() != null) && !clusterState.hasDeadInstances() )
+        if ( !ensembleBuilder.newEnsembleNeeded() )
         {
             return true;
         }
 
-        if ( !clusterState.isInQuorum() )
+        if ( !applyAllAtOnce() && !clusterState.isInQuorum() )
         {
-            exhibitor.getLog().add(ActivityLog.Type.INFO, "Ensemble is not currently in quorum. Automatic Instance Management will wait for quorum.");
+            exhibitor.getLog().add(ActivityLog.Type.INFO, "Ensemble is not currently in quorum. Automatic Instance Management will wait for quorum. NOTE: if \"Apply All At Once\" is set to \"yes\", this quorum check is not needed.");
             return true;
         }
 
-        int                 settlingPeriodMs = exhibitor.getConfigManager().getConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS);
-        if ( usState.getUs() == null )
-        {
-            // give preference to adding new instances. i.e. if there is an instance needing to be added,
-            // have it settle faster and also let it handle cleaning old instances.
-            // Do this by halving the settling period when our instance is not in the server list.
-            settlingPeriodMs /= 2;
-        }
-
+        int settlingPeriodMs = exhibitor.getConfigManager().getConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES_SETTLING_PERIOD_MS);
         if ( !clusterState.isStable(settlingPeriodMs) )
         {
             exhibitor.getLog().add(ActivityLog.Type.INFO, "Ensemble state is not yet stable. Automatic Instance Management will wait for stability.");
@@ -106,15 +92,18 @@ public class AutomaticInstanceManagement implements Activity
         {
             if ( lock.lock(exhibitor.getLog(), Exhibitor.AUTO_INSTANCE_MANAGEMENT_PERIOD_MS / 2, TimeUnit.MILLISECONDS) )
             {
-                ServerList      potentialServerList = createPotentialServerList(serverList, clusterState.getLiveInstances(), usState.getUs() == null);
-                if ( potentialServerList.getSpecs().size() == 0 )
+                ServerList potentialServerList = ensembleBuilder.createPotentialServerList();
+                if ( !potentialServerList.equals(serverList) )  // otherwise, no change
                 {
-                    exhibitor.getLog().add(ActivityLog.Type.INFO, "Automatic Instance Management skipped because new potential server list is empty");
-                }
-                else
-                {
-                    exhibitor.getLog().add(ActivityLog.Type.INFO, "Automatic Instance Management will change the server list: " + serverList + " ==> " + potentialServerList);
-                    adjustConfig(potentialServerList.toSpecString(), clusterState.getLeaderHostname());
+                    if ( potentialServerList.getSpecs().size() == 0 )
+                    {
+                        exhibitor.getLog().add(ActivityLog.Type.INFO, "Automatic Instance Management skipped because new potential server list is empty");
+                    }
+                    else
+                    {
+                        exhibitor.getLog().add(ActivityLog.Type.INFO, "Automatic Instance Management will change the server list: " + serverList + " ==> " + potentialServerList);
+                        adjustConfig(potentialServerList.toSpecString(), clusterState.getLeaderHostname());
+                    }
                 }
             }
         }
@@ -129,8 +118,8 @@ public class AutomaticInstanceManagement implements Activity
     @VisibleForTesting
     void adjustConfig(final String newSpec, String leaderHostname) throws Exception
     {
-        final InstanceConfig    currentConfig = exhibitor.getConfigManager().getConfig();
-        InstanceConfig          newConfig = new InstanceConfig()
+        final InstanceConfig currentConfig = exhibitor.getConfigManager().getConfig();
+        InstanceConfig newConfig = new InstanceConfig()
         {
             @Override
             public String getString(StringConfigs config)
@@ -148,7 +137,17 @@ public class AutomaticInstanceManagement implements Activity
                 return currentConfig.getInt(config);
             }
         };
-        if ( exhibitor.getConfigManager().startRollingConfig(newConfig, leaderHostname) )
+
+        boolean success;
+        if ( applyAllAtOnce() )
+        {
+            success = exhibitor.getConfigManager().updateConfig(newConfig);
+        }
+        else
+        {
+            success = exhibitor.getConfigManager().startRollingConfig(newConfig, leaderHostname);
+        }
+        if ( success )
         {
             clusterState.clear();
         }
@@ -158,66 +157,17 @@ public class AutomaticInstanceManagement implements Activity
         }
     }
 
-    private ServerList  createPotentialServerList(ServerList existingList, List<ServerStatus> statuses, boolean addUsIn)
+    private boolean applyAllAtOnce()
     {
-        List<ServerSpec>        newList = Lists.newArrayList();
-        int                     existingMaxId = 0;
-        for ( ServerSpec spec : existingList.getSpecs() )
-        {
-            if ( spec.getServerId() > existingMaxId )
-            {
-                existingMaxId = spec.getServerId();
-            }
-        }
-
-        Set<String>     addedHostnames = Sets.newHashSet();
-        for ( ServerStatus status : statuses )
-        {
-            ServerSpec spec = existingList.getSpec(status.getHostname());
-            if ( spec == null )
-            {
-                spec = new ServerSpec(status.getHostname(), ++existingMaxId, ServerType.STANDARD);
-                addedHostnames.add(spec.getHostname());
-            }
-            newList.add(spec);
-        }
-
-        if ( addUsIn )
-        {
-            ServerSpec      spec = new ServerSpec(exhibitor.getThisJVMHostname(), ++existingMaxId, ServerType.STANDARD);
-            addedHostnames.add(spec.getHostname());
-            newList.add(spec);
-        }
-
-        int                 standardTypeCount = 0;
-        for ( ServerSpec spec : newList )
-        {
-            if ( spec.getServerType() == ServerType.STANDARD )
-            {
-                ++standardTypeCount;
-            }
-        }
-
-        int         observerThreshold = exhibitor.getConfigManager().getConfig().getInt(IntConfigs.OBSERVER_THRESHOLD);
-        for ( int i = 0; (standardTypeCount >= observerThreshold) && (i < newList.size()); ++i )
-        {
-            ServerSpec      spec = newList.get(i);
-            if ( addedHostnames.contains(spec.getHostname()) )  // i.e. don't change existing instances to observer
-            {
-                newList.set(i, new ServerSpec(spec.getHostname(), spec.getServerId(), ServerType.OBSERVER));
-                --standardTypeCount;
-            }
-        }
-
-        return new ServerList(newList);
+        return exhibitor.getConfigManager().getConfig().getInt(IntConfigs.AUTO_MANAGE_INSTANCES_APPLY_ALL_AT_ONCE) != 0;
     }
 
     private List<ServerStatus> getStatuses(ServerList serverList)
     {
         exhibitor.getLog().add(ActivityLog.Type.DEBUG, "Automatic Instance Management querying for instance statuses...");
 
-        ClusterStatusTask   task = new ClusterStatusTask(exhibitor, serverList.getSpecs());
-        List<ServerStatus>  statuses = exhibitor.getForkJoinPool().invoke(task);
+        ClusterStatusTask task = new ClusterStatusTask(exhibitor, serverList.getSpecs());
+        List<ServerStatus> statuses = exhibitor.getForkJoinPool().invoke(task);
 
         exhibitor.getLog().add(ActivityLog.Type.DEBUG, "Instance statuses query done.");
 

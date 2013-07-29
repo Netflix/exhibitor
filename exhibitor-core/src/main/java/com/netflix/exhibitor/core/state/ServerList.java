@@ -93,7 +93,7 @@ public class ServerList
             {
                 str.append(",");
             }
-            str.append(spec.getServerId()).append(":").append(spec.getHostname());
+            str.append(spec.toSpecString());
         }
 
         return str.toString();

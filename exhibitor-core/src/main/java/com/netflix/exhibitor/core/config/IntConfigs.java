@@ -150,6 +150,32 @@ public enum IntConfigs
         {
             return false;
         }
+    },
+
+    /**
+     * If non-zero, automatic instance management will attempt to keep the ensemble at this fixed size. Further, rolling
+     * config changes will _not_ be used. Experience has shown that rolling config changes can lead to runtime problems.
+     */
+    AUTO_MANAGE_INSTANCES_FIXED_ENSEMBLE_SIZE()
+    {
+        @Override
+        public boolean isRestartSignificant()
+        {
+            return false;
+        }
+    },
+
+    /**
+     * boolean - if true (non zero) automatic instance management will make config changes all at once (instead
+     * of via rolling change).
+     */
+    AUTO_MANAGE_INSTANCES_APPLY_ALL_AT_ONCE()
+    {
+        @Override
+        public boolean isRestartSignificant()
+        {
+            return false;
+        }
     }
     ;
 

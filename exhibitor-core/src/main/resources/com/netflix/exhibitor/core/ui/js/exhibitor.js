@@ -251,6 +251,8 @@ function buildNewConfig()
     newConfig.zookeeperLogDirectory = $('#config-zookeeper-log-dir').val();
     newConfig.logIndexDirectory = $('#config-log-index-dir').val();
     newConfig.autoManageInstancesSettlingPeriodMs = $('#config-automatic-management-period-ms').val();
+    newConfig.autoManageInstancesFixedEnsembleSize = $('#config-fixed-ensemble-size').val();
+    newConfig.autoManageInstancesApplyAllAtOnce = $('#config-apply-all-at-once').val();
     newConfig.observerThreshold = $('#config-observer-threshold').val();
     newConfig.serversSpec = $('#config-servers-spec').val();
     newConfig.javaEnvironment = $('#config-java-env').val();
@@ -358,7 +360,9 @@ function ableConfig(enable)
     $('#config-zookeeper-snapshot-dir').prop('disabled', !enable);
     $('#config-zookeeper-log-dir').prop('disabled', !enable);
     $('#config-automatic-management-period-ms').prop('disabled', !enable);
+    $('#config-fixed-ensemble-size').prop('disabled', !enable);
     $('#config-observer-threshold').prop('disabled', !enable);
+    $('#config-apply-all-at-once').prop('disabled', !enable);
     $('#config-log-index-dir').prop('disabled', !enable);
     $('#config-servers-spec').prop('disabled', !enable);
     $('#config-java-env').prop('disabled', !enable);
@@ -400,7 +404,9 @@ function updateConfig()
     $('#config-zookeeper-snapshot-dir').val(systemConfig.zookeeperDataDirectory);
     $('#config-zookeeper-log-dir').val(systemConfig.zookeeperLogDirectory);
     $('#config-automatic-management-period-ms').val(systemConfig.autoManageInstancesSettlingPeriodMs);
+    $('#config-fixed-ensemble-size').val(systemConfig.autoManageInstancesFixedEnsembleSize);
     $('#config-observer-threshold').val(systemConfig.observerThreshold);
+    $('#config-apply-all-at-once').val(systemConfig.autoManageInstancesApplyAllAtOnce);
     $('#config-log-index-dir').val(systemConfig.logIndexDirectory);
     $('#config-servers-spec').val(systemConfig.serversSpec);
     $('#config-java-env').val(systemConfig.javaEnvironment);
