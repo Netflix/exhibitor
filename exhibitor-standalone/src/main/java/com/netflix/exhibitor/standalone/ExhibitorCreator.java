@@ -303,22 +303,34 @@ public class ExhibitorCreator
 
     private Properties makeDefaultProperties(CommandLine commandLine, BackupProvider backupProvider) throws IOException
     {
+        Properties          properties = new Properties();
+        properties.putAll(DefaultProperties.get(backupProvider));   // put in standard defaults first
+
+        addInitialConfigFile(commandLine, properties);
+
+        return new PropertyBasedInstanceConfig(properties, new Properties()).getProperties();
+    }
+
+    private void addInitialConfigFile(CommandLine commandLine, Properties properties) throws IOException
+    {
         Properties          defaultProperties = new Properties();
         String              defaultConfigFile = commandLine.getOptionValue(INITIAL_CONFIG_FILE);
-        if ( defaultConfigFile != null )
+        if ( defaultConfigFile == null )
         {
-            InputStream in = new BufferedInputStream(new FileInputStream(defaultConfigFile));
-            try
-            {
-                defaultProperties.load(in);
-            }
-            finally
-            {
-                Closeables.closeQuietly(in);
-            }
+            return;
         }
 
-        Set<String>         propertyNames = Sets.newHashSet();
+        InputStream in = new BufferedInputStream(new FileInputStream(defaultConfigFile));
+        try
+        {
+            defaultProperties.load(in);
+        }
+        finally
+        {
+            Closeables.closeQuietly(in);
+        }
+
+        Set<String> propertyNames = Sets.newHashSet();
         for ( StringConfigs config : StringConfigs.values() )
         {
             propertyNames.add(PropertyBasedInstanceConfig.toName(config, ""));
@@ -328,23 +340,18 @@ public class ExhibitorCreator
             propertyNames.add(PropertyBasedInstanceConfig.toName(config, ""));
         }
 
-        Properties          fixedDefaultProperties = new Properties();
         for ( String name : defaultProperties.stringPropertyNames() )
         {
             if ( propertyNames.contains(name) )
             {
                 String value = defaultProperties.getProperty(name);
-                fixedDefaultProperties.setProperty(PropertyBasedInstanceConfig.ROOT_PROPERTY_PREFIX + name, value);
+                properties.setProperty(PropertyBasedInstanceConfig.ROOT_PROPERTY_PREFIX + name, value);
             }
             else
             {
                 log.warn("Ignoring unknown config: " + name);
             }
         }
-
-        Properties properties = new PropertyBasedInstanceConfig(fixedDefaultProperties, new Properties()).getProperties();
-        properties.putAll(DefaultProperties.get(backupProvider));
-        return properties;
     }
 
     private ConfigProvider getNoneProvider(CommandLine commandLine, Properties defaultProperties)
