@@ -342,7 +342,9 @@ public class ExhibitorCreator
             }
         }
 
-        return new PropertyBasedInstanceConfig(fixedDefaultProperties, DefaultProperties.get(backupProvider)).getProperties();
+        Properties properties = new PropertyBasedInstanceConfig(fixedDefaultProperties, new Properties()).getProperties();
+        properties.putAll(DefaultProperties.get(backupProvider));
+        return properties;
     }
 
     private ConfigProvider getNoneProvider(CommandLine commandLine, Properties defaultProperties)

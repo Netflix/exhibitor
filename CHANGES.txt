@@ -1,3 +1,10 @@
+1.5.1 - xxxxxxxxxxxxx
+=====================
+* Default properties were not getting set correctly causing a brand new install of Exhibitor
+to have no defaults set. This could be the cause of Issue 148.
+
+* ZookeeperConfigProvider wasn't creating parent paths.
+
 1.5.0 - July 29, 2013
 =====================
 * Switching to correct semantic versioning.

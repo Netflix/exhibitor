@@ -130,7 +130,7 @@ public class ZookeeperConfigProvider implements ConfigProvider
         {
             try
             {
-                client.create().forPath(ZKPaths.makePath(configPath, CONFIG_NODE_NAME), bytes);
+                client.create().creatingParentsIfNeeded().forPath(ZKPaths.makePath(configPath, CONFIG_NODE_NAME), bytes);
                 newVersion = 0;
             }
             catch ( KeeperException.NodeExistsException e1 )
