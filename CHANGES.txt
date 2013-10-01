@@ -1,9 +1,11 @@
-1.5.1 - xxxxxxxxxxxxx
-=====================
+1.5.1 - October 1, 2013
+=======================
 * Default properties were not getting set correctly causing a brand new install of Exhibitor
 to have no defaults set. This could be the cause of Issue 148.
 
 * ZookeeperConfigProvider wasn't creating parent paths.
+
+* Curator 2.2.0-incubating
 
 1.5.0 - July 29, 2013
 =====================
