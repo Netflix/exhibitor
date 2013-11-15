@@ -55,10 +55,12 @@ import java.util.concurrent.Callable;
 public class ClusterResource
 {
     private final UIContext context;
+    private final GenerateHostname genHostname;
 
     public ClusterResource(@Context ContextResolver<UIContext> resolver)
     {
         context = resolver.getContext(UIContext.class);
+        genHostname = new GenerateHostname();
     }
 
     @Path("status")
@@ -360,7 +362,7 @@ public class ClusterResource
         ServerList          serverList = new ServerList(config.getString(StringConfigs.SERVERS_SPEC));
         for ( ServerSpec spec : serverList.getSpecs() )
         {
-            serversNode.add(spec.getHostname());
+            serversNode.add(genHostname.getHostname(spec.getHostname()));
         }
         node.put("servers", serversNode);
         node.put("port", config.getInt(IntConfigs.CLIENT_PORT));
@@ -383,7 +385,7 @@ public class ClusterResource
         int                 index = 0;
         for ( ServerSpec spec : serverList.getSpecs() )
         {
-            response.append("&server").append(index++).append("=").append(URLEncoder.encode(spec.getHostname(), "UTF-8"));
+            response.append("&server").append(index++).append("=").append(URLEncoder.encode(genHostname.getHostname(spec.getHostname()), "UTF-8"));
         }
 
         response.append("&port=").append(config.getInt(IntConfigs.CLIENT_PORT));
