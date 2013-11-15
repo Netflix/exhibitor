@@ -4,12 +4,16 @@ public class GenerateHostname {
     private final String suffix;
 
     public GenerateHostname() {
-        String hostname = System.getProperty("EC2_PUBLIC_HOSTNAME");
-        suffix = hostname.substring(hostname.indexOf('.'));
+        String hostname = System.getenv("EC2_PUBLIC_HOSTNAME");
+        if (hostname != null) {
+            suffix = hostname.substring(hostname.indexOf('.'));
+        } else {
+            suffix = null;
+        }
     }
 
     public String getHostname(String ipOrHostname) {
-        if (ipOrHostname.contains(suffix)) {
+        if (suffix == null || ipOrHostname.contains(suffix)) {
             return ipOrHostname;
         } else {
             String[] numbers = ipOrHostname.split("\\.");
