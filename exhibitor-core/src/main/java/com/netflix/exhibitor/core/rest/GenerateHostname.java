@@ -3,8 +3,7 @@ package com.netflix.exhibitor.core.rest;
 public class GenerateHostname {
     private final String suffix;
 
-    public GenerateHostname() {
-        String hostname = System.getenv("EC2_PUBLIC_HOSTNAME");
+    public GenerateHostname(String hostname) {
         if (hostname != null) {
             suffix = hostname.substring(hostname.indexOf('.'));
         } else {

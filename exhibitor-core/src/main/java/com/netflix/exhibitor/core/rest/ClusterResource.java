@@ -60,7 +60,7 @@ public class ClusterResource
     public ClusterResource(@Context ContextResolver<UIContext> resolver)
     {
         context = resolver.getContext(UIContext.class);
-        genHostname = new GenerateHostname();
+        genHostname = new GenerateHostname(System.getenv("EC2_PUBLIC_HOSTNAME"));
     }
 
     @Path("status")
