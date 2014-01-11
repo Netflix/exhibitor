@@ -209,6 +209,10 @@
                         <label for="config-check-ms">Live Check (ms)</label><input type="text" id="config-check-ms" class="mask-pint" name="config-check-ms" size="8" title="The number of milliseconds between live-ness checks on the ZooKeeper server"><br clear="all"/>
                         <label for="config-cleanup-ms">Cleanup Period (ms)</label><input type="text" id="config-cleanup-ms" class="mask-pint" name="config-cleanup-ms" size="8" title="The number of milliseconds between ZooKeeper log file cleanups"><br clear="all"/>
                         <label for="config-cleanup-max-files">Cleanup: Max Log Files</label><input type="text" id="config-cleanup-max-files" class="mask-pint" name="config-cleanup-max-files" size="2" title="The max number of ZooKeeper log files to keep when cleaning up"><br clear="all"/>
+                        <label for="config-manual-restart">Manual Restart on Config Change</label><select id="config-manual-restart" class="mask-pint" name="config-manual-restart" size="1" title="If set to 'yes', on any config change release, exhibitor won't restart zookeeper.">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select><br clear="all"/>
                     </fieldset>
 
                     <fieldset id="config-backups-fieldset">

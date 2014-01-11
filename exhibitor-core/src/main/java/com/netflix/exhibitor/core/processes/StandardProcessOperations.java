@@ -93,22 +93,7 @@ public class StandardProcessOperations implements ProcessOperations
     @Override
     public void startInstance() throws Exception
     {
-        Details         details = new Details(exhibitor);
-        String          javaEnvironmentScript = exhibitor.getConfigManager().getConfig().getString(StringConfigs.JAVA_ENVIRONMENT);
-        String          log4jProperties = exhibitor.getConfigManager().getConfig().getString(StringConfigs.LOG4J_PROPERTIES);
-
-        prepConfigFile(details);
-        if ( (javaEnvironmentScript != null) && (javaEnvironmentScript.trim().length() > 0) )
-        {
-            File     envFile = new File(details.configDirectory, "java.env");
-            Files.write(javaEnvironmentScript, envFile, Charset.defaultCharset());
-        }
-
-        if ( (log4jProperties != null) && (log4jProperties.trim().length() > 0) )
-        {
-            File     log4jFile = new File(details.configDirectory, "log4j.properties");
-            Files.write(log4jProperties, log4jFile, Charset.defaultCharset());
-        }
+        Details details = writeConfigFiles();
 
         File            binDirectory = new File(details.zooKeeperDirectory, "bin");
         File            startScript = new File(binDirectory, "zkServer.sh");
@@ -117,6 +102,26 @@ public class StandardProcessOperations implements ProcessOperations
         exhibitor.getProcessMonitor().monitor(ProcessTypes.ZOOKEEPER, builder.start(), null, ProcessMonitor.Mode.LEAVE_RUNNING_ON_INTERRUPT, ProcessMonitor.Streams.BOTH);
 
         exhibitor.getLog().add(ActivityLog.Type.INFO, "Process started via: " + startScript.getPath());
+    }
+
+    public Details writeConfigFiles() throws IOException {
+        Details         details = new Details(exhibitor);
+        String          javaEnvironmentScript = exhibitor.getConfigManager().getConfig().getString(StringConfigs.JAVA_ENVIRONMENT);
+        String          log4jProperties = exhibitor.getConfigManager().getConfig().getString(StringConfigs.LOG4J_PROPERTIES);
+
+        prepConfigFile(details);
+        if ( (javaEnvironmentScript != null) && (javaEnvironmentScript.trim().length() > 0) )
+        {
+            File envFile = new File(details.configDirectory, "java.env");
+            Files.write(javaEnvironmentScript, envFile, Charset.defaultCharset());
+        }
+
+        if ( (log4jProperties != null) && (log4jProperties.trim().length() > 0) )
+        {
+            File     log4jFile = new File(details.configDirectory, "log4j.properties");
+            Files.write(log4jProperties, log4jFile, Charset.defaultCharset());
+        }
+        return details;
     }
 
     private void prepConfigFile(Details details) throws IOException

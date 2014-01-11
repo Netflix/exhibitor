@@ -176,6 +176,18 @@ public enum IntConfigs
         {
             return false;
         }
+    },
+
+    /**
+     * boolean - if true (non zero) instance is restarted automatically on RestartSignificantConfig changes
+     */
+    MANUAL_RESTART()
+    {
+        @Override
+        public boolean isRestartSignificant()
+        {
+            return false;
+        }
     }
     ;
 
