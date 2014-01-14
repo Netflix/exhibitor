@@ -112,7 +112,7 @@ public class StandardProcessOperations implements ProcessOperations
 
         File            binDirectory = new File(details.zooKeeperDirectory, "bin");
         File            startScript = new File(binDirectory, "zkServer.sh");
-        ProcessBuilder  builder = new ProcessBuilder(startScript.getPath(), "start").directory(binDirectory.getParentFile());
+        ProcessBuilder  builder = new ProcessBuilder(startScript.getAbsolutePath(), "start").directory(binDirectory.getParentFile());
 
         exhibitor.getProcessMonitor().monitor(ProcessTypes.ZOOKEEPER, builder.start(), null, ProcessMonitor.Mode.LEAVE_RUNNING_ON_INTERRUPT, ProcessMonitor.Streams.BOTH);
 
