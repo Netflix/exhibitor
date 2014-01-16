@@ -151,6 +151,31 @@ public class ConfigManager implements Closeable
         }
     }
 
+    public synchronized boolean isRollingMe(InstanceState instanceState) {
+        ConfigCollection localConfig = getCollection();
+        if ( localConfig.isRolling() )
+        {
+            RollingReleaseState     state = new RollingReleaseState(instanceState, localConfig);
+            if ( state.getCurrentRollingHostname().equals(exhibitor.getThisJVMHostname()) )
+            {
+                if ( state.serverListHasSynced() )
+                {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return true;
+        }
+    }
+
     public synchronized void     checkRollingConfig(InstanceState instanceState) throws Exception
     {
         ConfigCollection localConfig = getCollection();

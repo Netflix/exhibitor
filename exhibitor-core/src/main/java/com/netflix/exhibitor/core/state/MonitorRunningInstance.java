@@ -29,6 +29,8 @@ import com.netflix.exhibitor.core.config.InstanceConfig;
 import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.StringConfigs;
 import com.netflix.exhibitor.core.controlpanel.ControlPanelTypes;
+import com.netflix.exhibitor.core.processes.StandardProcessOperations;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,16 +71,16 @@ public class MonitorRunningInstance implements Closeable
     {
         repeatingActivity.start();
         exhibitor.getConfigManager().addConfigListener
-        (
-            new ConfigListener()
-            {
-                @Override
-                public void configUpdated()
-                {
-                    repeatingActivity.setTimePeriodMs(exhibitor.getConfigManager().getConfig().getInt(IntConfigs.CHECK_MS));
-                }
-            }
-        );
+                (
+                        new ConfigListener()
+                        {
+                            @Override
+                            public void configUpdated()
+                            {
+                                repeatingActivity.setTimePeriodMs(exhibitor.getConfigManager().getConfig().getInt(IntConfigs.CHECK_MS));
+                            }
+                        }
+                );
     }
 
     @Override
@@ -107,8 +109,6 @@ public class MonitorRunningInstance implements Closeable
 
         currentIsLeader.set(stateAndLeader.isLeader());
 
-        exhibitor.getConfigManager().checkRollingConfig(instanceState);
-
         InstanceState   localCurrentInstanceState = currentInstanceState.get();
         if ( instanceState.equals(localCurrentInstanceState) )
         {
@@ -118,7 +118,17 @@ public class MonitorRunningInstance implements Closeable
         {
             handleServerListChange(instanceState, localCurrentInstanceState);
         }
+
+        if (restartScheduled && exhibitor.getConfigManager().isRollingMe(instanceState))
+        {
+            restartZooKeeper(localCurrentInstanceState);
+            restartScheduled = false;
+        }
+
+        exhibitor.getConfigManager().checkRollingConfig(instanceState);
     }
+
+    private boolean restartScheduled = false;
 
     private void handleServerListChange(InstanceState instanceState, InstanceState localCurrentInstanceState) throws Exception
     {
@@ -131,12 +141,12 @@ public class MonitorRunningInstance implements Closeable
         if ( serverListChange )
         {
             exhibitor.getLog().add(ActivityLog.Type.INFO, "Server list has changed");
-            restartZooKeeper(localCurrentInstanceState);
+            restartScheduled = true;
         }
         else if ( configChange )
         {
             exhibitor.getLog().add(ActivityLog.Type.INFO, "ZooKeeper related configuration has changed");
-            restartZooKeeper(localCurrentInstanceState);
+            restartScheduled = true;
         }
         else
         {
@@ -154,6 +164,12 @@ public class MonitorRunningInstance implements Closeable
                     break;
                 }
             }
+        }
+
+        if ( !restartScheduled && ( serverListChange || configChange ))
+        {
+            exhibitor.getLog().add(ActivityLog.Type.INFO, "No restart and writing config files now");
+            ((StandardProcessOperations) exhibitor.getProcessOperations()).writeConfigFiles();
         }
     }
 
@@ -200,7 +216,10 @@ public class MonitorRunningInstance implements Closeable
             return;
         }
 
-        exhibitor.getActivityQueue().add(QueueGroups.MAIN, new KillRunningInstance(exhibitor, true));
+        // restarting zookeeper should be synchronous here
+        Activity kill = new KillRunningInstance(exhibitor, true);
+        Boolean result = kill.call();
+        kill.completed((result != null) && result);
     }
 
     private int getDownInstanceRestartMs(InstanceConfig config)
