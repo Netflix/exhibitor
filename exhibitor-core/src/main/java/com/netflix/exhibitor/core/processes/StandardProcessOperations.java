@@ -111,14 +111,31 @@ public class StandardProcessOperations implements ProcessOperations
         }
 
         File            binDirectory = new File(details.zooKeeperDirectory, "bin");
-        File            startScript = new File(binDirectory, "zkServer.sh");
+        File            startScript = null;
+		if (isWindows())
+		{
+             startScript = new File(binDirectory, "zkServer.cmd");
+			 }
+		else
+		{
+			startScript = new File(binDirectory, "zkServer.sh");
+		}
         ProcessBuilder  builder = new ProcessBuilder(startScript.getPath(), "start").directory(binDirectory.getParentFile());
 
         exhibitor.getProcessMonitor().monitor(ProcessTypes.ZOOKEEPER, builder.start(), null, ProcessMonitor.Mode.LEAVE_RUNNING_ON_INTERRUPT, ProcessMonitor.Streams.BOTH);
 
         exhibitor.getLog().add(ActivityLog.Type.INFO, "Process started via: " + startScript.getPath());
     }
-
+    
+    private static String getOsName()
+	{
+	  if(OS == null) { OS = System.getProperty("os.name"); }
+		  return OS;
+	}
+	private static boolean isWindows()
+	{
+	  return getOsName().startsWith("Windows");
+	}
     private void prepConfigFile(Details details) throws IOException
     {
         UsState                 usState = new UsState(exhibitor);
