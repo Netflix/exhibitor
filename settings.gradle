@@ -1,2 +1,3 @@
 rootProject.name='exhibitor'
+include 'exhibitor-processes', 'exhibitor-core'
 include 'exhibitor-core','exhibitor-standalone'

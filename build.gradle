@@ -5,11 +5,11 @@ buildscript {
         mavenLocal()
         mavenCentral() // maven { url 'http://jcenter.bintray.com' }
     }
-    apply from: file('gradle/buildscript.gradle'), to: buildscript 
+    apply from: file('gradle/buildscript.gradle'), to: buildscript
 }
 
 allprojects {
-    repositories { 
+    repositories {
         mavenCentral() // maven { url: 'http://jcenter.bintray.com' }
     }
 }
@@ -35,8 +35,18 @@ subprojects {
     }
 }
 
+project(':exhibitor-processes') {
+    dependencies {
+        compile 'com.google.guava:guava:11.0.1'
+    }
+}
+
 project(':exhibitor-core') {
     dependencies {
+        compile (project(":exhibitor-processes")) {
+          exclude group: 'com.sun.jersey', module: 'jersey-client'
+        }
+
         compile('org.apache.zookeeper:zookeeper:3.4.5') {
             exclude group: 'com.sun.jmx', module: 'jmxri'
             exclude group: 'com.sun.jdmk', module: 'jmxtools'

@@ -14,29 +14,21 @@
  *    limitations under the License.
  */
 
-package com.netflix.exhibitor.core.processes;
+package com.netflix.exhibitor.processes;
 
-public interface ProcessOperations
-{
+public interface LoggingMinimum {
     /**
-     * Start the instance
-     *
-     *
-     * @throws Exception errors
+     * Log messages
      */
-    public void         startInstance() throws Exception;
+    public void add(Level level, String message);
 
     /**
-     * Kill the instance
-     *
-     * @throws Exception errors
+     * Supported logging levels
      */
-    public void         killInstance() throws Exception;
-
-    /**
-     * Perform an instance log/etc. cleanup
-     *
-     * @throws Exception errors
-     */
-    public void         cleanupInstance() throws Exception;
+    public enum Level
+    {
+        ERROR() {},
+        INFO() {},
+        DEBUG() {}
+    }
 }

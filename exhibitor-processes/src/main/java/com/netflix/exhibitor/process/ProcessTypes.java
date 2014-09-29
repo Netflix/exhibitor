@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.netflix.exhibitor.core.processes;
+package com.netflix.exhibitor.processes;
 
 public enum ProcessTypes
 {
