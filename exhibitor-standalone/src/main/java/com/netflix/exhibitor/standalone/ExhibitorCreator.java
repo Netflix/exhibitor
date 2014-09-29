@@ -31,6 +31,8 @@ import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.JQueryStyle;
 import com.netflix.exhibitor.core.config.PropertyBasedInstanceConfig;
 import com.netflix.exhibitor.core.config.StringConfigs;
+import com.netflix.exhibitor.core.config.couchdb.CouchdbConfigAruguments;
+import com.netflix.exhibitor.core.config.couchdb.CouchdbConfigProvider;
 import com.netflix.exhibitor.core.config.filesystem.FileSystemConfigProvider;
 import com.netflix.exhibitor.core.config.none.NoneConfigProvider;
 import com.netflix.exhibitor.core.config.s3.S3ConfigArguments;
@@ -41,6 +43,7 @@ import com.netflix.exhibitor.core.s3.PropertyBasedS3Credential;
 import com.netflix.exhibitor.core.s3.S3ClientFactoryImpl;
 import com.netflix.exhibitor.core.servo.ServoRegistration;
 import com.netflix.servo.jmx.JmxMonitorRegistry;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.ParseException;
@@ -65,6 +68,7 @@ import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -276,7 +280,12 @@ public class ExhibitorCreator
         Properties          defaultProperties = makeDefaultProperties(commandLine, backupProvider);
 
         ConfigProvider      configProvider;
-        if ( configType.equals("s3") )
+        if ( configType.equals("couchdb") )
+        {
+        	
+        	configProvider = getCouchdbProvider(cli, commandLine, defaultProperties);
+        }
+        else if ( configType.equals("s3") )
         {
             configProvider = getS3Provider(cli, commandLine, awsCredentials, useHostname, defaultProperties, s3Region);
         }
@@ -365,6 +374,21 @@ public class ExhibitorCreator
         return new NoneConfigProvider(commandLine.getOptionValue(NONE_CONFIG_DIRECTORY), defaultProperties);
     }
 
+    private ConfigProvider getCouchdbProvider(ExhibitorCLI cli, CommandLine commandLine, Properties defaultProperties) throws Exception
+    {
+    	String host = commandLine.getOptionValue(COUCHDB_HOST);
+    	String user = commandLine.getOptionValue(COUCHDB_USER);
+    	String password = commandLine.getOptionValue(COUCHDB_PASSWORD);
+    	CouchdbConfigAruguments args = new CouchdbConfigAruguments(host, user , password);
+    	
+    	CouchdbConfigProvider cloudantConfigProvider = new CouchdbConfigProvider(args, defaultProperties);
+    	
+    	closeables.add(cloudantConfigProvider);
+    	cloudantConfigProvider.start();
+    	
+    	return cloudantConfigProvider;
+    }
+    
     private ConfigProvider getZookeeperProvider(CommandLine commandLine, String useHostname, Properties defaultProperties) throws Exception
     {
         String      connectString = commandLine.getOptionValue(ZOOKEEPER_CONFIG_INITIAL_CONNECT_STRING);

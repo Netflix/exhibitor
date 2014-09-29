@@ -77,6 +77,9 @@ public class ExhibitorCLI
     public static final String ZOOKEEPER_CONFIG_POLLING = "zkconfigpollms";
     public static final String NONE_CONFIG_DIRECTORY = "noneconfigdir";
     public static final String INITIAL_CONFIG_FILE = "defaultconfig";
+    public static final String COUCHDB_HOST = "couchdbhost";
+    public static final String COUCHDB_USER = "couchdbuser";
+    public static final String COUCHDB_PASSWORD = "couchdbpassword";
 
     public static final String FILESYSTEMBACKUP = "filesystembackup";
     public static final String TIMEOUT = "timeout";
@@ -143,6 +146,11 @@ public class ExhibitorCLI
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_BASE_PATH, true, "The base ZPath that Exhibitor should use. E.g: \"/exhibitor/config\"");
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_RETRY, true, "The retry values to use in the form sleep-ms:retry-qty. The default is: " + DEFAULT_ZOOKEEPER_CONFIG_RETRY);
         zookeeperConfigOptions.addOption(null, ZOOKEEPER_CONFIG_POLLING, true, "The period in ms to check for changes in the config ensemble. The default is: " + DEFAULT_ZOOKEEPER_CONFIG_POLLING);
+        
+        Options couchdbConfigOptions = new Options();
+        couchdbConfigOptions.addOption(null, COUCHDB_HOST, true, "The CouchDB hostname");
+        couchdbConfigOptions.addOption(null, COUCHDB_USER, true, "The CouchDB username");
+        couchdbConfigOptions.addOption(null, COUCHDB_PASSWORD, true, "The CouchDB password");
 
         Options noneConfigOptions = new Options();
         noneConfigOptions.addOption(null, NONE_CONFIG_DIRECTORY, true, "Directory to store the local configuration file. Config type \"none\" is a special purpose type that should only be used when running a second ZooKeeper ensemble that is used for storing config. DO NOT USE THIS MODE for a normal ZooKeeper ensemble.");
@@ -164,7 +172,7 @@ public class ExhibitorCLI
         generalOptions.addOption(null, NODE_MUTATIONS, true, "If true, the Explorer UI will allow nodes to be modified (use with caution). Default is true.");
         generalOptions.addOption(null, JQUERY_STYLE, true, "Styling used for the JQuery-based UI. Currently available options: " + getStyleOptions());
         generalOptions.addOption(ALT_HELP, HELP, false, "Print this help");
-        generalOptions.addOption(SHORT_CONFIG_TYPE, CONFIG_TYPE, true, "Defines which configuration type you want to use. Choices are: \"file\", \"s3\", \"zookeeper\" or \"none\". Additional config will be required depending on which type you are using.");
+        generalOptions.addOption(SHORT_CONFIG_TYPE, CONFIG_TYPE, true, "Defines which configuration type you want to use. Choices are: \"file\", \"s3\", \"zookeeper\", \"couchdb\" or \"none\". Additional config will be required depending on which type you are using.");
         generalOptions.addOption(null, CONFIGCHECKMS, true, "Period (ms) to check for shared config updates. Default is: 30000");
         generalOptions.addOption(null, SERVO_INTEGRATION, true, "true/false (default is false). If enabled, ZooKeeper will be queried once a minute for its state via the 'mntr' four letter word (this requires ZooKeeper 3.4.x+). Servo will be used to publish this data via JMX.");
         generalOptions.addOption(null, INITIAL_CONFIG_FILE, true, "Full path to a file that contains initial/default values for Exhibitor/ZooKeeper config values. The file is a standard property file. The property names are listed below. The file can specify some or all of the properties.");
@@ -181,6 +189,7 @@ public class ExhibitorCLI
         addAll("Configuration Options for Type \"zookeeper\"", zookeeperConfigOptions);
         addAll("Configuration Options for Type \"file\"", fileConfigOptions);
         addAll("Configuration Options for Type \"none\"", noneConfigOptions);
+        addAll("Configuration Options for Type \"couchdb\"", couchdbConfigOptions);
         addAll("Backup Options", backupOptions);
         addAll("Authorization Options", authOptions);
         addAll("Deprecated Authorization Options", deprecatedAuthOptions);
