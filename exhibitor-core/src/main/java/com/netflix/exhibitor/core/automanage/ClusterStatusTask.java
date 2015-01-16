@@ -38,12 +38,22 @@ public class ClusterStatusTask extends RecursiveTask<List<ServerStatus>>
     private final Exhibitor exhibitor;
     private final List<ServerSpec> specs;
     private final ServerSpec us;
+    
+    private int from;
+    private int to;
 
     public ClusterStatusTask(Exhibitor exhibitor, List<ServerSpec> specs)
     {
         this.exhibitor = exhibitor;
-        this.specs = ImmutableList.copyOf(specs);
+        this.specs = specs;
         us = Iterables.find(specs, ServerList.isUs(exhibitor.getThisJVMHostname()), null);
+    }
+
+    private ClusterStatusTask(Exhibitor exhibitor, List<ServerSpec> specs, int from, int to)
+    {
+        this(exhibitor, specs);
+        this.from = from;
+        this.to = to;
     }
 
     @Override
@@ -51,7 +61,7 @@ public class ClusterStatusTask extends RecursiveTask<List<ServerStatus>>
     {
         List<ServerStatus>      statuses = Lists.newArrayList();
 
-        int size = specs.size();
+        int size = (to - from);
         switch ( size )
         {
             case 0:
@@ -61,24 +71,20 @@ public class ClusterStatusTask extends RecursiveTask<List<ServerStatus>>
 
             case 1:
             {
-                statuses.add(getStatus(specs.get(0)));
+                statuses.add(getStatus(specs.get(to - from)));
                 break;
             }
 
             default:
             {
-                List<ClusterStatusTask> tasks = Lists.newArrayList();
-                for ( List<ServerSpec> subList : Lists.partition(specs, size / 2) )
-                {
-                    ClusterStatusTask task = new ClusterStatusTask(exhibitor, subList);
-                    task.fork();
-                    tasks.add(task);
-                }
-
-                for ( ClusterStatusTask task : tasks )
-                {
-                    statuses.addAll(task.join());
-                }
+                
+                int split = (from + to)/2;
+                
+                invokeAll(
+                    new ClusterStatusTask(exhibitor, specs, from, split),
+                    new ClusterStatusTask(exhibitor, specs, from + split, to)
+                );
+                
                 break;
             }
         }
