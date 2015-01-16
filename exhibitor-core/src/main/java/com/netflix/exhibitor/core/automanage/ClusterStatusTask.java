@@ -82,7 +82,7 @@ public class ClusterStatusTask extends RecursiveTask<List<ServerStatus>>
                 
                 invokeAll(
                     new ClusterStatusTask(exhibitor, specs, from, split),
-                    new ClusterStatusTask(exhibitor, specs, from + split, to),
+                    new ClusterStatusTask(exhibitor, specs, from + split, to)
                 );
                 
                 break;
