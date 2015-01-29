@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.ExhibitorArguments;
+import com.netflix.exhibitor.processes.LoggingMinimum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
@@ -33,7 +34,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ActivityLog
+public class ActivityLog implements LoggingMinimum
 {
     private final Queue<Message>    queue = new ConcurrentLinkedQueue<Message>();
     private final int               windowSizeLines;
@@ -174,6 +175,35 @@ public class ActivityLog
     public void         add(Type type, String message)
     {
         add(type, message, null);
+    }
+
+    /**
+     * Add a log message
+     *
+     * @param level logging level
+     * @param message the message
+     */
+    public void          add(LoggingMinimum.Level level, String message) {
+        switch(level)
+        {
+            case ERROR:
+            {
+                add(ActivityLog.Type.ERROR, message);
+                break;
+            }
+
+            case INFO:
+            {
+                add(ActivityLog.Type.INFO, message);
+                break;
+            }
+
+            case DEBUG:
+            {
+                add(ActivityLog.Type.DEBUG, message);
+                break;
+            }
+        }
     }
 
     /**

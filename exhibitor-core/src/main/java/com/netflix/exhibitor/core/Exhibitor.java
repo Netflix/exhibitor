@@ -40,8 +40,6 @@ import com.netflix.exhibitor.core.config.JQueryStyle;
 import com.netflix.exhibitor.core.controlpanel.ControlPanelValues;
 import com.netflix.exhibitor.core.controlpanel.FileBasedPreferences;
 import com.netflix.exhibitor.core.index.IndexCache;
-import com.netflix.exhibitor.core.processes.ProcessMonitor;
-import com.netflix.exhibitor.core.processes.ProcessOperations;
 import com.netflix.exhibitor.core.processes.StandardProcessOperations;
 import com.netflix.exhibitor.core.rest.UITab;
 import com.netflix.exhibitor.core.servo.GetMonitorData;
@@ -49,6 +47,8 @@ import com.netflix.exhibitor.core.servo.ZookeeperMonitoredData;
 import com.netflix.exhibitor.core.state.CleanupManager;
 import com.netflix.exhibitor.core.state.ManifestVersion;
 import com.netflix.exhibitor.core.state.MonitorRunningInstance;
+import com.netflix.exhibitor.processes.ProcessMonitor;
+import com.netflix.exhibitor.processes.ProcessOperations;
 import com.netflix.servo.monitor.CompositeMonitor;
 import com.netflix.servo.monitor.Monitors;
 import jsr166y.ForkJoinPool;
@@ -133,7 +133,7 @@ public class Exhibitor implements Closeable
         monitorRunningInstance = new MonitorRunningInstance(this);
         cleanupManager = new CleanupManager(this);
         indexCache = new IndexCache(log);
-        processMonitor = new ProcessMonitor(this);
+        processMonitor = new ProcessMonitor(log);
         autoInstanceManagement = new RepeatingActivityImpl(log, activityQueue, QueueGroups.MAIN, new AutomaticInstanceManagement(this), getAutoInstanceManagementPeriod());
 
         remoteInstanceRequestClient = new RemoteInstanceRequestClientImpl(arguments.remoteConnectionConfiguration);

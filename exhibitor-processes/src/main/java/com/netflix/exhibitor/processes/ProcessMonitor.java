@@ -14,12 +14,10 @@
  *    limitations under the License.
  */
 
-package com.netflix.exhibitor.core.processes;
+package com.netflix.exhibitor.processes;
 
 import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
-import com.netflix.exhibitor.core.Exhibitor;
-import com.netflix.exhibitor.core.activity.ActivityLog;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
@@ -34,12 +32,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ProcessMonitor implements Closeable
 {
     private final ExecutorService   service = Executors.newCachedThreadPool();
-    private final Exhibitor         exhibitor;
+    private final LoggingMinimum log;
     private final Map<ProcessTypes, ProcessHolder> processes = Maps.newConcurrentMap();
 
-    public ProcessMonitor(Exhibitor exhibitor)
+    public ProcessMonitor(LoggingMinimum log)
     {
-        this.exhibitor = exhibitor;
+        this.log = log;
     }
 
     @Override
@@ -88,20 +86,20 @@ public class ProcessMonitor implements Closeable
         {
             case ERROR:
             {
-                service.submit(makeStreamProc(process.getErrorStream(), type.getDescription(), ActivityLog.Type.ERROR, newHolder));
+                service.submit(makeStreamProc(process.getErrorStream(), type.getDescription(), LoggingMinimum.Level.ERROR, newHolder));
                 break;
             }
 
             case STANDARD:
             {
-                service.submit(makeStreamProc(process.getInputStream(), type.getDescription(), ActivityLog.Type.INFO, newHolder));
+                service.submit(makeStreamProc(process.getInputStream(), type.getDescription(), LoggingMinimum.Level.INFO, newHolder));
                 break;
             }
 
             case BOTH:
             {
-                service.submit(makeStreamProc(process.getErrorStream(), type.getDescription(), ActivityLog.Type.ERROR, newHolder));
-                service.submit(makeStreamProc(process.getInputStream(), type.getDescription(), ActivityLog.Type.INFO, newHolder));
+                service.submit(makeStreamProc(process.getErrorStream(), type.getDescription(), LoggingMinimum.Level.ERROR, newHolder));
+                service.submit(makeStreamProc(process.getInputStream(), type.getDescription(), LoggingMinimum.Level.INFO, newHolder));
                 break;
             }
         }
@@ -149,13 +147,13 @@ public class ProcessMonitor implements Closeable
 
                 if ( completionMessage != null )
                 {
-                    exhibitor.getLog().add(ActivityLog.Type.INFO, completionMessage);
+                    log.add(LoggingMinimum.Level.INFO, completionMessage);
                 }
             }
         };
     }
 
-    private Callable<Object> makeStreamProc(final InputStream stream, final String name, final ActivityLog.Type type, final ProcessHolder holder)
+    private Callable<Object> makeStreamProc(final InputStream stream, final String name, final LoggingMinimum.Level level, final ProcessHolder holder)
     {
         return new Callable<Object>()
         {
@@ -171,7 +169,7 @@ public class ProcessMonitor implements Closeable
                     }
                     if ( !holder.isBeingClosed.get() )
                     {
-                        exhibitor.getLog().add(type, name + ": " + line);
+                        log.add(level, name + ": " + line);
                     }
                 }
                 return null;
