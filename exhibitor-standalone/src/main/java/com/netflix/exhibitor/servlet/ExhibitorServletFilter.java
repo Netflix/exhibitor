@@ -36,7 +36,7 @@ public class ExhibitorServletFilter implements Filter
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {
         HttpServletResponse httpServletResponse = (HttpServletResponse)response;
-        httpServletResponse.sendRedirect("/exhibitor/v1/ui/index.html");
+        httpServletResponse.sendRedirect("./exhibitor/v1/ui/index.html");
     }
 
     @Override
