@@ -1,7 +1,17 @@
+version = '1.0'
+
+buildscript {
+    dependencies {
+        classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
+    }
+    repositories {
+        jcenter()
+    }
+}
+
 apply plugin: 'java'
 apply plugin: 'maven'
-group = 'exhibitor'
-version = '1.5.4'
+apply plugin: "eu.appsatori.fatjar"
 
 repositories {
     mavenCentral()
@@ -14,8 +24,13 @@ dependencies {
     compile 'com.netflix.exhibitor:exhibitor-standalone:1.5.4'
 }
 
-jar {
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+fatJar {
+    classifier = 'all'
+
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.RSA'
+
     manifest {
         attributes (
             'Main-Class': 'com.netflix.exhibitor.application.ExhibitorMain',
