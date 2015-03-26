@@ -112,6 +112,13 @@ public class ExhibitorCLI
     public static final String DEFAULT_ZOOKEEPER_CONFIG_RETRY = "1000:3";
     public static final String DEFAULT_ZOOKEEPER_CONFIG_POLLING = "10000";
     public static final String DEFAULT_ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH = "/";
+    
+    public static final String HTTPS_PORT = "httpsport";
+    public static final String KEYSTORE = "keystore";
+    public static final String KEYSTORE_PASSWORD = "keystorepassword";
+    public static final String TRUSTSTORE = "truststore";
+    public static final String TRUSTSTORE_PASSWORD = "truststorepassword";
+    
 
     public ExhibitorCLI()
     {
@@ -177,6 +184,15 @@ public class ExhibitorCLI
         aclOptions.addOption(null, ACL_ID, true, "Enable ACL for Exhibitor's internal ZooKeeper connection. This sets the ACL's ID.");
         aclOptions.addOption(null, ACL_SCHEME, true, "Enable ACL for Exhibitor's internal ZooKeeper connection. This sets the ACL's Scheme.");
         aclOptions.addOption(null, ACL_PERMISSIONS, true, "Enable ACL for Exhibitor's internal ZooKeeper connection. This sets the ACL's Permissions - a comma list of possible permissions. If this isn't specified the permission is set to ALL. Values: read, write, create, delete, admin");
+        
+        Options sslOptions = new Options();
+        sslOptions.addOption(null, HTTPS_PORT, true , "HTTPS port to listen.");
+        sslOptions.addOption(null, KEYSTORE, true , "KeyStore File Location. Default will be user.home/.keystore");
+        sslOptions.addOption(null, KEYSTORE_PASSWORD, true , "KEYSTORE PASSWORD");
+        sslOptions.addOption(null, TRUSTSTORE, true , "Truststore File location. Default will be KEYSTORE.");
+        sslOptions.addOption(null, TRUSTSTORE_PASSWORD, true , "Truststore password. Default will be KEYSTORE_PASSWORD.");
+        
+        
 
         options = new Options();
         addAll("S3 Options", s3Options);
@@ -188,6 +204,7 @@ public class ExhibitorCLI
         addAll("Authorization Options", authOptions);
         addAll("Deprecated Authorization Options", deprecatedAuthOptions);
         addAll("ACL Options", aclOptions);
+        addAll("Configuation Options for SSL", sslOptions);
         addAll(null, generalOptions);
     }
 

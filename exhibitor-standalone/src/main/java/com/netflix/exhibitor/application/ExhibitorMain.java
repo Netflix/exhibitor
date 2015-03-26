@@ -20,7 +20,6 @@ package com.netflix.exhibitor.application;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import com.netflix.exhibitor.servlet.ExhibitorServletFilter;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.ExhibitorArguments;
@@ -31,17 +30,18 @@ import com.netflix.exhibitor.core.rest.UIContext;
 import com.netflix.exhibitor.core.rest.jersey.JerseySupport;
 import com.netflix.exhibitor.standalone.ExhibitorCreator;
 import com.netflix.exhibitor.standalone.ExhibitorCreatorExit;
+import com.netflix.exhibitor.standalone.SSLArguments;
 import com.netflix.exhibitor.standalone.SecurityArguments;
 import com.sun.jersey.api.client.filter.ClientFilter;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import com.sun.jersey.api.client.filter.HTTPDigestAuthFilter;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import org.apache.curator.utils.CloseableUtils;
-import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.ContextHandler;
 import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
+import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.jetty.webapp.WebAppContext;
@@ -82,15 +82,24 @@ public class ExhibitorMain implements Closeable
             return;
         }
 
-        SecurityArguments securityArguments = new SecurityArguments(creator.getSecurityFile(), creator.getRealmSpec(), creator.getRemoteAuthSpec());
+		SecurityArguments securityArguments = new SecurityArguments(
+				creator.getSecurityFile(), creator.getRealmSpec(),
+				creator.getRemoteAuthSpec());
+		
+		SSLArguments sslarguments = new SSLArguments( creator.getKeystore(),
+				creator.getKeystorePassword(), creator.getTruststore(),
+				creator.getTrustPassword());
+		
         ExhibitorMain exhibitorMain = new ExhibitorMain
         (
             creator.getBackupProvider(),
             creator.getConfigProvider(),
             creator.getBuilder(),
             creator.getHttpPort(),
+            creator.getHttpsPort(),
             creator.getSecurityHandler(),
-            securityArguments
+            securityArguments, 
+            sslarguments
         );
         setShutdown(exhibitorMain);
 
@@ -110,7 +119,7 @@ public class ExhibitorMain implements Closeable
         }
     }
 
-    public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments.Builder builder, int httpPort, SecurityHandler security, SecurityArguments securityArguments) throws Exception
+    public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments.Builder builder, int httpPort, int httpsPort,  SecurityHandler security, SecurityArguments securityArguments, SSLArguments sslArguments) throws Exception
     {
         HashUserRealm realm = makeRealm(securityArguments);
         if ( securityArguments.getRemoteAuthSpec() != null )
@@ -125,8 +134,21 @@ public class ExhibitorMain implements Closeable
         DefaultResourceConfig   application = JerseySupport.newApplicationConfig(new UIContext(exhibitor));
         ServletContainer        container = new ServletContainer(application);
         server = new Server(httpPort);
+        
+       if( httpsPort != 0 ){
+        		SslSocketConnector sslconnector = new SslSocketConnector();
+        		
+        		if(sslArguments.getKeystore() != null ){
+        			sslconnector.setKeystore(sslArguments.getKeystore());
+        		}	
+        		sslconnector.setKeyPassword(sslArguments.getKeystorePassword());
+        		sslconnector.setTruststore(sslArguments.getTruststore());
+        		sslconnector.setTrustPassword(sslArguments.getTrustPassword());
+        		sslconnector.setPort(httpsPort);
+        	 	server.addConnector(sslconnector);
+        }
+        
         Context root = new Context(server, "/", Context.SESSIONS);
-        root.addFilter(ExhibitorServletFilter.class, "/", Handler.ALL);
         root.addServlet(new ServletHolder(container), "/*");
         if ( security != null )
         {

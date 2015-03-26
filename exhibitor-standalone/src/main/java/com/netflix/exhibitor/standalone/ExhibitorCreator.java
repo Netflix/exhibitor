@@ -88,10 +88,15 @@ public class ExhibitorCreator
     private final BackupProvider backupProvider;
     private final ConfigProvider configProvider;
     private final int httpPort;
+    private final int httpsPort;
     private final List<Closeable> closeables = Lists.newArrayList();
     private final String securityFile;
     private final String realmSpec;
     private final String remoteAuthSpec;
+    private final String keystore ;
+    private final String keystorePassword ;
+    private final String truststore ;
+    private final String truststorePassword;
 
     public ExhibitorCreator(String[] args) throws Exception
     {
@@ -191,6 +196,13 @@ public class ExhibitorCreator
             log.warn(Joiner.on(", ").join(BASIC_AUTH_REALM, CONSOLE_USER, CONSOLE_PASSWORD, CURATOR_USER, CURATOR_PASSWORD) + " - have been deprecated. Use TBD instead");
             handler = makeSecurityHandler(realm, user, password, curatorUser, curatorPassword);
         }
+        
+        
+        int httpsPort = Integer.parseInt(commandLine.getOptionValue(HTTPS_PORT, "443"));
+        keystore = commandLine.getOptionValue(KEYSTORE);
+        keystorePassword = commandLine.getOptionValue(KEYSTORE_PASSWORD);
+        truststore = commandLine.getOptionValue(TRUSTSTORE) != null ? commandLine.getOptionValue(TRUSTSTORE) :keystore;
+        truststorePassword = commandLine.getOptionValue(TRUSTSTORE_PASSWORD) != null ? commandLine.getOptionValue(TRUSTSTORE_PASSWORD) :keystorePassword;
 
         String      aclId = commandLine.getOptionValue(ACL_ID);
         String      aclScheme = commandLine.getOptionValue(ACL_SCHEME);
@@ -231,6 +243,7 @@ public class ExhibitorCreator
         this.backupProvider = backupProvider;
         this.configProvider = configProvider;
         this.httpPort = httpPort;
+        this.httpsPort = httpsPort;
     }
 
     public ExhibitorArguments.Builder getBuilder()
@@ -637,4 +650,24 @@ public class ExhibitorCreator
 
         return handler;
     }
+
+	public int getHttpsPort() {
+		return httpsPort;
+	}
+
+	public String getKeystore() {
+		return keystore;
+	}
+
+	public String getTruststore() {
+		return truststore;
+	}
+
+	public String getTrustPassword() {
+		return truststorePassword;
+	}
+
+	public String getKeystorePassword() {
+		return keystorePassword;
+	}
 }
