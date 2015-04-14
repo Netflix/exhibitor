@@ -127,6 +127,7 @@ public class S3ConfigProvider implements ConfigProvider
      * @param clientConfig s3 client configuration
      * @param arguments args
      * @param hostname this VM's hostname
+     * @param defaults default props
      * @param s3Region optional region or null
      * @throws Exception errors
      */

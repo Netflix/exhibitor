@@ -55,7 +55,7 @@ public abstract class PseudoLockBase implements PseudoLock
     /**
      * @param lockPrefix key prefix
      * @param timeoutMs max age for locks
-     * @param pollingMs how often to poll S3
+     * @param pollingMs how often to poll storage service
      */
     public PseudoLockBase(String lockPrefix, int timeoutMs, int pollingMs)
     {
@@ -65,8 +65,8 @@ public abstract class PseudoLockBase implements PseudoLock
     /**
      * @param lockPrefix key prefix
      * @param timeoutMs max age for locks
-     * @param pollingMs how often to poll S3
-     * @param settlingMs how long to wait for S3 to reach consistency
+     * @param pollingMs how often to poll storage service
+     * @param settlingMs how long to wait for storage service to reach consistency
      */
     public PseudoLockBase(String lockPrefix, int timeoutMs, int pollingMs, int settlingMs)
     {
