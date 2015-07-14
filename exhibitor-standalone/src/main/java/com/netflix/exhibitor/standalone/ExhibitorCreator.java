@@ -17,12 +17,15 @@
 package com.netflix.exhibitor.standalone;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.inject.Module;
 import com.netflix.exhibitor.core.ExhibitorArguments;
 import com.netflix.exhibitor.core.backup.BackupProvider;
 import com.netflix.exhibitor.core.backup.filesystem.FileSystemBackupProvider;
 import com.netflix.exhibitor.core.backup.s3.S3BackupProvider;
+import com.netflix.exhibitor.core.backup.swift.SwiftBackupProvider;
 import com.netflix.exhibitor.core.config.AutoManageLockArguments;
 import com.netflix.exhibitor.core.config.ConfigProvider;
 import com.netflix.exhibitor.core.config.DefaultProperties;
@@ -35,12 +38,16 @@ import com.netflix.exhibitor.core.config.none.NoneConfigProvider;
 import com.netflix.exhibitor.core.config.s3.S3ConfigArguments;
 import com.netflix.exhibitor.core.config.s3.S3ConfigAutoManageLockArguments;
 import com.netflix.exhibitor.core.config.s3.S3ConfigProvider;
+import com.netflix.exhibitor.core.config.swift.SwiftConfigArguments;
+import com.netflix.exhibitor.core.config.swift.SwiftConfigAutoManageLockArguments;
+import com.netflix.exhibitor.core.config.swift.SwiftConfigProvider;
 import com.netflix.exhibitor.core.config.zookeeper.ZookeeperConfigProvider;
 import com.netflix.exhibitor.core.s3.PropertyBasedS3ClientConfig;
 import com.netflix.exhibitor.core.s3.PropertyBasedS3Credential;
 import com.netflix.exhibitor.core.s3.S3ClientFactoryImpl;
 import com.netflix.exhibitor.core.servo.ServoRegistration;
 import com.netflix.servo.jmx.JmxMonitorRegistry;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.ParseException;
@@ -58,6 +65,9 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.common.PathUtils;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Id;
+import org.jclouds.ContextBuilder;
+import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
+import org.jclouds.openstack.swift.v1.SwiftApi;
 import org.mortbay.jetty.security.BasicAuthenticator;
 import org.mortbay.jetty.security.Constraint;
 import org.mortbay.jetty.security.ConstraintMapping;
@@ -66,6 +76,7 @@ import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -117,6 +128,8 @@ public class ExhibitorCreator
         }
 
         checkMutuallyExclusive(cli, commandLine, S3_BACKUP, FILESYSTEMBACKUP);
+        checkMutuallyExclusive(cli, commandLine, S3_BACKUP, SWIFT_BACKUP);
+        checkMutuallyExclusive(cli, commandLine, FILESYSTEMBACKUP, SWIFT_BACKUP);
 
         String                        s3Region = commandLine.getOptionValue(S3_REGION, null);
         PropertyBasedS3Credential     awsCredentials = null;
@@ -131,6 +144,23 @@ public class ExhibitorCreator
             awsClientConfig = new PropertyBasedS3ClientConfig(new File(commandLine.getOptionValue(S3_PROXY)));
         }
 
+		Iterable<Module> modules = ImmutableSet.<Module>of(
+	            new SLF4JLoggingModule());
+		
+		String provider = commandLine.getOptionValue(SWIFT_PROVIDER,"openstack-swift");
+	    String identity = commandLine.getOptionValue(SWIFT_IDENTITY,null);
+	    String apikey = commandLine.getOptionValue(SWIFT_API_KEY,null);
+		String authUrl = commandLine.getOptionValue(SWIFT_AUTH_URL,null);
+		
+		SwiftApi  swiftApi = null;
+		
+		if (identity!=null && apikey !=null && authUrl !=null)
+			swiftApi = ContextBuilder.newBuilder(provider)
+		            .endpoint(authUrl)
+		            .credentials(identity, apikey)
+		            .modules(modules)
+		            .buildApi(SwiftApi.class);
+
         BackupProvider backupProvider = null;
         if ( "true".equalsIgnoreCase(commandLine.getOptionValue(S3_BACKUP)) )
         {
@@ -139,7 +169,12 @@ public class ExhibitorCreator
         else if ( "true".equalsIgnoreCase(commandLine.getOptionValue(FILESYSTEMBACKUP)) )
         {
             backupProvider = new FileSystemBackupProvider();
+        } 
+        else if ( "true".equalsIgnoreCase(commandLine.getOptionValue(SWIFT_BACKUP)) )
+        {
+            backupProvider = new SwiftBackupProvider(swiftApi);
         }
+
 
         int timeoutMs = Integer.parseInt(commandLine.getOptionValue(TIMEOUT, "30000"));
         int logWindowSizeLines = Integer.parseInt(commandLine.getOptionValue(LOGLINES, "1000"));
@@ -155,7 +190,7 @@ public class ExhibitorCreator
             throw new MissingConfigurationTypeException("Configuration type (-" + SHORT_CONFIG_TYPE + " or --" + CONFIG_TYPE + ") must be specified", cli);
         }
 
-        ConfigProvider configProvider = makeConfigProvider(configType, cli, commandLine, awsCredentials, awsClientConfig, backupProvider, useHostname, s3Region);
+        ConfigProvider configProvider = makeConfigProvider(configType, cli, commandLine, awsCredentials, awsClientConfig, backupProvider, useHostname, s3Region, swiftApi);
         if ( configProvider == null )
         {
             throw new ExhibitorCreatorExit(cli);
@@ -278,7 +313,7 @@ public class ExhibitorCreator
         return remoteAuthSpec;
     }
 
-    private ConfigProvider makeConfigProvider(String configType, ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, PropertyBasedS3ClientConfig awsClientConfig, BackupProvider backupProvider, String useHostname, String s3Region) throws Exception
+    private ConfigProvider makeConfigProvider(String configType, ExhibitorCLI cli, CommandLine commandLine, PropertyBasedS3Credential awsCredentials, PropertyBasedS3ClientConfig awsClientConfig, BackupProvider backupProvider, String useHostname, String s3Region, SwiftApi swiftApi) throws Exception
     {
         Properties          defaultProperties = makeDefaultProperties(commandLine, backupProvider);
 
@@ -299,6 +334,10 @@ public class ExhibitorCreator
         {
             log.warn("Warning: you have intentionally turned off shared configuration. This mode is meant for special purposes only. Please verify that this is your intent.");
             configProvider = getNoneProvider(commandLine, defaultProperties);
+        }
+        else if ( configType.equals("swift") )
+        {
+            configProvider = getSwiftProvider(cli, commandLine, swiftApi, useHostname,defaultProperties);
         }
         else
         {
@@ -528,6 +567,12 @@ public class ExhibitorCreator
         return new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, awsClientConfig, getS3Arguments(cli, commandLine.getOptionValue(S3_CONFIG), prefix), hostname, defaultProperties, s3Region);
     }
 
+    private ConfigProvider getSwiftProvider(ExhibitorCLI cli, CommandLine commandLine, SwiftApi swiftApi, String hostname, Properties defaultProperties) throws Exception
+    {
+        String  prefix = cli.getOptions().hasOption(SWIFT_CONFIG_PREFIX) ? commandLine.getOptionValue(SWIFT_CONFIG_PREFIX) : DEFAULT_PREFIX;
+        return new SwiftConfigProvider(swiftApi, getSwiftArguments(cli, commandLine.getOptionValue(SWIFT_CONFIG), prefix), hostname, defaultProperties);
+    }
+
     private void checkMutuallyExclusive(ExhibitorCLI cli, CommandLine commandLine, String option1, String option2) throws ExhibitorCreatorExit
     {
         if ( commandLine.hasOption(option1) && commandLine.hasOption(option2) )
@@ -546,6 +591,17 @@ public class ExhibitorCreator
             throw new ExhibitorCreatorExit(cli);
         }
         return new S3ConfigArguments(parts[0].trim(), parts[1].trim(), new S3ConfigAutoManageLockArguments(prefix + "-lock-"));
+    }
+
+    private SwiftConfigArguments getSwiftArguments(ExhibitorCLI cli, String value, String prefix) throws ExhibitorCreatorExit
+    {
+        String[]        parts = value.split(":");
+        if ( parts.length != 2 )
+        {
+            log.error("Bad swiftconfig argument: " + value);
+            throw new ExhibitorCreatorExit(cli);
+        }
+        return new SwiftConfigArguments(parts[0].trim(), parts[1].trim(), new SwiftConfigAutoManageLockArguments(prefix + "-lock-"));
     }
 
     private CuratorFramework makeCurator(final String connectString, int baseSleepTimeMs, int maxRetries, int exhibitorPort, String exhibitorRestPath, int pollingMs)
