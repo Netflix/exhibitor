@@ -147,7 +147,7 @@ public class ExhibitorCreator
 		Iterable<Module> modules = ImmutableSet.<Module>of(
 	            new SLF4JLoggingModule());
 		
-		String provider = commandLine.getOptionValue(SWIFT_PROVIDER,"openstack-swift");
+		String provider = commandLine.getOptionValue(SWIFT_PROVIDER,DEFAULT_SWIFT_PROVIDER);
 	    String identity = commandLine.getOptionValue(SWIFT_IDENTITY,null);
 	    String apikey = commandLine.getOptionValue(SWIFT_API_KEY,null);
 		String authUrl = commandLine.getOptionValue(SWIFT_AUTH_URL,null);

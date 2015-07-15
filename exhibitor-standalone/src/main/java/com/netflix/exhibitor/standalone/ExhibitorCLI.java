@@ -120,7 +120,7 @@ public class ExhibitorCLI
     public static final String DEFAULT_ZOOKEEPER_CONFIG_RETRY = "1000:3";
     public static final String DEFAULT_ZOOKEEPER_CONFIG_POLLING = "10000";
     public static final String DEFAULT_ZOOKEEPER_CONFIG_EXHIBITOR_URI_PATH = "/";
-    public static final String DEFAULT_SWIFT_PROVIDER = "exhibitor.properties";
+    public static final String DEFAULT_SWIFT_PROVIDER = "openstack-swift";
 
     public ExhibitorCLI()
     {
