@@ -87,7 +87,8 @@ public class SwiftBackupProvider implements BackupProvider
     public boolean isValidConfig(Exhibitor exhibitor, Map<String, String> configValues)
     {
         String containerName = (configValues != null) ? configValues.get(CONFIG_CONTAINER.getKey()) : null;
-        return (containerName != null) && (containerName.trim().length() > 0);
+        boolean valid = (containerName != null) && (containerName.trim().length() > 0);
+        return valid;
     }
     
     private ObjectApi getObjectApi(String containerName)
@@ -105,7 +106,6 @@ public class SwiftBackupProvider implements BackupProvider
     @Override
     public UploadResult uploadBackup(Exhibitor exhibitor, BackupMetaData backup, File source, final Map<String, String> configValues) throws Exception
     {
-    	System.out.println("uploadBackup:"+backup);
         List<BackupMetaData>    availableBackups = getAvailableBackups(exhibitor, configValues);
         if ( availableBackups.contains(backup) )
         {
@@ -137,8 +137,6 @@ public class SwiftBackupProvider implements BackupProvider
     @Override
     public BackupStream getBackupStream(Exhibitor exhibitor, BackupMetaData backup, Map<String, String> configValues) throws Exception
     {
-    	System.out.println("getBackupStream:"+backup);
-
     	long            startMs = System.currentTimeMillis();
         RetryPolicy     retryPolicy = makeRetryPolicy(configValues);
         int             retryCount = 0;
@@ -226,8 +224,6 @@ public class SwiftBackupProvider implements BackupProvider
     @Override
     public void downloadBackup(Exhibitor exhibitor, BackupMetaData backup, OutputStream destination, Map<String, String> configValues) throws Exception
     {
-    	System.out.println("downloadBackup:"+backup);
-
         byte[]          buffer = new byte[MIN_SWIFT_PART_SIZE];
 
         long            startMs = System.currentTimeMillis();
@@ -278,8 +274,6 @@ public class SwiftBackupProvider implements BackupProvider
     @Override
     public List<BackupMetaData> getAvailableBackups(Exhibitor exhibitor, Map<String, String> configValues) throws Exception
     {
-    	System.out.println("getAvailableBackups:"+getKeyPrefix(configValues));
-
         String            keyPrefix = getKeyPrefix(configValues);
         List<BackupMetaData>    completeList = Lists.newArrayList();
 
@@ -292,6 +286,8 @@ public class SwiftBackupProvider implements BackupProvider
 	    	String name = obj.getName();
 	    	if (name.startsWith(keyPrefix))
 	    		completeList.add(new BackupMetaData(name, obj.getLastModified().getTime()));
+	    	else
+	    		System.out.println("getAvailableBackups of prefix "+ keyPrefix +", ignore "+name);
 
 	    }
         return completeList;
