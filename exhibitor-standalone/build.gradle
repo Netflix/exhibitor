@@ -18,15 +18,3 @@ dependencies {
 
     provided 'javax.servlet:servlet-api:' + servletVersion
 }
-
-task fatJar(type: Jar) {
-	manifest {
-        attributes (
-            'Main-Class': 'com.netflix.exhibitor.application.ExhibitorMain',
-            'Implementation-Version': project.version
-        )
-    }
-    baseName = project.name + '-all'
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}

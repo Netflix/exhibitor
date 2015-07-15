@@ -32,6 +32,7 @@ import org.jclouds.openstack.swift.v1.features.ObjectApi;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.Properties;
 
 public class SwiftConfigProvider implements ConfigProvider
@@ -42,6 +43,14 @@ public class SwiftConfigProvider implements ConfigProvider
 	private final ObjectApi objectApi;
 	private final Properties defaults;
 	
+	/**
+	 * 
+	 * @param swiftApi SwiftApi
+	 * @param arguments args
+	 * @param hostname this VM's hostname
+	 * @param defaults default props
+	 * @throws Exception
+	 */
     public SwiftConfigProvider(SwiftApi  swiftApi, SwiftConfigArguments arguments,String hostname, Properties defaults) throws Exception
     {
     	this.swiftApi = swiftApi;
@@ -91,13 +100,15 @@ public class SwiftConfigProvider implements ConfigProvider
 
     @Override
     public LoadedInstanceConfig loadConfig() throws Exception
-    {
+    {	
+        Date        lastModified;
         Properties  properties = new Properties();
         SwiftObject obj= objectApi.get(this.arguments.getKey());
 
         if (obj !=null)
         {
-        	System.out.println("name=" +obj.getName() + ",meta="+ obj.getMetadata()+ ",headers="+obj.getHeaders());
+            lastModified = obj.getLastModified();
+
         	InputStream is = null;
         	try{
 		    	is =  obj.getPayload().openStream();
@@ -108,19 +119,24 @@ public class SwiftConfigProvider implements ConfigProvider
         			is.close();
         	}
         }
+        else
+        {
+            lastModified = new Date(0L);
+        }
 
         PropertyBasedInstanceConfig config = new PropertyBasedInstanceConfig(properties, defaults);
-        return new LoadedInstanceConfig(config, obj.getLastModified().getTime());
+        return new LoadedInstanceConfig(config, lastModified.getTime());
     }
 
     
     @Override
     public LoadedInstanceConfig storeConfig(ConfigCollection config, long compareVersion) throws Exception
     {
-    	String name =this.arguments.getKey();
-        SwiftObject obj= objectApi.get(name);
+        SwiftObject obj= objectApi.get(arguments.getKey());
         if ( obj!=null && obj.getLastModified().getTime() != compareVersion )
+        {
         	return null;
+        }
 
         PropertyBasedInstanceConfig     propertyBasedInstanceConfig = new PropertyBasedInstanceConfig(config);
         ByteArrayOutputStream           out = new ByteArrayOutputStream();
@@ -128,7 +144,11 @@ public class SwiftConfigProvider implements ConfigProvider
 
         byte[]                          bytes = out.toByteArray();
 	    Payload payload =  new ByteArrayPayload(bytes);
-    	objectApi.put(name, payload);
+    	objectApi.put(arguments.getKey(), payload);
+    	if (obj == null)
+    	{
+    		obj = objectApi.get(arguments.getKey());
+    	}
 
         return new LoadedInstanceConfig(propertyBasedInstanceConfig, obj.getLastModified().getTime());
     }

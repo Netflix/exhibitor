@@ -30,12 +30,27 @@ public class SwiftPseudoLock extends PseudoLockBase
 {
 	private final ObjectApi objectApi;
 
+	/**
+	 * 
+	 * @param objectApi ObjectApi
+	 * @param lockPrefix key prefix
+	 * @param timeoutMs max age for locks
+	 * @param pollingMs how often to poll S3
+	 */
     public SwiftPseudoLock(ObjectApi objectApi, String lockPrefix, int timeoutMs, int pollingMs)
     {
         super(lockPrefix, timeoutMs, pollingMs);
         this.objectApi = objectApi;
     }
 
+    /**
+     * 
+     * @param objectApi ObjectApi
+     * @param lockPrefix key prefix
+     * @param timeoutMs max age for locks
+     * @param pollingMs how often to poll S3
+     * @param settlingMs how long to wait to reach consistency
+     */
     public SwiftPseudoLock(ObjectApi objectApi, String lockPrefix, int timeoutMs, int pollingMs, int settlingMs)
     {
         super(lockPrefix, timeoutMs, pollingMs, settlingMs);

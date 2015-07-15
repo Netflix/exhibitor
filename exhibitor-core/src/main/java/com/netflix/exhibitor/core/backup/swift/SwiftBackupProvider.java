@@ -66,6 +66,11 @@ public class SwiftBackupProvider implements BackupProvider
     static final String       SEPARATOR = "/";
     private static final String       SEPARATOR_REPLACEMENT = "_";
 
+    /**
+     * 
+     * @param swiftApi the SwiftApi
+     * @throws Exception
+     */
     public SwiftBackupProvider(SwiftApi  swiftApi) throws Exception
     {
         this.swiftApi = swiftApi;
@@ -100,29 +105,22 @@ public class SwiftBackupProvider implements BackupProvider
     @Override
     public UploadResult uploadBackup(Exhibitor exhibitor, BackupMetaData backup, File source, final Map<String, String> configValues) throws Exception
     {
+    	System.out.println("uploadBackup:"+backup);
         List<BackupMetaData>    availableBackups = getAvailableBackups(exhibitor, configValues);
         if ( availableBackups.contains(backup) )
         {
             return UploadResult.DUPLICATE;
         }
 
-        RetryPolicy retryPolicy = makeRetryPolicy(configValues);
-        Throttle    throttle = makeThrottle(configValues);
-
         String      key = toKey(backup, configValues);
         ObjectApi	objectApi = getObjectApi(configValues.get(CONFIG_CONTAINER.getKey()));
 
-        if ( source.length() < MIN_SWIFT_PART_SIZE )
-        {
-            byte[]          bytes = Files.toByteArray(source);
-		    Payload payload =  new ByteArrayPayload(bytes);
-	    	objectApi.put(key, payload);
-        }
-        else
-        {
-            multiPartUpload(source, configValues, retryPolicy, throttle, key);
-        }
-
+        byte[]          bytes = Files.toByteArray(source);
+		Payload payload =  new ByteArrayPayload(bytes);
+	    objectApi.put(key, payload);
+	    	
+	    //TODO find a way to do multiparts
+	    
         UploadResult        result = UploadResult.SUCCEEDED;
         for ( BackupMetaData existing : availableBackups )
         {
@@ -135,20 +133,13 @@ public class SwiftBackupProvider implements BackupProvider
         return result;
     }
 
-    private void multiPartUpload(File source, Map<String, String> configValues, RetryPolicy retryPolicy, Throttle throttle, String key) throws Exception
-    {
-    	// TODO how to support multipart on jcloud swift?
-        ObjectApi	objectApi = getObjectApi(configValues.get(CONFIG_CONTAINER.getKey()));
-        byte[]          bytes = Files.toByteArray(source);
-	    Payload payload =  new ByteArrayPayload(bytes);
-    	objectApi.put(key, payload);
-
-    }
 
     @Override
     public BackupStream getBackupStream(Exhibitor exhibitor, BackupMetaData backup, Map<String, String> configValues) throws Exception
     {
-        long            startMs = System.currentTimeMillis();
+    	System.out.println("getBackupStream:"+backup);
+
+    	long            startMs = System.currentTimeMillis();
         RetryPolicy     retryPolicy = makeRetryPolicy(configValues);
         int             retryCount = 0;
         ObjectApi	    objectApi = getObjectApi(configValues.get(CONFIG_CONTAINER.getKey()));
@@ -161,6 +152,7 @@ public class SwiftBackupProvider implements BackupProvider
             }
             catch ( Exception e)
             {
+            	e.printStackTrace();
             	/*TODO any fastpath on failure?
             	if (some condition)
             	{
@@ -234,6 +226,8 @@ public class SwiftBackupProvider implements BackupProvider
     @Override
     public void downloadBackup(Exhibitor exhibitor, BackupMetaData backup, OutputStream destination, Map<String, String> configValues) throws Exception
     {
+    	System.out.println("downloadBackup:"+backup);
+
         byte[]          buffer = new byte[MIN_SWIFT_PART_SIZE];
 
         long            startMs = System.currentTimeMillis();
@@ -267,6 +261,7 @@ public class SwiftBackupProvider implements BackupProvider
             }
             catch ( Exception e )
             {
+            	e.printStackTrace();
                 if ( !retryPolicy.allowRetry(retryCount++, System.currentTimeMillis() - startMs, RetryLoop.getDefaultRetrySleeper()) )
                 {
                     done = true;
@@ -283,6 +278,8 @@ public class SwiftBackupProvider implements BackupProvider
     @Override
     public List<BackupMetaData> getAvailableBackups(Exhibitor exhibitor, Map<String, String> configValues) throws Exception
     {
+    	System.out.println("getAvailableBackups:"+getKeyPrefix(configValues));
+
         String            keyPrefix = getKeyPrefix(configValues);
         List<BackupMetaData>    completeList = Lists.newArrayList();
 
