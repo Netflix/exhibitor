@@ -5,7 +5,7 @@ Exhibitor is a supervisor system for ZooKeeper.
 
 Please see the doc at https://github.com/Netflix/exhibitor/wiki
 
-[OpenStack Swift Object Storage as Backup and Config Provider](swift/README_Swift.md)
+[OpenStack Swift Object Storage as Backup and Config Provider](swift/README_swift.md)
 
 
 ## BUILDING
