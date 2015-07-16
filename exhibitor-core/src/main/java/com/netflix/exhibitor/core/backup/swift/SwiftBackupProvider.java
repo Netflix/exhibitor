@@ -285,7 +285,7 @@ public class SwiftBackupProvider implements BackupProvider
 	    	SwiftObject obj = list.get(i);
 	    	String name = obj.getName();
 	    	if (name.startsWith(keyPrefix))
-	    		completeList.add(new BackupMetaData(name, obj.getLastModified().getTime()));
+	    		completeList.add(fromKey(name));
 	    	else
 	    		System.out.println("getAvailableBackups of prefix "+ keyPrefix +", ignore "+name);
 
