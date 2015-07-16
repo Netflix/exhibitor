@@ -53,9 +53,9 @@ public class SwiftBackupProvider implements BackupProvider
     private final SwiftApi  swiftApi;
 
 	private static final BackupConfigSpec CONFIG_THROTTLE = new BackupConfigSpec("throttle", "Throttle (bytes/ms)", "Data throttling. Maximum bytes per millisecond.", Integer.toString(1024 * 1024), BackupConfigSpec.Type.INTEGER);
-    private static final BackupConfigSpec CONFIG_CONTAINER= new BackupConfigSpec("container-name", "Swift Container Name", "The Swfit containerto use", "", BackupConfigSpec.Type.STRING);
-    private static final BackupConfigSpec CONFIG_KEY_PREFIX = new BackupConfigSpec("key-prefix", "Swfit Key Prefix", "The prefix for Swift backup keys", "exhibitor-backup", BackupConfigSpec.Type.STRING);
-    private static final BackupConfigSpec CONFIG_MAX_RETRIES = new BackupConfigSpec("max-retries", "Max Retries", "Maximum retries when uploading/downloading S3 data", "3", BackupConfigSpec.Type.INTEGER);
+    private static final BackupConfigSpec CONFIG_CONTAINER= new BackupConfigSpec("container-name", "Swift Container Name", "The Swift container to use", "", BackupConfigSpec.Type.STRING);
+    private static final BackupConfigSpec CONFIG_KEY_PREFIX = new BackupConfigSpec("key-prefix", "Swift Key Prefix", "The prefix for Swift backup keys", "exhibitor-backup", BackupConfigSpec.Type.STRING);
+    private static final BackupConfigSpec CONFIG_MAX_RETRIES = new BackupConfigSpec("max-retries", "Max Retries", "Maximum retries when uploading/downloading Swift data", "3", BackupConfigSpec.Type.INTEGER);
     private static final BackupConfigSpec CONFIG_RETRY_SLEEP_MS = new BackupConfigSpec("retry-sleep-ms", "Retry Sleep (ms)", "Sleep time in milliseconds when retrying", "1000", BackupConfigSpec.Type.INTEGER);
 
     private static final List<BackupConfigSpec>     CONFIGS = Arrays.asList(CONFIG_THROTTLE, CONFIG_CONTAINER, CONFIG_KEY_PREFIX, CONFIG_MAX_RETRIES, CONFIG_RETRY_SLEEP_MS);
