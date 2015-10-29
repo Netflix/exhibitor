@@ -9,6 +9,8 @@ Please see the doc at https://github.com/Netflix/exhibitor/wiki
 
 Exhibitor is built via Gradle (http://www.gradle.org). To build from the command line:
     ./gradlew build
+    
+If you're looking for a quick way to try-out Exhibitor, you can use a provided [Docker image](http://techblog.netflix.com/2014/11/zerotodocker-easy-way-to-evaluate.html)
 
 ## ARTIFACTS
 
