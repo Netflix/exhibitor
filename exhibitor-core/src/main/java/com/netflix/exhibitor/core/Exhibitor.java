@@ -104,7 +104,7 @@ public class Exhibitor implements Closeable
         String      host = "unknown";
         try
         {
-            return InetAddress.getLocalHost().getHostName();
+            return InetAddress.getLocalHost().getCanonicalHostName();
         }
         catch ( UnknownHostException e )
         {
