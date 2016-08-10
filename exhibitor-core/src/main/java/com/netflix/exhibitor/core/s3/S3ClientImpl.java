@@ -282,8 +282,11 @@ public class S3ClientImpl implements S3Client
 
         if ( s3Region != null )
         {
-            String      fixedRegion = s3Region.equals("us-east-1") ? "" : ("-" + s3Region);
-            String      endpoint = ENDPOINT_SPEC.replace("$REGION$", fixedRegion);
+            String endpoint = s3Region;
+            if (! s3Region.startsWith("http")) {
+                String fixedRegion = s3Region.equals("us-east-1") ? "" : ("-" + s3Region);
+                endpoint = ENDPOINT_SPEC.replace("$REGION$", fixedRegion);
+            }
             localClient.setEndpoint(endpoint);
             log.info("Setting S3 endpoint to: " + endpoint);
         }
