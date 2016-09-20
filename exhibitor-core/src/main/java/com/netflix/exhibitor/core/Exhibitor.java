@@ -176,6 +176,9 @@ public class Exhibitor implements Closeable
     {
         Preconditions.checkState(state.compareAndSet(State.LATENT, State.STARTED));
 
+        //Try to restore data from backup before zookeeper will be started
+        backupManager.restoreAll();
+
         activityQueue.start();
         configManager.start();
         monitorRunningInstance.start();

@@ -182,6 +182,23 @@ public class BackupManager implements Closeable
     }
 
     /**
+     * Restore all known logs
+     */
+    public void restoreAll() throws Exception {
+        ZooKeeperLogFiles logFiles = new ZooKeeperLogFiles(exhibitor);
+        if (!logFiles.isValid() || !logFiles.getPaths().isEmpty()) {
+            //If directory invalid or files exist do not restore
+            return;
+        }
+        File dataDir = ZooKeeperLogFiles.getDataDir(exhibitor);
+        for (BackupMetaData data : getAvailableBackups()) {
+            String fileName = data.getName();
+            File file = new File(dataDir, fileName);
+            restore(data, file);
+        }
+    }
+
+    /**
      * Restore the given key to the given file
      *
      * @param backup the backup to pull down
