@@ -25,4 +25,16 @@ subprojects {
     test {
         useTestNG()
     }
+
+    jar {
+        manifest {
+            attributes (
+                'Implementation-Title': 'exhibitor-standalone',
+                'Implementation-Version': project.version,
+                'Main-Class': 'com.netflix.exhibitor.application.ExhibitorMain'
+            )
+        }
+        dependsOn configurations.runtime
+        from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    }
 }
