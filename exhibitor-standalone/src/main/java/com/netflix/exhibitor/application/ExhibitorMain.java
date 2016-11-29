@@ -39,6 +39,7 @@ import com.sun.jersey.api.core.DefaultResourceConfig;
 import org.apache.curator.utils.CloseableUtils;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
+import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.handler.ContextHandler;
 import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
@@ -89,6 +90,7 @@ public class ExhibitorMain implements Closeable
             creator.getConfigProvider(),
             creator.getBuilder(),
             creator.getHttpPort(),
+            creator.getListenAddress(),
             creator.getSecurityHandler(),
             securityArguments
         );
@@ -110,7 +112,7 @@ public class ExhibitorMain implements Closeable
         }
     }
 
-    public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments.Builder builder, int httpPort, SecurityHandler security, SecurityArguments securityArguments) throws Exception
+    public ExhibitorMain(BackupProvider backupProvider, ConfigProvider configProvider, ExhibitorArguments.Builder builder, int httpPort, String listenAddress, SecurityHandler security, SecurityArguments securityArguments) throws Exception
     {
         HashUserRealm realm = makeRealm(securityArguments);
         if ( securityArguments.getRemoteAuthSpec() != null )
@@ -124,7 +126,12 @@ public class ExhibitorMain implements Closeable
 
         DefaultResourceConfig   application = JerseySupport.newApplicationConfig(new UIContext(exhibitor));
         ServletContainer        container = new ServletContainer(application);
-        server = new Server(httpPort);
+        server = new Server();
+        SocketConnector http = new SocketConnector();
+        http.setHost(listenAddress);
+        http.setPort(httpPort);
+        server.addConnector(http);
+
         Context root = new Context(server, "/", Context.SESSIONS);
         root.addFilter(ExhibitorServletFilter.class, "/", Handler.ALL);
         root.addServlet(new ServletHolder(container), "/*");

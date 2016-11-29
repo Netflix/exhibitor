@@ -99,6 +99,7 @@ public class ExhibitorCreator
     private final BackupProvider backupProvider;
     private final ConfigProvider configProvider;
     private final int httpPort;
+    private final String listenAddress;
     private final List<Closeable> closeables = Lists.newArrayList();
     private final String securityFile;
     private final String realmSpec;
@@ -157,6 +158,7 @@ public class ExhibitorCreator
         int configCheckMs = Integer.parseInt(commandLine.getOptionValue(CONFIGCHECKMS, "30000"));
         String useHostname = commandLine.getOptionValue(HOSTNAME, cli.getHostname());
         int httpPort = Integer.parseInt(commandLine.getOptionValue(HTTP_PORT, "8080"));
+        String listenAddress = commandLine.getOptionValue(LISTEN_ADDRESS, "0.0.0.0");
         String extraHeadingText = commandLine.getOptionValue(EXTRA_HEADING_TEXT, null);
         boolean allowNodeMutations = "true".equalsIgnoreCase(commandLine.getOptionValue(NODE_MUTATIONS, "true"));
 
@@ -242,6 +244,7 @@ public class ExhibitorCreator
         this.backupProvider = backupProvider;
         this.configProvider = configProvider;
         this.httpPort = httpPort;
+        this.listenAddress = listenAddress;
     }
 
     public ExhibitorArguments.Builder getBuilder()
@@ -252,6 +255,11 @@ public class ExhibitorCreator
     public int getHttpPort()
     {
         return httpPort;
+    }
+    
+    public String getListenAddress()
+    {
+        return listenAddress;
     }
 
     public ConfigProvider getConfigProvider()

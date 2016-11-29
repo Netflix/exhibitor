@@ -96,6 +96,7 @@ public class ExhibitorCLI
     public static final String HELP = "help";
     public static final String ALT_HELP = "?";
     public static final String HTTP_PORT = "port";
+    public static final String LISTEN_ADDRESS = "listenaddress";
     public static final String EXTRA_HEADING_TEXT = "headingtext";
     public static final String NODE_MUTATIONS = "nodemodification";
     public static final String JQUERY_STYLE = "jquerystyle";
@@ -181,6 +182,7 @@ public class ExhibitorCLI
         generalOptions.addOption(null, LOGLINES, true, "Max lines of logging to keep in memory for display. Default is 1000.");
         generalOptions.addOption(null, HOSTNAME, true, "Hostname to use for this JVM. Default is: " + hostname);
         generalOptions.addOption(null, HTTP_PORT, true, "Port for the HTTP Server. Default is: 8080");
+        generalOptions.addOption(null, LISTEN_ADDRESS, true, "Address for the HTTP Server. Default is: 0.0.0.0");
         generalOptions.addOption(null, EXTRA_HEADING_TEXT, true, "Extra text to display in UI header");
         generalOptions.addOption(null, NODE_MUTATIONS, true, "If true, the Explorer UI will allow nodes to be modified (use with caution). Default is true.");
         generalOptions.addOption(null, JQUERY_STYLE, true, "Styling used for the JQuery-based UI. Currently available options: " + getStyleOptions());
