@@ -18,6 +18,7 @@ dependencies {
     compile "org.apache.lucene:lucene-core:${luceneVersion}"
     
     compile "com.sun.jersey:jersey-client:${jerseyVersion}"
+    compile "com.sun.jersey.contribs:jersey-multipart:${jerseyVersion}"
 
     // if you are using Java 7 you can remove this and switch to the JDK version
     compile 'org.codehaus.jsr166-mirror:jsr166y:1.7.0'

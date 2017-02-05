@@ -25,12 +25,14 @@ import com.netflix.exhibitor.core.analyze.PathAnalyzer;
 import com.netflix.exhibitor.core.analyze.PathAndMax;
 import com.netflix.exhibitor.core.analyze.PathComplete;
 import com.netflix.exhibitor.core.analyze.UsageListing;
+import com.netflix.exhibitor.core.entities.ExportRequest;
 import com.netflix.exhibitor.core.entities.IdList;
 import com.netflix.exhibitor.core.entities.PathAnalysis;
 import com.netflix.exhibitor.core.entities.PathAnalysisNode;
 import com.netflix.exhibitor.core.entities.PathAnalysisRequest;
 import com.netflix.exhibitor.core.entities.Result;
 import com.netflix.exhibitor.core.entities.UsageListingRequest;
+import com.netflix.exhibitor.core.importandexport.Exporter;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.KeeperException;
@@ -40,6 +42,7 @@ import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.type.TypeReference;
+
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -255,6 +258,32 @@ public class ExplorerResource
         }
 
         return children.toString();
+    }
+
+    @GET
+    @Path("export")
+    @Produces("application/json")
+    public Response     getExport(@QueryParam("request") String json) throws Exception
+    {
+        ObjectMapper        mapper = new ObjectMapper();
+        ExportRequest exportRequest = mapper.getJsonFactory().createJsonParser(json).readValueAs(ExportRequest.class);
+
+        return getExport(exportRequest);
+    }
+
+    @POST
+    @Path("export")
+    @Consumes("application/json")
+    @Produces("application/json")
+    public Response      getExport(ExportRequest exportRequest) throws Exception
+    {
+        context.getExhibitor().getLog().add(ActivityLog.Type.INFO, "Starting export");
+
+        Exporter exporter = new Exporter(context, exportRequest.getStartPath());
+
+        return Response.ok(exporter.generate())
+                .header("content-disposition", "attachment; filename=exhibitor_export.json")
+                .build();
     }
 
     @GET

@@ -20,12 +20,17 @@ import com.google.common.collect.Sets;
 import com.netflix.exhibitor.core.rest.ClusterResource;
 import com.netflix.exhibitor.core.rest.ConfigResource;
 import com.netflix.exhibitor.core.rest.ExplorerResource;
+import com.netflix.exhibitor.core.rest.ImportResource;
 import com.netflix.exhibitor.core.rest.IndexResource;
 import com.netflix.exhibitor.core.rest.UIContext;
 import com.netflix.exhibitor.core.rest.UIContextResolver;
 import com.netflix.exhibitor.core.rest.UIResource;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
+import com.sun.jersey.multipart.impl.FormDataMultiPartDispatchProvider;
+import com.sun.jersey.multipart.impl.MultiPartConfigProvider;
+import com.sun.jersey.multipart.impl.MultiPartReaderServerSide;
+
 import java.util.Set;
 
 @SuppressWarnings("UnusedDeclaration")
@@ -77,6 +82,9 @@ public class JerseySupport
         classes.add(ExplorerResource.class);
         classes.add(ClusterResource.class);
         classes.add(ConfigResource.class);
+        classes.add(ImportResource.class);
+        classes.add(MultiPartConfigProvider.class);
+        classes.add(MultiPartReaderServerSide.class);
         return classes;
     }
 
@@ -85,6 +93,7 @@ public class JerseySupport
         final Set<Object> singletons = Sets.newHashSet();
         singletons.add(new UIContextResolver(context));
         singletons.add(new NaturalNotationContextResolver());
+        singletons.add(new FormDataMultiPartDispatchProvider());
         return singletons;
     }
 

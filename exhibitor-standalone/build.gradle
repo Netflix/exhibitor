@@ -12,6 +12,7 @@ dependencies {
     compile 'com.sun.jersey:jersey-server:' + jerseyVersion
     compile 'com.sun.jersey:jersey-servlet:' + jerseyVersion
     compile 'com.sun.jersey:jersey-json:' + jerseyVersion
+    compile 'com.sun.jersey.contribs:jersey-multipart:' + jerseyVersion
     compile 'org.mortbay.jetty:jetty:' + jettyVersion
     compile 'commons-cli:commons-cli:' + commonsCliVersion
 
