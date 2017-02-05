@@ -1,8 +1,6 @@
-[![Build Status](https://travis-ci.org/soabase/exhibitor.svg?branch=master)](https://travis-ci.org/soabase/exhibitor)
+[![Build Status](https://travis-ci.org/soabase/exhibitor.svg?branch=master)](https://travis-ci.org/soabase/exhibitor) [![Join the chat at https://gitter.im/soabase/exhibitor](https://badges.gitter.im/soabase/exhibitor.svg)](https://gitter.im/soabase/exhibitor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # IMPORTANT NOTE
-
-[![Join the chat at https://gitter.im/soabase/exhibitor](https://badges.gitter.im/soabase/exhibitor.svg)](https://gitter.im/soabase/exhibitor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Exhibitor is now on its own! PLEASE READ THIS NOTE: https://groups.google.com/forum/#!topic/exhibitor-users/PVkcd88mk8c
 
