@@ -1,5 +1,6 @@
 apply plugin: 'nebula.provided-base'
 apply plugin: 'application'
+apply plugin: 'eclipse'
 
 mainClassName = 'com.netflix.exhibitor.application.ExhibitorMain'
 

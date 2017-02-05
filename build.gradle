@@ -13,6 +13,7 @@ subprojects {
 
     repositories {
         jcenter()
+        mavenLocal()
     }
 
     sourceCompatibility = 1.6
