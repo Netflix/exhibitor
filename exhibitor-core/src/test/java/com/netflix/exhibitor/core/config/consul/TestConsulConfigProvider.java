@@ -5,6 +5,7 @@ import com.netflix.exhibitor.core.config.LoadedInstanceConfig;
 import com.netflix.exhibitor.core.config.PropertyBasedInstanceConfig;
 import com.netflix.exhibitor.core.config.StringConfigs;
 import com.orbitz.consul.Consul;
+import com.orbitz.consul.model.session.SessionInfo;
 import com.pszymczyk.consul.ConsulProcess;
 import com.pszymczyk.consul.ConsulStarterBuilder;
 import org.apache.curator.test.Timing;
@@ -12,6 +13,7 @@ import org.apache.curator.utils.CloseableUtils;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
+import java.util.List;
 import java.util.Properties;
 
 
@@ -57,6 +59,9 @@ public class TestConsulConfigProvider {
 
             LoadedInstanceConfig instanceConfig = config.loadConfig();
             Assert.assertEquals(instanceConfig.getConfig().getRootConfig().getString(StringConfigs.ZOO_CFG_EXTRA), "1,2,3");
+
+            List<SessionInfo> sessions = client.sessionClient().listSessions();
+            Assert.assertEquals(sessions.size(), 0, "Consul session still exists!");
         }
         finally {
             CloseableUtils.closeQuietly(config);
