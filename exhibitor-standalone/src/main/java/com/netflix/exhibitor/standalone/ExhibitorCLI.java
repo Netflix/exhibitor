@@ -79,6 +79,14 @@ public class ExhibitorCLI
     public static final String ZOOKEEPER_CONFIG_POLLING = "zkconfigpollms";
     public static final String NONE_CONFIG_DIRECTORY = "noneconfigdir";
     public static final String INITIAL_CONFIG_FILE = "defaultconfig";
+    public static final String CONSUL_CONFIG_HOST = "consulhost";
+    public static final String CONSUL_CONFIG_PORT = "consulport";
+    public static final String CONSUL_CONFIG_KEY_PREFIX = "consulprefix";
+    public static final String CONSUL_CONFIG_ACL_TOKEN = "consulacltoken";
+    public static final String CONSUL_CONFIG_SSL = "consulssl";
+    public static final String CONSUL_CONFIG_SSL_VERIFY_HOSTNAME = "consulsslverifyhostname";
+    public static final String CONSUL_CONFIG_SSL_PROTOCOL = "consulsslprotocol";
+    public static final String CONSUL_CONFIG_SSL_CA_CERT = "consulsslcacert";
 
     public static final String FILESYSTEMBACKUP = "filesystembackup";
     public static final String TIMEOUT = "timeout";
@@ -158,6 +166,16 @@ public class ExhibitorCLI
         s3Options.addOption(null, S3_REGION, true, "Optional region for S3 calls (e.g. \"eu-west-1\"). Will be used to set the S3 client's endpoint.");
         s3Options.addOption(null, S3_PROXY, true, "Optional configuration used when when connecting to S3 via a proxy. Argument is the path to an AWS credential properties file with four properties (only host, port and protocol are required if using a proxy): " + PropertyBasedS3ClientConfig.PROPERTY_S3_PROXY_HOST + ", " + PropertyBasedS3ClientConfig.PROPERTY_S3_PROXY_PORT + ", " + PropertyBasedS3ClientConfig.PROPERTY_S3_PROXY_USERNAME + ", " + PropertyBasedS3ClientConfig.PROPERTY_S3_PROXY_PASSWORD);
 
+        Options consulConfigOptions = new Options();
+        consulConfigOptions.addOption(null, CONSUL_CONFIG_HOST, true, "Consul host; defaults to \"localhost\"");
+        consulConfigOptions.addOption(null, CONSUL_CONFIG_PORT, true, "Consul HTTP(s) port; defaults to 8500");
+        consulConfigOptions.addOption(null, CONSUL_CONFIG_ACL_TOKEN, true, "Optional Consul ACL token");
+        consulConfigOptions.addOption(null, CONSUL_CONFIG_SSL, true, "If true, enables Consul communication over SSL");
+        consulConfigOptions.addOption(null, CONSUL_CONFIG_SSL_VERIFY_HOSTNAME, true, "If true, verify SSL hostnames");
+        consulConfigOptions.addOption(null, CONSUL_CONFIG_SSL_PROTOCOL, true, "Consul SSL/TLS protocol; defaults to \"TLSv1.2\"");
+        consulConfigOptions.addOption(null, CONSUL_CONFIG_SSL_CA_CERT, true, "Path to the consul CA cert file");
+        consulConfigOptions.addOption(null, CONSUL_CONFIG_KEY_PREFIX, true, "Prefix in the key-value store under which to store Exhibitor data, e.g. \"exhibitor/\"");
+
         generalOptions = new Options();
         generalOptions.addOption(null, TIMEOUT, true, "Connection timeout (ms) for ZK connections. Default is 30000.");
         generalOptions.addOption(null, LOGLINES, true, "Max lines of logging to keep in memory for display. Default is 1000.");
@@ -167,7 +185,7 @@ public class ExhibitorCLI
         generalOptions.addOption(null, NODE_MUTATIONS, true, "If true, the Explorer UI will allow nodes to be modified (use with caution). Default is true.");
         generalOptions.addOption(null, JQUERY_STYLE, true, "Styling used for the JQuery-based UI. Currently available options: " + getStyleOptions());
         generalOptions.addOption(ALT_HELP, HELP, false, "Print this help");
-        generalOptions.addOption(SHORT_CONFIG_TYPE, CONFIG_TYPE, true, "Defines which configuration type you want to use. Choices are: \"file\", \"s3\", \"zookeeper\" or \"none\". Additional config will be required depending on which type you are using.");
+        generalOptions.addOption(SHORT_CONFIG_TYPE, CONFIG_TYPE, true, "Defines which configuration type you want to use. Choices are: \"file\", \"s3\", \"zookeeper\", \"consul\" or \"none\". Additional config will be required depending on which type you are using.");
         generalOptions.addOption(null, CONFIGCHECKMS, true, "Period (ms) to check for shared config updates. Default is: 30000");
         generalOptions.addOption(null, SERVO_INTEGRATION, true, "true/false (default is false). If enabled, ZooKeeper will be queried once a minute for its state via the 'mntr' four letter word (this requires ZooKeeper 3.4.x+). Servo will be used to publish this data via JMX.");
         generalOptions.addOption(null, INITIAL_CONFIG_FILE, true, "Full path to a file that contains initial/default values for Exhibitor/ZooKeeper config values. The file is a standard property file. The property names are listed below. The file can specify some or all of the properties.");
@@ -183,6 +201,7 @@ public class ExhibitorCLI
         addAll("Configuration Options for Type \"s3\"", s3ConfigOptions);
         addAll("Configuration Options for Type \"zookeeper\"", zookeeperConfigOptions);
         addAll("Configuration Options for Type \"file\"", fileConfigOptions);
+        addAll("Configuration Options for Type \"consul\"", consulConfigOptions);
         addAll("Configuration Options for Type \"none\"", noneConfigOptions);
         addAll("Backup Options", backupOptions);
         addAll("Authorization Options", authOptions);

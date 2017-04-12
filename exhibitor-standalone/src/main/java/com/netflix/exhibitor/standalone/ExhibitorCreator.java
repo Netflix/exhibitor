@@ -19,6 +19,7 @@ package com.netflix.exhibitor.standalone;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.net.HostAndPort;
 import com.netflix.exhibitor.core.ExhibitorArguments;
 import com.netflix.exhibitor.core.backup.BackupProvider;
 import com.netflix.exhibitor.core.backup.filesystem.FileSystemBackupProvider;
@@ -30,6 +31,7 @@ import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.JQueryStyle;
 import com.netflix.exhibitor.core.config.PropertyBasedInstanceConfig;
 import com.netflix.exhibitor.core.config.StringConfigs;
+import com.netflix.exhibitor.core.config.consul.ConsulConfigProvider;
 import com.netflix.exhibitor.core.config.filesystem.FileSystemConfigProvider;
 import com.netflix.exhibitor.core.config.none.NoneConfigProvider;
 import com.netflix.exhibitor.core.config.s3.S3ConfigArguments;
@@ -41,6 +43,7 @@ import com.netflix.exhibitor.core.s3.PropertyBasedS3Credential;
 import com.netflix.exhibitor.core.s3.S3ClientFactoryImpl;
 import com.netflix.exhibitor.core.servo.ServoRegistration;
 import com.netflix.servo.jmx.JmxMonitorRegistry;
+import com.orbitz.consul.Consul;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.ParseException;
@@ -66,12 +69,20 @@ import org.mortbay.jetty.security.HashUserRealm;
 import org.mortbay.jetty.security.SecurityHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -294,6 +305,10 @@ public class ExhibitorCreator
         else if ( configType.equals("zookeeper") )
         {
             configProvider = getZookeeperProvider(commandLine, useHostname, defaultProperties);
+        }
+        else if ( configType.equals("consul") )
+        {
+            configProvider = getConsulProvider(cli, commandLine, defaultProperties);
         }
         else if ( configType.equals("none") )
         {
@@ -526,6 +541,54 @@ public class ExhibitorCreator
     {
         String  prefix = cli.getOptions().hasOption(S3_CONFIG_PREFIX) ? commandLine.getOptionValue(S3_CONFIG_PREFIX) : DEFAULT_PREFIX;
         return new S3ConfigProvider(new S3ClientFactoryImpl(), awsCredentials, awsClientConfig, getS3Arguments(cli, commandLine.getOptionValue(S3_CONFIG), prefix), hostname, defaultProperties, s3Region);
+    }
+
+    private ConfigProvider getConsulProvider(ExhibitorCLI cli, CommandLine commandLine, Properties defaultProperties) throws Exception {
+        String host = commandLine.getOptionValue(CONSUL_CONFIG_HOST, "localhost");
+        Integer port = Integer.valueOf(commandLine.getOptionValue(CONSUL_CONFIG_PORT, "8500"));
+        String prefix = commandLine.getOptionValue(CONSUL_CONFIG_KEY_PREFIX, "exhibitor/");
+
+        Boolean sslEnabled = Boolean.valueOf(commandLine.getOptionValue(CONSUL_CONFIG_SSL, "false"));
+        String protocol = sslEnabled ? "https" : "http";
+        String url = String.format("%s://%s:%d", protocol, host, port);
+
+        Consul.Builder builder = Consul.builder().withUrl(url);
+        if (sslEnabled) {
+            if (!Boolean.valueOf(commandLine.getOptionValue(CONSUL_CONFIG_SSL_VERIFY_HOSTNAME, "true"))) {
+                builder.withHostnameVerifier(new NullHostnameVerifier());
+            }
+
+            String sslProtocol = commandLine.getOptionValue(CONSUL_CONFIG_SSL_PROTOCOL, "TLSv1.2");
+            String caCertPath = commandLine.getOptionValue(CONSUL_CONFIG_SSL_CA_CERT);
+            log.debug("SSL enabled for consul connections; protocol = %s, cacert = %s",
+                    sslProtocol, caCertPath);
+
+            // Load cacert file
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            X509Certificate cacert = (X509Certificate) cf.generateCertificate(new FileInputStream(caCertPath));
+
+            KeyStore trustStore = KeyStore.getInstance("JKS");
+            trustStore.load(null);
+            trustStore.setCertificateEntry("caCert", cacert);
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            tmf.init(trustStore);
+
+            SSLContext sslContext = SSLContext.getInstance(sslProtocol);
+            sslContext.init(null, tmf.getTrustManagers(), null);
+
+            builder.withSslContext(sslContext);
+        }
+        else {
+            log.debug("SSL is disabled for consul connections");
+        }
+
+        if (commandLine.hasOption(CONSUL_CONFIG_ACL_TOKEN)) {
+            builder.withAclToken(commandLine.getOptionValue(CONSUL_CONFIG_ACL_TOKEN));
+        }
+
+        Consul consul = builder.build();
+        return new ConsulConfigProvider(consul, prefix, defaultProperties);
     }
 
     private void checkMutuallyExclusive(ExhibitorCLI cli, CommandLine commandLine, String option1, String option2) throws ExhibitorCreatorExit

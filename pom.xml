@@ -45,6 +45,8 @@
         <mockito-version>1.8.5</mockito-version>
         <zookeeper-version>3.4.5</zookeeper-version>
         <jsr166-version>1.7.0</jsr166-version>
+        <consul-version>0.14.0</consul-version>
+        <embedded-consul-version>0.3.1</embedded-consul-version>
     </properties>
 
     <scm>
@@ -199,6 +201,18 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito-version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.orbitz.consul</groupId>
+                <artifactId>consul-client</artifactId>
+                <version>${consul-version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.pszymczyk.consul</groupId>
+                <artifactId>embedded-consul</artifactId>
+                <version>${embedded-consul-version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
