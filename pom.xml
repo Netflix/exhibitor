@@ -41,7 +41,7 @@
         <jax-rs-version>1.1.1</jax-rs-version>
         <jackson-version>1.9.2</jackson-version>
         <lucene-version>3.6.0</lucene-version>
-        <aws-version>1.10.24</aws-version>
+        <aws-version>1.11.128</aws-version>
         <mockito-version>1.8.5</mockito-version>
         <zookeeper-version>3.4.5</zookeeper-version>
         <jsr166-version>1.7.0</jsr166-version>
