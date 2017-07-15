@@ -27,7 +27,6 @@ There is an Exhibitor mailing list. Join here: http://groups.google.com/group/ex
 ## AUTHOR
 
 Jordan Zimmerman (jordan@jordanzimmerman.com)
-Ariana Peng
 
 ## LICENSE
 

@@ -18,15 +18,21 @@
   },
   "homepage": "https://github.com/wkwiatek/react-hot-loader-minimal-boilerplate#readme",
   "dependencies": {
+    "babel-polyfill": "^6.23.0",
+    "bootstrap": "^3.3.6",
     "react": "^15.4.2",
+    "react-bootstrap": "0.31.0",
     "react-dom": "^15.4.2",
-    "babel-polyfill": "^6.23.0"
+    "react-redux": "^5.0.5",
+    "style-loader": "^0.18.2"
   },
   "devDependencies": {
     "babel-core": "^6.23.1",
     "babel-loader": "^6.3.2",
     "babel-preset-latest": "^6.22.0",
     "babel-preset-react": "^6.23.0",
+    "babel-preset-stage-2": "^6.24.1",
+    "css-loader": "^0.28.4",
     "react-hot-loader": "^3.0.0-beta.6",
     "webpack": "^2.2.1",
     "webpack-dev-server": "^2.4.1"
