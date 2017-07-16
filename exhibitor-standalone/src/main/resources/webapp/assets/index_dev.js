@@ -7,11 +7,11 @@ import { AppContainer } from 'react-hot-loader'
 import Root from './containers/Root'
 import * as reducers from './reducers'
 
-const reducer = combineReducers({
-	...reducers
-})
+// const reducer = combineReducers({
+// 	...reducers
+// })
 
-let store = createStore(reducer)
+// let store = createStore(reducer)
 
 ReactDOM.render(
 	<AppContainer>

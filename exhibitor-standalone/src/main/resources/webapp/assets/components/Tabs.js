@@ -1,11 +1,11 @@
 import React from 'react'
-import { Tab, Row, Col, Nav, Navbar, NavItem, Glyphicon, NavDropdown, MenuItem } from 'react-bootstrap';
+import { Nav, NavItem, Navbar, NavDropdown, MenuItem, Glyphicon } from 'react-bootstrap';
 import styles from '../css/sideBarMenu.css'
 
 class Tabs extends React.Component {
   render() {
     return( 
-      <div id="sidebar-menu" className={styles.sideBarMenuContainer}>
+        <div id="sidebar-menu" className={styles.sideBarMenuContainer}>
             <Navbar fluid className={styles.sidebar} inverse >
 
                 <Navbar.Header>

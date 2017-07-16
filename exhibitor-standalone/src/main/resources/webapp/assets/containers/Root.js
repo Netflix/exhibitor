@@ -9,11 +9,13 @@ class Root extends React.Component {
 		 <div>
 		    <Grid>
   	  			<Row>
-  	  				<Col xs={3}>
+  	  				<Col>
   	  					<Header />
+  	  				</Col>
+  	  				<Col xs={2}>
 		 				<Tabs />
   	  				</Col>
-  	    			<Col xs={9}> 
+  	    			<Col xs={10}> 
 		 				
 		 			</Col>
 		 		</Row>
