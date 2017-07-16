@@ -28,6 +28,6 @@ module.exports = function(env) {
           loader: 'babel-loader' 
         }   
       ]
-    },
+    }
   }
 }
