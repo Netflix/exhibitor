@@ -8,18 +8,18 @@ import Root from './containers/Root'
 import * as reducers from './reducers'
 
 // const reducer = combineReducers({
-// 	...reducers
+//  ...reducers
 // })
 
 // let store = createStore(reducer)
 
 ReactDOM.render(
-	<AppContainer>
-	  		<Root />
-	</AppContainer>,
-	document.getElementById('root')
+    <AppContainer>
+        <Root />
+    </AppContainer>,
+    document.getElementById('root')
 )
 
 if (module.hot) {
-  module.hot.accept()
+    module.hot.accept()
 }

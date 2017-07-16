@@ -6,22 +6,21 @@ import { PageHeader, Jumbotron, Grid, Col, Row } from 'react-bootstrap';
 class Root extends React.Component {
   render() {
     return( 
-		 <div>
-		    <Grid>
-  	  			<Row>
-  	  				<Col>
-  	  					<Header />
-  	  				</Col>
-  	  				<Col xs={2}>
-		 				<Tabs />
-  	  				</Col>
-  	    			<Col xs={10}> 
-		 				
-		 			</Col>
-		 		</Row>
-		 	</Grid>
-		 </div>
-	  )
+         <div>
+            <Grid>
+                <Row>
+                    <Col>
+                        <Header />
+                    </Col>
+                    <Col xs={2}>
+                        <Tabs />
+                    </Col>
+                    <Col xs={10}> 
+                    </Col>
+                </Row>
+            </Grid>
+         </div>
+      )
   }
 }
 
