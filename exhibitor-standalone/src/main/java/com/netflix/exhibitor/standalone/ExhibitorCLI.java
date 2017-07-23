@@ -16,26 +16,25 @@
 
 package com.netflix.exhibitor.standalone;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.netflix.exhibitor.core.Exhibitor;
 import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.JQueryStyle;
 import com.netflix.exhibitor.core.config.PropertyBasedInstanceConfig;
 import com.netflix.exhibitor.core.config.StringConfigs;
-import com.netflix.exhibitor.core.s3.PropertyBasedS3Credential;
 import com.netflix.exhibitor.core.s3.PropertyBasedS3ClientConfig;
+import com.netflix.exhibitor.core.s3.PropertyBasedS3Credential;
 import com.netflix.exhibitor.core.state.ManifestVersion;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.List;
 
 public class ExhibitorCLI
 {
@@ -259,18 +258,10 @@ public class ExhibitorCLI
 
     private static String getStyleOptions()
     {
-        Iterable<String> transformed = Iterables.transform
-            (
-                Arrays.asList(JQueryStyle.values()),
-                new Function<JQueryStyle, String>()
-                {
-                    @Override
-                    public String apply(JQueryStyle style)
-                    {
-                        return style.name().toLowerCase();
-                    }
-                }
-            );
+        Iterable<String> transformed =
+            Arrays.stream(JQueryStyle.values())
+                .map(style -> style.name().toLowerCase())
+                .collect(Collectors.toList());
         return Joiner.on(", ").join(transformed);
     }
 
