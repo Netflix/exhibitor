@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { Provider } from 'react-redux'
-import { createStore, combineReducers } from 'redux'
+import { createStore, combineReducers } from 'react-redux'
 import { AppContainer } from 'react-hot-loader'
 
 import Root from './containers/Root'
