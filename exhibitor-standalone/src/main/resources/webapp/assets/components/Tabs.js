@@ -18,10 +18,9 @@ class Tabs extends React.Component {
                 <Navbar.Collapse>
                     <Navbar.Text className={styles.userMenu}>
                         <Navbar.Link href="#"><Glyphicon glyph="home"/></Navbar.Link>
-                        <Navbar.Link href="#"><Glyphicon glyph="log-out"/></Navbar.Link>
                     </Navbar.Text>
                     <Nav>
-                        <NavDropdown eventKey={1} title="Item 1">
+                        <NavDropdown id="something" eventKey={1} title="Item 1">
                             <MenuItem eventKey={1.1} href="#">Item 1.1</MenuItem>
                         </NavDropdown>
                         <NavItem eventKey={2}>Item 2</NavItem>
