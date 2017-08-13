@@ -96,9 +96,16 @@ public class ExhibitorMain implements Closeable
         );
         setShutdown(exhibitorMain);
 
-        exhibitorMain.start();
-        try
-        {
+        try {
+            exhibitorMain.start();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace(System.err);
+            System.err.println(String.format("Failed to start HTTP server on address %s, port %d. Exiting", creator.getListenAddress(), creator.getHttpPort()));
+            Runtime.getRuntime().exit(1);
+        }
+
+        try {
             exhibitorMain.join();
         }
         finally
