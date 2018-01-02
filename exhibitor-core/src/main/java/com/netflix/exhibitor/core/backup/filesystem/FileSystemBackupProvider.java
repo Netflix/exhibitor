@@ -138,6 +138,14 @@ public class FileSystemBackupProvider implements BackupProvider
         {
             exhibitor.getLog().add(ActivityLog.Type.ERROR, "Could not delete old backup: " + destinationFile);
         }
+
+        if ( destinationDirectory.list().length == 0 )
+        {
+            if ( !destinationDirectory.delete() )
+            {
+                exhibitor.getLog().add(ActivityLog.Type.ERROR, "Could not delete old backup parent directory: " + destinationDirectory);
+            }
+        }
     }
 
     @Override
