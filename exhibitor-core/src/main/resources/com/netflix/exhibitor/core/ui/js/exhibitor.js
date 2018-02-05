@@ -459,7 +459,7 @@ function refreshCurrentTab()
     {
         var index = selected - BUILTIN_TAB_QTY;
         if ( (customTabs[index].type === "simple") || customTabs[index].firstTime ) {
-            $("#" + customTabs[index].contentId).load(customTabs[index].url);
+            $.get(customTabs[index].url, function( data ) { $("#" + customTabs[index].contentId).text(data); });
             customTabs[index].firstTime = false;
         }
     }
