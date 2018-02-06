@@ -469,6 +469,7 @@ function refreshCurrentTab()
                     }
                 }
             );
+
             customTabs[index].firstTime = false;
         }
     }
