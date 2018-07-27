@@ -32,6 +32,7 @@ import com.netflix.exhibitor.core.state.MonitorRunningInstance;
 import com.netflix.exhibitor.core.state.ServerList;
 import com.netflix.exhibitor.core.state.ServerSpec;
 import com.netflix.exhibitor.core.state.StartInstance;
+import com.netflix.exhibitor.core.state.UsState;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
@@ -345,6 +346,27 @@ public class ClusterResource
         mainNode.put("isLeader", monitorRunningInstance.isCurrentlyLeader());
 
         return JsonUtil.writeValueAsString(mainNode);
+    }
+
+    @Path("node/serving")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response   nodeIsServing() throws Exception
+    {
+        MonitorRunningInstance  monitorRunningInstance = context.getExhibitor().getMonitorRunningInstance();
+        InstanceStateTypes      state = monitorRunningInstance.getCurrentInstanceState();
+
+        InstanceConfig  config = context.getExhibitor().getConfigManager().getConfig();
+        ServerList      serverList = new ServerList(config.getString(StringConfigs.SERVERS_SPEC));
+        ServerSpec      us = UsState.findUs(context.getExhibitor(), serverList.getSpecs());
+
+        Integer serverId = (us != null) ? us.getServerId() : -1;
+
+        if (state == InstanceStateTypes.SERVING && serverId != -1) {
+            return Response.ok().build();
+        }
+
+        return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
     }
 
     @Path("list")
