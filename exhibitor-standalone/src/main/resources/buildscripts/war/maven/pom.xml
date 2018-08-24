@@ -22,7 +22,7 @@
                 <configuration>
                     <overlays>
                         <overlay>
-                            <groupId>com.netflix.exhibitor</groupId>
+                            <groupId>io.soabase.exhibitor</groupId>
                             <artifactId>exhibitor-standalone</artifactId>
                             <type>jar</type>
                             <includes>
