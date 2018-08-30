@@ -33,6 +33,7 @@ import com.netflix.exhibitor.core.config.ConfigManager;
 import com.netflix.exhibitor.core.config.ConfigProvider;
 import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.config.JQueryStyle;
+import com.netflix.exhibitor.core.config.StringConfigs;
 import com.netflix.exhibitor.core.controlpanel.ControlPanelValues;
 import com.netflix.exhibitor.core.controlpanel.FileBasedPreferences;
 import com.netflix.exhibitor.core.index.IndexCache;
@@ -311,6 +312,11 @@ public class Exhibitor implements Closeable
                 .sessionTimeoutMs(arguments.connectionTimeOutMs * 10)
                 .connectionTimeoutMs(arguments.connectionTimeOutMs)
                 .retryPolicy(new ExponentialBackoffRetry(1000, 3));
+
+            String zkSuperUserPassword = configManager.getConfig().getString(StringConfigs.ZK_SUPER_USER_PASSWORD);
+            if (zkSuperUserPassword != null && !zkSuperUserPassword.equals("")) {
+                builder.authorization("digest", ("super:" + zkSuperUserPassword).getBytes());
+            }
 
             if ( arguments.aclProvider != null )
             {

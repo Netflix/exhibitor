@@ -121,6 +121,13 @@ public enum StringConfigs
         {
             return true;
         }
+    },
+
+    ZK_SUPER_USER_PASSWORD {
+        @Override
+        public boolean isRestartSignificant() {
+            return true;
+        }
     }
     ;
 

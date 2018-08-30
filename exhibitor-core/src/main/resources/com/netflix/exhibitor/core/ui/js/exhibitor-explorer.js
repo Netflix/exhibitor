@@ -1,5 +1,6 @@
 var explorerSelectedPath = null;
 var explorerSelectedBytes = null;
+var explorerSelectedACLs = null;
 
 var analyzePathsContainerContent = null;
 var analyzePathsContainerQty = 0;
@@ -119,11 +120,13 @@ function initExplorer()
                     success:function (data){
                         explorerSelectedPath = node.data.key;
                         explorerSelectedBytes = data.bytes;
+                        explorerSelectedACLs = data.aclsArray;
 
                         $("#path").text(node.data.key);
                         $("#stat").text(data.stat);
                         $("#data-bytes").text(data.bytes);
                         $("#data-str").text(data.str);
+                        $("#node-acl").html(data.acls)
                     }
                 }
             );
@@ -166,6 +169,7 @@ function initExplorer()
         }
     }).click(function(){
         var localData = explorerSelectedBytes;
+        var localACLs = explorerSelectedACLs;
         var localDataType;
         if ( !localData || !localData.length )
         {
@@ -177,7 +181,7 @@ function initExplorer()
             localDataType = "binary";
         }
 
-        openModifyDialog("update", explorerSelectedPath, localData, localDataType);
+        openModifyDialog("update", explorerSelectedPath, localData, localDataType, localACLs);
         return false;
     });
 

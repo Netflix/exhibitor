@@ -143,7 +143,7 @@ label
     border: 1px solid gray;
 }
 
-#path, #stat, #data-bytes, #data-str
+#path, #stat, #data-bytes, #data-str, #node-acl
 {
     font-family: monospace;
     font-size: 125%;
@@ -556,6 +556,21 @@ fieldset
     padding-bottom: 3px;
     font-weight: bold;
     font-style: italic;
+}
+
+#node-acls-table
+{
+    width: 480px;
+}
+
+.acl-element
+{
+    text-align: left;
+}
+
+.acl-checkbox
+{
+    text-align: center;
 }
 
 .open-window

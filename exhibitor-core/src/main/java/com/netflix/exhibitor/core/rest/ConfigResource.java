@@ -46,6 +46,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ContextResolver;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +57,13 @@ public class ConfigResource
     private final UIContext context;
 
     private static final String CANT_UPDATE_CONFIG_MESSAGE = "It appears that another process has updated the config. Your change was not committed.";
+
+    /**
+     * Contains a list of all those properties that we don't want returned in the 'get-state' method.
+     */
+    private static final List<StringConfigs> EXCLUSIONS = Arrays.asList(
+            StringConfigs.ZK_SUPER_USER_PASSWORD
+    );
 
     public ConfigResource(@Context ContextResolver<UIContext> resolver)
     {
@@ -92,7 +100,9 @@ public class ConfigResource
         configNode.put("serverId", (us != null) ? us.getServerId() : -1);
         for ( StringConfigs c : StringConfigs.values() )
         {
-            configNode.put(fixName(c), config.getString(c));
+            if ( !EXCLUSIONS.contains(c) ) {
+                configNode.put(fixName(c), config.getString(c));
+            }
         }
         for ( IntConfigs c : IntConfigs.values() )
         {

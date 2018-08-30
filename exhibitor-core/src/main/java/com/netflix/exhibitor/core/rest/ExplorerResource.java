@@ -25,6 +25,7 @@ import com.netflix.exhibitor.core.analyze.PathAnalyzer;
 import com.netflix.exhibitor.core.analyze.PathAndMax;
 import com.netflix.exhibitor.core.analyze.PathComplete;
 import com.netflix.exhibitor.core.analyze.UsageListing;
+import com.netflix.exhibitor.core.config.IntConfigs;
 import com.netflix.exhibitor.core.entities.IdList;
 import com.netflix.exhibitor.core.entities.PathAnalysis;
 import com.netflix.exhibitor.core.entities.PathAnalysisNode;
@@ -34,7 +35,10 @@ import com.netflix.exhibitor.core.entities.UsageListingRequest;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Id;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.ZooDefs;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
@@ -44,10 +48,12 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ContextResolver;
+import javax.xml.bind.DatatypeConverter;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -61,10 +67,12 @@ public class ExplorerResource
     private final ExecutorService   executorService = Executors.newCachedThreadPool();
 
     private static final String         ERROR_KEY = "*";
+    private final boolean aclsEnabled;
 
     public ExplorerResource(@Context ContextResolver<UIContext> resolver)
     {
         context = resolver.getContext(UIContext.class);
+        aclsEnabled = context.getExhibitor().getConfigManager().getConfig().getInt(IntConfigs.ENABLE_ACLS) == 1;
     }
 
     public static String bytesToString(byte[] bytes)
@@ -139,6 +147,7 @@ public class ExplorerResource
             @HeaderParam("netflix-user-name") String trackingUserName,
             @HeaderParam("netflix-ticket-number") String trackingTicketNumber,
             @HeaderParam("netflix-reason") String trackingReason,
+            @HeaderParam("acls") String aclsJsonArray,
             String binaryDataStr
         )
     {
@@ -156,6 +165,18 @@ public class ExplorerResource
 
             try
             {
+                List<ACL> acls = new ArrayList<ACL>();
+                boolean processAcls = (aclsEnabled && (aclsJsonArray != null && !aclsJsonArray.equals("")));
+
+                if (processAcls) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<ObjectNode> aclsInJson = mapper.readValue(DatatypeConverter.parseBase64Binary(aclsJsonArray), new TypeReference<List<ObjectNode>>() {});
+                    for (ObjectNode aclInJson : aclsInJson) {
+                        Id id = new Id(aclInJson.get("scheme").getTextValue(), aclInJson.get("id").getTextValue());
+                        acls.add(new ACL(aclInJson.get("bitmask").getIntValue(), id));
+                    }
+                }
+
                 binaryDataStr = binaryDataStr.replace(" ", "");
                 byte[]      data = new byte[binaryDataStr.length() / 2];
                 for ( int i = 0; i < data.length; ++i )
@@ -169,11 +190,21 @@ public class ExplorerResource
                 {
                     context.getExhibitor().getLocalConnection().setData().forPath(path, data);
                     context.getExhibitor().getLog().add(ActivityLog.Type.INFO, String.format("createNode() updated node [%s] to data [%s]", path, binaryDataStr));
+
+                    if (processAcls) {
+                        context.getExhibitor().getLocalConnection().setACL().withACL(acls).forPath(path);
+                        context.getExhibitor().getLog().add(ActivityLog.Type.INFO, String.format("createNode() updated acls for node [%s]", path));
+                    }
                 }
                 catch ( KeeperException.NoNodeException dummy )
                 {
                     context.getExhibitor().getLocalConnection().create().creatingParentsIfNeeded().forPath(path, data);
                     context.getExhibitor().getLog().add(ActivityLog.Type.INFO, String.format("createNode() created node [%s] with data [%s]", path, binaryDataStr));
+
+                    if (processAcls) {
+                        context.getExhibitor().getLocalConnection().setACL().withACL(acls).forPath(path);
+                        context.getExhibitor().getLog().add(ActivityLog.Type.INFO, String.format("createNode() updated acls for node [%s]" , path));
+                    }
                 }
             }
             catch ( Exception e )
@@ -199,6 +230,21 @@ public class ExplorerResource
             Stat stat = context.getExhibitor().getLocalConnection().checkExists().forPath(key);
             byte[]          bytes = context.getExhibitor().getLocalConnection().getData().storingStatIn(stat).forPath(key);
 
+            if (aclsEnabled) {
+                List<ACL> acls = context.getExhibitor().getLocalConnection().getACL().forPath(key);
+                ArrayNode aclsNode = node.putArray("acls");
+                StringBuilder aclsAsString = new StringBuilder();
+
+                for (ACL acl : acls) {
+                    aclsAsString.append(encodeAclToString(acl));
+                    aclsAsString.append("<br/>");
+
+                    aclsNode.add(encodeAclToJson(acl));
+                }
+                node.put("aclsArray", aclsNode);
+                node.put("acls", aclsAsString.toString());
+            }
+
             if (bytes != null) {
                 node.put("bytes", bytesToString(bytes));
                 node.put("str", new String(bytes, "UTF-8"));
@@ -221,6 +267,30 @@ public class ExplorerResource
             node.put("stat", e.getMessage());
         }
         return node.toString();
+    }
+
+    private String encodeAclToString(ACL acl) {
+        String scheme = acl.getId().getScheme();
+        String id = acl.getId().getId();
+
+        StringBuilder perms = new StringBuilder();
+        if ((acl.getPerms() & ZooDefs.Perms.READ) > 0) perms.append("R");
+        if ((acl.getPerms() & ZooDefs.Perms.WRITE) > 0) perms.append("W");
+        if ((acl.getPerms() & ZooDefs.Perms.CREATE) > 0) perms.append("C");
+        if ((acl.getPerms() & ZooDefs.Perms.DELETE) > 0) perms.append("D");
+        if ((acl.getPerms() & ZooDefs.Perms.ADMIN) > 0) perms.append("A");
+
+        return scheme + ":" + id + "=" + perms.toString();
+    }
+
+    private ObjectNode encodeAclToJson(ACL acl) {
+        ObjectNode node = JsonNodeFactory.instance.objectNode();
+
+        node.put("scheme", acl.getId().getScheme());
+        node.put("id", acl.getId().getId());
+        node.put("perms", acl.getPerms());
+
+        return node;
     }
 
     @GET

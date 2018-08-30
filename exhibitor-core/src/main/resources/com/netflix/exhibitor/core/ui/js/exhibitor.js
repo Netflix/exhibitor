@@ -34,6 +34,13 @@ var URL_GET_BACKUP_CONFIG = "backup-config";
 var URL_GET_TABS = "tabs";
 var URL_RESTART = "stop";
 
+// Perm flags for the ACL bitmask
+var PERM_READ = 1;
+var PERM_WRITE = 2;
+var PERM_CREATE = 4;
+var PERM_DELETE = 8;
+var PERM_ADMIN = 16;
+
 var AUTOMATIC_INSTANCE_MANAGEMENT_HELP_TEXT = "When on, as new instances read the shared config they will automatically add themselves to the ensemble via a rolling release. Additionally, old instances will be automatically removed via rolling release.";
 
 var doConfigUpdates = true;
@@ -172,6 +179,24 @@ function updateState()
                 $('#explorer-buttons').hide();
             }
 
+            if (systemConfig.enableAcls == 1)
+            {
+                $('.acl-component').show();
+            }
+            else
+            {
+                $('.acl-component').hide();
+            }
+
+            if (systemConfig.enableTracking == 1)
+            {
+                $('.tracking-fields-component').show();
+            }
+            else
+            {
+                $('.tracking-fields-component').hide();
+            }
+
             $.unblockUI();
 
             if ( systemState.extraHeadingText )
@@ -266,6 +291,8 @@ function buildNewConfig()
     newConfig.backupPeriodMs = $('#config-backup-ms').val();
     newConfig.backupMaxStoreMs = $('#config-backup-max-store-ms').val();
     newConfig.autoManageInstances = $('#cp-auto-init-instances').prop("checked") ? "1" : "0";
+    newConfig.enableAcls = $('#config-enable-acls').val();
+    newConfig.enableTracking = $('#config-enable-tracking-fields').val();
 
     var zooCfgTab = $('#config-custom').val().split("\n");
     newConfig.zooCfgExtra = {};
@@ -376,6 +403,8 @@ function ableConfig(enable)
     $('#config-cleanup-max-files').prop('disabled', !enable);
     $('#config-backup-ms').prop('disabled', !enable);
     $('#config-backup-max-store-ms').prop('disabled', !enable);
+    $('#config-enable-acls').prop('disabled', !enable);
+    $('#config-enable-tracking-fields').prop('disabled', !enable);
 
     for ( var i = 0; i < configExtraTab.length; ++i )
     {
@@ -420,6 +449,8 @@ function updateConfig()
     $('#config-cleanup-max-files').val(systemConfig.cleanupMaxFiles);
     $('#config-backup-ms').val(systemConfig.backupPeriodMs);
     $('#config-backup-max-store-ms').val(systemConfig.backupMaxStoreMs);
+    $('#config-enable-acls').val(systemConfig.enableAcls);
+    $('#config-enable-tracking-fields').val(systemConfig.enableTracking)
 
     $('#rolling-config-floater-status').html(systemConfig.rollStatus);
     if ( systemConfig.rollInProgress )

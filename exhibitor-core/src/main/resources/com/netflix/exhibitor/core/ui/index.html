@@ -114,6 +114,9 @@
                         <tr valign="top">
                             <td nowrap><strong>Data as String</strong></td> <td><span id="data-str"></span></td>
                         </tr>
+                        <tr valign="top" class="acl-component">
+                            <td nowrap><strong>ACLs</strong></td> <td><span id="node-acl"></span></td>
+                        </tr>
                     </table>
                 </div>
 
@@ -209,6 +212,14 @@
                         <label for="config-check-ms">Live Check (ms)</label><input type="text" id="config-check-ms" class="mask-pint" name="config-check-ms" size="8" title="The number of milliseconds between live-ness checks on the ZooKeeper server"><br clear="all"/>
                         <label for="config-cleanup-ms">Cleanup Period (ms)</label><input type="text" id="config-cleanup-ms" class="mask-pint" name="config-cleanup-ms" size="8" title="The number of milliseconds between ZooKeeper log file cleanups"><br clear="all"/>
                         <label for="config-cleanup-max-files">Cleanup: Max Log Files</label><input type="text" id="config-cleanup-max-files" class="mask-pint" name="config-cleanup-max-files" size="2" title="The max number of ZooKeeper log files to keep when cleaning up"><br clear="all"/>
+                        <label for="config-enable-acls">Enable ACLs</label><select type="text" id="config-enable-acls" class="mask-pint" name="config-enable-acls" size="1" title="If set to 'yes', then Exhibitor will allow viewing and modification of ACLs.">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select><br clear="all"/>
+                        <label for="config-enable-tracking-fields">Enable Tracking Fields</label><select type="text" id="config-enable-tracking-fields" class="mask-pint" name="config-enable-tracking-fields" size="1" title="If set to 'yes', then Exhibitor will allow viewing and modification of ACLs.">
+                             <option value="0">No</option>
+                             <option value="1">Yes</option>
+                        </select><br clear="all"/>
                     </fieldset>
 
                     <fieldset id="config-backups-fieldset">
@@ -337,6 +348,32 @@
             rollback to the previous configuration or force commit to the updated configuration.
         </div>
 
+        <div id="get-node-data-acls-table-row" class="ui-helper-hidden">
+            <table>
+                <tr id="node-acls-table-headers">
+                    <th class="acl-checkbox"></th>
+                    <th class="acl-element">Scheme</th>
+                    <th class="acl-element">ID</th>
+                    <th class="acl-checkbox">R</th>
+                    <th class="acl-checkbox">W</th>
+                    <th class="acl-checkbox">C</th>
+                    <th class="acl-checkbox">D</th>
+                    <th class="acl-checkbox">A</th>
+                </tr>
+
+                <tr name="aclrow">
+                    <td class="acl-checkbox"><input type="checkbox" name="deleteacl"/></td>
+                    <td class="acl-element"><input type="text" class="acl-element" name="schemeinput"/><span class="acl-element" name="schemeinputtext"></span></td>
+                    <td class="acl-element"><input type="text" class="acl-element" name="idinput"/><span class="acl-element" name="idinputtext"></span></td>
+                    <td class="acl-checkbox"><input type="checkbox" name="readperm" data-bitmask="1"/></td>
+                    <td class="acl-checkbox"><input type="checkbox" name="writeperm" data-bitmask="2"/></td>
+                    <td class="acl-checkbox"><input type="checkbox" name="createperm" data-bitmask="4"/></td>
+                    <td class="acl-checkbox"><input type="checkbox" name="deleteperm" data-bitmask="8"/></td>
+                    <td class="acl-checkbox"><input type="checkbox" name="adminperm" data-bitmask="16"/></td>
+                </tr>
+            </table>
+        </div>
+
         <div id="get-node-data-dialog" class="ui-helper-hidden">
             <div>
                 <label for="node-action">Type </label><select name="node-action" id="node-action">
@@ -348,13 +385,25 @@
                 <label for="node-name">Path </label><input type="text" id="node-name" name="node-name" size="40"><br clear="all"/>
             </div>
             <div id="node-data-container">
-                <label for="node-data">Data </label><textarea id="node-data" name="node-data" cols="45" rows="3"></textarea><select name="node-data-type" id="node-data-type">
-                <option value="string">String</option>
-                <option value="binary">Binary</option>
-            </select><br clear="all"/>
+                <label for="node-data">Data </label><textarea id="node-data" name="node-data" cols="45" rows="3"></textarea>
+                <select name="node-data-type" id="node-data-type">
+                    <option value="string">String</option>
+                    <option value="binary">Binary</option>
+                </select>
+                <fieldset class="acl-component">
+                    <legend>ACLs</legend>
+
+                    <table id="node-acls-table" class="ui-helper-hidden">
+                    </table>
+
+                    <button id="add-acl">Add ACL</button>
+                    <button id="remove-acls">Remove ACLs</button>
+                </fieldset>
+
+                <br clear="all"/>
             </div>
 
-            <fieldset>
+            <fieldset class="tracking-fields-component">
                 <legend>Tracking</legend>
                 <label for="node-data-user">Username</label><input type="text" id="node-data-user" name="node-data-user" size="20" title="Your username"><br clear="all"/>
                 <label for="node-data-ticket">Ticket/Code</label><input type="text" id="node-data-ticket" name="node-data-ticket" size="20" title="Ticket/tag number for this operation"><br clear="all"/>

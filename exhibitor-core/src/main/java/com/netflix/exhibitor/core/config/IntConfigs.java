@@ -176,6 +176,26 @@ public enum IntConfigs
         {
             return false;
         }
+    },
+
+    /**
+     * true/false (0 or 1) - this will enable the viewing and modification of znode ACLs. The default is disabled.
+     */
+    ENABLE_ACLS {
+        @Override
+        public boolean isRestartSignificant() {
+            return false;
+        }
+    },
+
+    /**
+     * true/false (0 or 1) - this will enable the tracking fields on the modifiy dialog box. The default is enabled.
+     */
+    ENABLE_TRACKING {
+        @Override
+        public boolean isRestartSignificant() {
+            return false;
+        }
     }
     ;
 

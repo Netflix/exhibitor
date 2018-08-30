@@ -159,6 +159,16 @@ public class DefaultProperties
                         return 1;
                     }
 
+                    case ENABLE_ACLS:
+                    {
+                        return 0;
+                    }
+
+                    case ENABLE_TRACKING:
+                    {
+                        return 1;
+                    }
+
                 }
                 return 0;
             }
