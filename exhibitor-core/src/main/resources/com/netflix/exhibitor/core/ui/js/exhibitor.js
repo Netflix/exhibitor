@@ -459,7 +459,17 @@ function refreshCurrentTab()
     {
         var index = selected - BUILTIN_TAB_QTY;
         if ( (customTabs[index].type === "simple") || customTabs[index].firstTime ) {
-            $("#" + customTabs[index].contentId).load(customTabs[index].url);
+            $.get(customTabs[index].url,
+                function( data ) {
+                    var destination = $("#" + customTabs[index].contentId);
+                    if ( customTabs[index].html === true ) {
+                        destination.html(data);
+                    } else {
+                        destination.text(data);
+                    }
+                }
+            );
+
             customTabs[index].firstTime = false;
         }
     }
@@ -600,6 +610,7 @@ $(function ()
             tabData.contentId = 'tabs-custom-content' + i;
             tabData.url = uiTabSpec[i].url;
             tabData.type = uiTabSpec[i].type;
+            tabData.html = uiTabSpec[i].html;
             tabData.firstTime = true;
             customTabs[i] = tabData;
 
