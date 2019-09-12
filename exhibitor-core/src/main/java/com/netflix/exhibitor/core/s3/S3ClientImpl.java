@@ -286,6 +286,10 @@ public class S3ClientImpl implements S3Client
             String      endpoint = ENDPOINT_SPEC.replace("$REGION$", fixedRegion);
             localClient.setEndpoint(endpoint);
             log.info("Setting S3 endpoint to: " + endpoint);
+        } else
+        {
+            localClient.setEndpoint(ENDPOINT_SPEC);
+            log.info("Setting S3 endpoint to: " + ENDPOINT_SPEC);
         }
 
         return localClient;
